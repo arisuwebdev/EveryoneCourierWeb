@@ -39,12 +39,15 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [react()],
-  base: "/EveryoneCourierWeb/", // Your GitHub repository name
+
+  // GitHub Pages needs this, local development needs "/"
+  base: mode === "production" ? "/EveryoneCourierWeb/" : "/",
+
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
   },
-});
+}));
