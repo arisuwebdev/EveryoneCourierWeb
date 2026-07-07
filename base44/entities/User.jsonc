@@ -1,0 +1,83 @@
+{
+  "name": "User",
+  "type": "object",
+  "properties": {
+    "user_type": {
+      "type": "string",
+      "enum": [
+        "customer",
+        "courier",
+        "both"
+      ],
+      "default": "customer",
+      "description": "Type of user account"
+    },
+    "phone": {
+      "type": "string",
+      "description": "Phone number for contact"
+    },
+    "address": {
+      "type": "string",
+      "description": "User's address"
+    },
+    "id_verified": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether user has completed ID verification"
+    },
+    "id_document_url": {
+      "type": "string",
+      "description": "URL to uploaded ID document"
+    },
+    "rating": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 5,
+      "description": "User rating out of 5"
+    },
+    "completed_deliveries": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of completed deliveries"
+    },
+    "bio": {
+      "type": "string",
+      "description": "User bio/description"
+    },
+    "vehicle_type": {
+      "type": "string",
+      "enum": [
+        "car",
+        "ute",
+        "van",
+        "motorcycle",
+        "bicycle"
+      ],
+      "description": "Type of vehicle the courier owns/uses"
+    },
+    "stripe_account_id": {
+      "type": "string",
+      "description": "Stripe Connect account ID for courier payouts"
+    },
+    "terms_accepted": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the user has accepted the Terms of Service"
+    },
+    "terms_accepted_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when the user accepted the Terms of Service"
+    }
+  },
+  "required": [
+    "phone",
+    "address",
+    "id_document_url",
+    "rating",
+    "bio",
+    "vehicle_type",
+    "stripe_account_id",
+    "terms_accepted_date"
+  ]
+}

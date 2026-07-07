@@ -1,0 +1,37 @@
+{
+  "name": "CourierLocation",
+  "type": "object",
+  "properties": {
+    "job_id": {
+      "type": "string",
+      "description": "ID of the active delivery job"
+    },
+    "courier_id": {
+      "type": "string",
+      "description": "ID of the courier"
+    },
+    "latitude": {
+      "type": "number",
+      "description": "Current latitude of the courier"
+    },
+    "longitude": {
+      "type": "number",
+      "description": "Current longitude of the courier"
+    },
+    "status_message": {
+      "type": "string",
+      "description": "Current status message from courier"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether courier is currently sharing location"
+    }
+  },
+  "required": [
+    "job_id",
+    "courier_id",
+    "latitude",
+    "longitude"
+  ]
+}
