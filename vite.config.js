@@ -41,6 +41,7 @@ import path from "path";
 
 export default defineConfig({
   plugins: [react()],
+  base: "/EveryoneCourierWeb/", // Your GitHub repository name
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
