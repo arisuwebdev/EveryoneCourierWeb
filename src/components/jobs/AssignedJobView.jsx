@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+// import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -33,23 +33,17 @@ function DeliveredSection({ job, isCustomer, courier, currentUser, hasReviewed, 
   const [comment, setComment] = React.useState("");
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
-  const handleSubmit = async () => {
-    if (rating === 0) return;
-    setIsSubmitting(true);
-    await base44.entities.Review.create({
-      job_id: job.id,
-      customer_id: currentUser.id,
-      courier_id: job.courier_id,
-      rating,
-      comment,
-    });
-    // Update courier's average rating
-    const allReviews = await base44.entities.Review.filter({ courier_id: job.courier_id });
-    const avg = allReviews.reduce((s, r) => s + r.rating, 0) / allReviews.length;
-    await base44.entities.User.update(job.courier_id, { rating: parseFloat(avg.toFixed(2)) });
+const handleSubmit = async () => {
+  if (rating === 0) return;
+
+  setIsSubmitting(true);
+
+  // Simulate saving
+  setTimeout(() => {
     setIsSubmitting(false);
     onReviewed();
-  };
+  }, 1000);
+};
 
   if (!isCustomer) {
     return (

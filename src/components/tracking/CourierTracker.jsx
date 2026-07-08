@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { base44 } from "@/api/base44Client";
+// import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -91,71 +91,27 @@ export default function CourierTracker({ job }) {
     );
   };
 
-  const stopSharing = async () => {
-    if (watchIdRef.current) {
-      navigator.geolocation.clearWatch(watchIdRef.current);
-      watchIdRef.current = null;
-    }
-    if (locationRecord) {
-      await base44.entities.CourierLocation.update(locationRecord.id, { is_active: false });
-    }
-    setIsSharing(false);
-    setRouteInfo(null);
-  };
+const startSharing = () => {
+  if (!navigator.geolocation) {
+    setError("Your browser doesn't support GPS.");
+    return;
+  }
 
-  const startSharing = () => {
-    setError(null);
-    if (!navigator.geolocation) {
-      setError("Your browser doesn't support GPS location.");
-      return;
-    }
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      const { latitude, longitude } = pos.coords;
 
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const { latitude, longitude } = pos.coords;
+      if (myMarkerRef.current) {
+        myMarkerRef.current.setPosition({ lat: latitude, lng: longitude });
+        mapInstanceRef.current?.panTo({ lat: latitude, lng: longitude });
+      }
 
-        // Update map marker
-        if (myMarkerRef.current) {
-          myMarkerRef.current.setPosition({ lat: latitude, lng: longitude });
-          mapInstanceRef.current?.panTo({ lat: latitude, lng: longitude });
-        }
-        fetchRoute(latitude, longitude);
-
-        const existing = await base44.entities.CourierLocation.filter({ job_id: job.id });
-        let record;
-        if (existing.length > 0) {
-          record = existing[0];
-          await base44.entities.CourierLocation.update(record.id, { latitude, longitude, is_active: true });
-        } else {
-          record = await base44.entities.CourierLocation.create({
-            job_id: job.id,
-            courier_id: job.courier_id,
-            latitude,
-            longitude,
-            is_active: true,
-          });
-        }
-        setLocationRecord(record);
-        setIsSharing(true);
-
-        watchIdRef.current = navigator.geolocation.watchPosition(
-          async (updatedPos) => {
-            const { latitude: lat, longitude: lng } = updatedPos.coords;
-            await base44.entities.CourierLocation.update(record.id, { latitude: lat, longitude: lng });
-            if (myMarkerRef.current) {
-              myMarkerRef.current.setPosition({ lat, lng });
-              mapInstanceRef.current?.panTo({ lat, lng });
-            }
-            fetchRoute(lat, lng);
-          },
-          (err) => setError("Location error: " + err.message),
-          { enableHighAccuracy: true, maximumAge: 5000 }
-        );
-      },
-      (err) => setError("Could not get location: " + err.message),
-      { enableHighAccuracy: true }
-    );
-  };
+      fetchRoute(latitude, longitude);
+      setIsSharing(true);
+    },
+    (err) => setError(err.message)
+  );
+};
 
   useEffect(() => {
     return () => {

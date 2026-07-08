@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,120 +12,134 @@ export default function AIJobMatches({ user, jobs, applications }) {
 
   const isCourier = user?.user_type === "courier" || !user?.user_type;
 
-  const getMatches = async () => {
-    setIsLoading(true);
-    try {
-      if (isCourier) {
-        // Fetch open jobs to match against
-        const openJobs = await base44.entities.DeliveryJob.filter({ status: "open" }, "-created_date", 20);
-        const appliedJobIds = applications.map((a) => a.job_id);
-        const availableJobs = openJobs.filter((j) => !appliedJobIds.includes(j.id));
+//   const getMatches = async () => {
 
-        if (availableJobs.length === 0) {
-          setMatches({ type: "courier", results: [], message: "No open jobs available right now. Check back soon!" });
-          setIsLoading(false);
-          return;
-        }
+//     setIsLoading(true);
+//     try {
+//       if (isCourier) {
+//         // Fetch open jobs to match against
+//         const openJobs = await base44.entities.DeliveryJob.filter({ status: "open" }, "-created_date", 20);
+//         const appliedJobIds = applications.map((a) => a.job_id);
+//         const availableJobs = openJobs.filter((j) => !appliedJobIds.includes(j.id));
 
-        const result = await base44.integrations.Core.InvokeLLM({
-          prompt: `You are a smart delivery job matching assistant.
+//         if (availableJobs.length === 0) {
+//           setMatches({ type: "courier", results: [], message: "No open jobs available right now. Check back soon!" });
+//           setIsLoading(false);
+//           return;
+//         }
 
-Courier profile:
-- Name: ${user.full_name}
-- Location/Address: ${user.address || "not specified"}
-- Bio: ${user.bio || "not specified"}
-- Completed deliveries: ${user.completed_deliveries || 0}
-- Verified: ${user.id_verified ? "yes" : "no"}
+//         const result = await base44.integrations.Core.InvokeLLM({
+//           prompt: `You are a smart delivery job matching assistant.
 
-Available jobs (JSON):
-${JSON.stringify(availableJobs.map(j => ({ id: j.id, title: j.title, pickup: j.pickup_address, delivery: j.delivery_address, size: j.package_size, price: j.price, urgent: j.urgent })), null, 2)}
+// Courier profile:
+// - Name: ${user.full_name}
+// - Location/Address: ${user.address || "not specified"}
+// - Bio: ${user.bio || "not specified"}
+// - Completed deliveries: ${user.completed_deliveries || 0}
+// - Verified: ${user.id_verified ? "yes" : "no"}
 
-Pick the TOP 3 best matching jobs for this courier based on their location, experience, and profile. Return a brief reason (1 sentence) for each match.`,
-          response_json_schema: {
-            type: "object",
-            properties: {
-              matches: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    job_id: { type: "string" },
-                    reason: { type: "string" },
-                    match_score: { type: "number" }
-                  }
-                }
-              }
-            }
-          }
-        });
+// Available jobs (JSON):
+// ${JSON.stringify(availableJobs.map(j => ({ id: j.id, title: j.title, pickup: j.pickup_address, delivery: j.delivery_address, size: j.package_size, price: j.price, urgent: j.urgent })), null, 2)}
 
-        const matchedJobs = (result.matches || [])
-          .map((m) => ({ ...availableJobs.find((j) => j.id === m.job_id), reason: m.reason, match_score: m.match_score }))
-          .filter((j) => j.id);
+// Pick the TOP 3 best matching jobs for this courier based on their location, experience, and profile. Return a brief reason (1 sentence) for each match.`,
+//           response_json_schema: {
+//             type: "object",
+//             properties: {
+//               matches: {
+//                 type: "array",
+//                 items: {
+//                   type: "object",
+//                   properties: {
+//                     job_id: { type: "string" },
+//                     reason: { type: "string" },
+//                     match_score: { type: "number" }
+//                   }
+//                 }
+//               }
+//             }
+//           }
+//         });
 
-        setMatches({ type: "courier", results: matchedJobs });
-      } else {
-        // Customer: match couriers to their latest open job
-        const openJob = jobs.find((j) => j.status === "open");
-        if (!openJob) {
-          setMatches({ type: "customer", results: [], message: "You have no open jobs. Post a job to get courier suggestions!" });
-          setIsLoading(false);
-          return;
-        }
+//         const matchedJobs = (result.matches || [])
+//           .map((m) => ({ ...availableJobs.find((j) => j.id === m.job_id), reason: m.reason, match_score: m.match_score }))
+//           .filter((j) => j.id);
 
-        const allUsers = await base44.entities.User.list();
-        const couriers = allUsers.filter((u) => u.id_verified);
+//         setMatches({ type: "courier", results: matchedJobs });
+//       } else {
+//         // Customer: match couriers to their latest open job
+//         const openJob = jobs.find((j) => j.status === "open");
+//         if (!openJob) {
+//           setMatches({ type: "customer", results: [], message: "You have no open jobs. Post a job to get courier suggestions!" });
+//           setIsLoading(false);
+//           return;
+//         }
 
-        if (couriers.length === 0) {
-          setMatches({ type: "customer", results: [], message: "No verified couriers available yet." });
-          setIsLoading(false);
-          return;
-        }
+//         const allUsers = await base44.entities.User.list();
+//         const couriers = allUsers.filter((u) => u.id_verified);
 
-        const result = await base44.integrations.Core.InvokeLLM({
-          prompt: `You are a smart courier matching assistant.
+//         if (couriers.length === 0) {
+//           setMatches({ type: "customer", results: [], message: "No verified couriers available yet." });
+//           setIsLoading(false);
+//           return;
+//         }
 
-Job details:
-- Title: ${openJob.title}
-- Pickup: ${openJob.pickup_address}
-- Delivery: ${openJob.delivery_address}
-- Package size: ${openJob.package_size}
-- Price: $${openJob.price}
-- Urgent: ${openJob.urgent ? "yes" : "no"}
+//         const result = await base44.integrations.Core.InvokeLLM({
+//           prompt: `You are a smart courier matching assistant.
 
-Available verified couriers (JSON):
-${JSON.stringify(couriers.map(c => ({ id: c.id, name: c.full_name, address: c.address || "unknown", deliveries: c.completed_deliveries || 0, bio: c.bio || "" })), null, 2)}
+// Job details:
+// - Title: ${openJob.title}
+// - Pickup: ${openJob.pickup_address}
+// - Delivery: ${openJob.delivery_address}
+// - Package size: ${openJob.package_size}
+// - Price: $${openJob.price}
+// - Urgent: ${openJob.urgent ? "yes" : "no"}
 
-Pick the TOP 3 best couriers for this job. Return a brief reason (1 sentence) for each.`,
-          response_json_schema: {
-            type: "object",
-            properties: {
-              matches: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    courier_id: { type: "string" },
-                    reason: { type: "string" },
-                    match_score: { type: "number" }
-                  }
-                }
-              }
-            }
-          }
-        });
+// Available verified couriers (JSON):
+// ${JSON.stringify(couriers.map(c => ({ id: c.id, name: c.full_name, address: c.address || "unknown", deliveries: c.completed_deliveries || 0, bio: c.bio || "" })), null, 2)}
 
-        const matchedCouriers = (result.matches || [])
-          .map((m) => ({ ...couriers.find((c) => c.id === m.courier_id), reason: m.reason, match_score: m.match_score }))
-          .filter((c) => c.id);
+// Pick the TOP 3 best couriers for this job. Return a brief reason (1 sentence) for each.`,
+//           response_json_schema: {
+//             type: "object",
+//             properties: {
+//               matches: {
+//                 type: "array",
+//                 items: {
+//                   type: "object",
+//                   properties: {
+//                     courier_id: { type: "string" },
+//                     reason: { type: "string" },
+//                     match_score: { type: "number" }
+//                   }
+//                 }
+//               }
+//             }
+//           }
+//         });
 
-        setMatches({ type: "customer", results: matchedCouriers, job: openJob });
-      }
-    } catch (e) {
-      console.error(e);
-    }
+//         const matchedCouriers = (result.matches || [])
+//           .map((m) => ({ ...couriers.find((c) => c.id === m.courier_id), reason: m.reason, match_score: m.match_score }))
+//           .filter((c) => c.id);
+
+//         setMatches({ type: "customer", results: matchedCouriers, job: openJob });
+//       }
+//     } catch (e) {
+//       console.error(e);
+//     }
+//     setIsLoading(false);
+//   };
+
+const getMatches = () => {
+  setIsLoading(true);
+
+  setTimeout(() => {
+    setMatches({
+      type: "courier",
+      message: "AI matching is currently unavailable."
+    });
+
     setIsLoading(false);
-  };
+  }, 500);
+};
 
   return (
     <Card className="mb-8 border-0 shadow-lg bg-gradient-to-br from-violet-50 to-indigo-50 overflow-hidden">

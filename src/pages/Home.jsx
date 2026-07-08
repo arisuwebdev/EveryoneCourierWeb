@@ -22,26 +22,33 @@ export default function Home() {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const checkUser = async () => {
-      try {
-        const currentUser = await User.me();
-        setUser(currentUser);
-      } catch (error) {
-        // User not logged in
-      }
-      setIsLoading(false);
-    };
-    checkUser();
-  }, []);
+  // useEffect(() => {
+  //   const checkUser = async () => {
+  //     try {
+  //       const currentUser = await User.me();
+  //       setUser(currentUser);
+  //     } catch (error) {
+  //       // User not logged in
+  //     }
+  //     setIsLoading(false);
+  //   };
+  //   checkUser();
+  // }, []);
 
-  const handleGetStarted = async () => {
-    if (user) {
-      navigate(createPageUrl("Dashboard"));
-    } else {
-      await User.login();
-    }
-  };
+  useEffect(() => {
+  setIsLoading(false);
+}, []);
+
+  // const handleGetStarted = async () => {
+  //   if (user) {
+  //     navigate(createPageUrl("Dashboard"));
+  //   } else {
+  //     await User.login();
+  //   }
+  // };
+  const handleGetStarted = () => {
+  navigate(createPageUrl("Login"));
+};
 
   if (isLoading) {
     return (

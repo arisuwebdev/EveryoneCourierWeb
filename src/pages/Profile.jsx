@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { base44 } from "../api/base44Client";
+// import { base44 } from "../api/base44Client";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Input } from "../components/ui/input";
@@ -29,10 +29,13 @@ export default function Profile() {
     loadUser();
   }, []);
 
-  const loadUser = async () => {
-    try {
-      const currentUser = await base44.auth.me();
+ const loadUser = () => {
+  try {
+    const currentUser = JSON.parse(localStorage.getItem("user"));
+
+    if (currentUser) {
       setUser(currentUser);
+
       setProfileData({
         phone: currentUser.phone || "",
         address: currentUser.address || "",
@@ -40,12 +43,13 @@ export default function Profile() {
         user_type: currentUser.user_type || "customer",
         vehicle_type: currentUser.vehicle_type || ""
       });
-    } catch (error) {
-      console.error("Error loading user:", error);
     }
-    setIsLoading(false);
-  };
+  } catch (error) {
+    console.error("Error loading user:", error);
+  }
 
+  setIsLoading(false);
+};
   const handleInputChange = (field, value) => {
     setProfileData(prev => ({
       ...prev,

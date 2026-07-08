@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+// import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -15,71 +15,37 @@ export default function ApplicantList({ job, onBack }) {
   
   const { notifyJobAssigned } = useNotificationTrigger();
 
-  useEffect(() => {
-    const loadApplicants = async () => {
-      setIsLoading(true);
-      try {
-        const applications = await base44.entities.JobApplication.filter({ job_id: job.id, status: 'pending' });
-        const courierIds = applications.map(app => app.courier_id);
-        
-        if (courierIds.length > 0) {
-          const couriers = await base44.entities.User.list();
-          const filteredCouriers = couriers.filter(c => courierIds.includes(c.id));
-          const courierMap = filteredCouriers.reduce((map, courier) => {
-            map[courier.id] = courier;
-            return map;
-          }, {});
+ useEffect(() => {
+  // No backend available
+  setApplicants([]);
+  setCustomer(null);
+  setIsLoading(false);
+}, []);
 
-          const detailedApplicants = applications.map(app => ({
-            ...app,
-            courier: courierMap[app.courier_id]
-          }));
-          setApplicants(detailedApplicants);
-        }
-        
-        // Load customer info for notifications
-        const customerData = await base44.auth.me();
-        setCustomer(customerData);
-      } catch (error) {
-        console.error("Error loading applicants:", error);
-      }
-      setIsLoading(false);
-    };
+const handleAssignCourier = async (application) => {
+  setIsAssigning(true);
 
-    loadApplicants();
-  }, [job.id]);
+  try {
+    console.log("Assign courier:", application);
 
-  const handleAssignCourier = async (application) => {
-    setIsAssigning(true);
-    try {
-      // 1. Update the DeliveryJob
-      await base44.entities.DeliveryJob.update(job.id, {
-        status: 'assigned',
-        courier_id: application.courier_id
-      });
+    // Notification placeholder
+    await notifyJobAssigned(
+      job,
+      customer?.full_name || "Customer",
+      application?.courier?.full_name || "Courier"
+    );
 
-      // 2. Accept the chosen application
-      await base44.entities.JobApplication.update(application.id, { status: 'accepted' });
+    alert(
+      `Courier ${application?.courier?.full_name || ""} assigned successfully!`
+    );
 
-      // 3. Reject other pending applications for this job
-      const otherApplications = applicants.filter(app => app.id !== application.id);
-      for (const app of otherApplications) {
-        await base44.entities.JobApplication.update(app.id, { status: 'rejected' });
-      }
-      
-      // 4. Send notifications
-      if (customer) {
-        await notifyJobAssigned(job, customer.full_name, application.courier.full_name);
-      }
-      
-      alert(`Courier ${application.courier.full_name} has been assigned!`);
-      onBack(); // Go back to the list
-    } catch (error) {
-      console.error("Error assigning courier:", error);
-      alert("Failed to assign courier. Please try again.");
-    }
-    setIsAssigning(false);
-  };
+    onBack();
+  } catch (error) {
+    console.error(error);
+  }
+
+  setIsAssigning(false);
+};
 
   if (isLoading) {
     return (

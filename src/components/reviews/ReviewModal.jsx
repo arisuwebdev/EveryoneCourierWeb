@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+// import { base44 } from "@/api/base44Client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -12,27 +12,18 @@ export default function ReviewModal({ isOpen, onClose, job, courier, currentUser
   const [comment, setComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = async () => {
-    if (rating === 0) return;
-    setIsSubmitting(true);
+const handleSubmit = async () => {
+  if (rating === 0) return;
 
-    await base44.entities.Review.create({
-      job_id: job.id,
-      customer_id: currentUser.id,
-      courier_id: job.courier_id,
-      rating,
-      comment,
-    });
+  setIsSubmitting(true);
 
-    // Recalculate courier's average rating
-    const allReviews = await base44.entities.Review.filter({ courier_id: job.courier_id });
-    const avg = allReviews.reduce((sum, r) => sum + r.rating, 0) / allReviews.length;
-    await base44.entities.User.update(job.courier_id, { rating: parseFloat(avg.toFixed(2)) });
+  // Simulate a request
+  await new Promise(resolve => setTimeout(resolve, 1000));
 
-    setIsSubmitting(false);
-    onReviewSubmitted();
-    onClose();
-  };
+  setIsSubmitting(false);
+  onReviewSubmitted();
+  onClose();
+};
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>

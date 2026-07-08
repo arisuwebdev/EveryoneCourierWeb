@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { base44 } from "@/api/base44Client";
+// import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Navigation, WifiOff, MapPin } from "lucide-react";
@@ -28,83 +28,11 @@ export default function CustomerTrackingMap({ job, courierName }) {
   const [mapsReady, setMapsReady] = useState(false);
   const [apiKey, setApiKey] = useState(null);
 
-  // Fetch API key
-  useEffect(() => {
-    getGoogleMapsKey().then(res => setApiKey(res.data.key));
-  }, []);
-
-  // Init map once key + container ready
-  useEffect(() => {
-    if (!apiKey || !mapRef.current) return;
-    loadGoogleMaps(apiKey).then((maps) => {
-      mapInstanceRef.current = new maps.Map(mapRef.current, {
-        zoom: 14,
-        center: { lat: -33.8688, lng: 151.2093 }, // default Sydney
-        mapTypeControl: false,
-        fullscreenControl: false,
-        streetViewControl: false,
-      });
-      directionsRendererRef.current = new maps.DirectionsRenderer({
-        suppressMarkers: false,
-        polylineOptions: { strokeColor: "#6366f1", strokeWeight: 4 },
-      });
-      directionsRendererRef.current.setMap(mapInstanceRef.current);
-      courierMarkerRef.current = new maps.Marker({
-        map: mapInstanceRef.current,
-        title: courierName || "Courier",
-        icon: {
-          path: maps.SymbolPath.FORWARD_CLOSED_ARROW,
-          scale: 6,
-          fillColor: "#6366f1",
-          fillOpacity: 1,
-          strokeColor: "#fff",
-          strokeWeight: 2,
-        },
-      });
-      setMapsReady(true);
-    });
-  }, [apiKey, mapRef.current]);
-
-  // Draw route pickup → delivery
-  useEffect(() => {
-    if (!mapsReady || !job.pickup_address || !job.delivery_address) return;
-    const maps = window.google.maps;
-    const ds = new maps.DirectionsService();
-    ds.route(
-      {
-        origin: job.pickup_address,
-        destination: job.delivery_address,
-        travelMode: maps.TravelMode.DRIVING,
-      },
-      (result, status) => {
-        if (status === "OK") directionsRendererRef.current.setDirections(result);
-      }
-    );
-  }, [mapsReady, job.pickup_address, job.delivery_address]);
-
-  // Update courier marker position
-  useEffect(() => {
-    if (!mapsReady || !location) return;
-    const pos = { lat: location.lat, lng: location.lng };
-    courierMarkerRef.current.setPosition(pos);
-    mapInstanceRef.current.panTo(pos);
-  }, [location, mapsReady]);
-
-  // Poll courier location
-  useEffect(() => {
-    const fetch = async () => {
-      const records = await base44.entities.CourierLocation.filter({ job_id: job.id });
-      if (records.length > 0) {
-        const rec = records[0];
-        setLocation({ lat: rec.latitude, lng: rec.longitude });
-        setIsActive(rec.is_active);
-        setLastUpdated(new Date(rec.updated_date));
-      }
-    };
-    fetch();
-    const interval = setInterval(fetch, 8000);
-    return () => clearInterval(interval);
-  }, [job.id]);
+useEffect(() => {
+  setLocation(null);
+  setIsActive(false);
+  setLastUpdated(null);
+}, []);
 
   const getTimeSince = () => {
     if (!lastUpdated) return "";

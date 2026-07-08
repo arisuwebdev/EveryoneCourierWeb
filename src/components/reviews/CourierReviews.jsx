@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+// import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Star, MessageSquare } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -24,21 +24,10 @@ export default function CourierReviews({ courierId }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const load = async () => {
-      const data = await base44.entities.Review.filter({ courier_id: courierId }, "-created_date", 20);
-      setReviews(data);
-
-      if (data.length > 0) {
-        const allUsers = await base44.entities.User.list();
-        const map = {};
-        allUsers.forEach((u) => { map[u.id] = u; });
-        setReviewers(map);
-      }
-
-      setIsLoading(false);
-    };
-    if (courierId) load();
-  }, [courierId]);
+  setReviews([]);
+  setReviewers({});
+  setIsLoading(false);
+}, []);
 
   if (isLoading) return null;
 
