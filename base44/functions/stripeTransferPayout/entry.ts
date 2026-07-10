@@ -1,10 +1,10 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
+
 import Stripe from 'npm:stripe@14.21.0';
 
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
+    // const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
     const { job_id, payment_intent_id, courier_stripe_account_id, courier_payout_cents } = await req.json();

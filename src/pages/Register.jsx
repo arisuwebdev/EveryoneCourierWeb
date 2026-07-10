@@ -1,14 +1,24 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-// import { base44 } from "../api/base44Client";
+import { registerUser } from "../api/ApiServices/registerService";
+import { sendOtpService } from "../api/ApiServices/sentOtpService";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { UserPlus, Mail, Lock, Loader2 } from "lucide-react";
-import { InputOTP, InputOTPGroup, InputOTPSlot } from "../components/ui/input-otp";
+import { toast } from "react-toastify";
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSlot,
+} from "../components/ui/input-otp";
 import AuthLayout from "../components/AuthLayout";
 import GoogleIcon from "../components/GoogleIcon";
-import { toast } from "../components/ui/use-toast";
+// import { toast } from "../components/ui/use-toast";
+import { Checkbox } from "../components/ui/checkbox";
+import { getTermsOfServiceUrl } from "../api/ApiServices/getTermsOfServiceUrlApiService";
+import { getPrivacyPolicyUrl } from "../api/ApiServices/getPrivacyPolicyUrlApiService";
+import { useEffect } from "react";
 
 export default function Register() {
   const [email, setEmail] = useState("");
@@ -18,39 +28,128 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const [showOtp, setShowOtp] = useState(false);
   const [otpCode, setOtpCode] = useState("");
+  const [accepted, setAccepted] = useState(false);
+  const [termsUrl, setTermsUrl] = useState("");
+  const [privacyUrl, setPrivacyUrl] = useState("");
 
- const handleSubmit = (e) => {
-  e.preventDefault();
-  setError("");
-
-  if (password !== confirmPassword) {
-    setError("Passwords do not match");
-    return;
-  }
-
-  setShowOtp(true);
-};
-
- const handleVerify = () => {
-  window.location.href = "/";
-};
-
-  const handleResend = async () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     setError("");
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
+    if (!accepted) {
+      const message = "Please accept the Terms of Service and Privacy Policy.";
+      setError(message);
+      toast.error(message);
+      return;
+    }
+    console.log("accepted:", accepted);
+
     try {
-      await base44.auth.resendOtp(email);
-      toast({
-        title: "Code sent",
-        description: "Check your email for the new code.",
-      });
+      setLoading(true);
+      const response = await sendOtpService(email);
+
+      if (response.status === 1) {
+        setShowOtp(true);
+        toast.success(response.msg);
+      } else {
+        setError(response.msg);
+        toast.error(response.msg);
+      }
     } catch (err) {
-      setError(err.message || "Failed to resend code");
+      const errorMessage =
+        err.response?.data?.msg ||
+        err.response?.data?.payload?.verrors ||
+        err.response?.data?.message ||
+        err.message ||
+        "Failed to send OTP";
+
+      setError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setLoading(false);
     }
   };
 
- const handleGoogle = () => {
-  alert("Google Sign-In is disabled.");
-};
+  useEffect(() => {
+    const fetchUrls = async () => {
+      try {
+        const [termsRes, privacyRes] = await Promise.all([
+          getTermsOfServiceUrl(),
+          getPrivacyPolicyUrl(),
+        ]);
+
+        setTermsUrl(
+          termsRes?.payload?.termsOfServiceUrl ||
+            termsRes?.data?.payload?.termsOfServiceUrl ||
+            "#",
+        );
+
+        setPrivacyUrl(
+          privacyRes?.payload?.privacyPolicyUrl ||
+            privacyRes?.data?.payload?.privacyPolicyUrl ||
+            "#",
+        );
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    fetchUrls();
+  }, []);
+
+  const handleVerify = async () => {
+    setError("");
+
+    try {
+      setLoading(true);
+
+      const response = await registerUser({
+        email,
+        password,
+        otp: otpCode,
+        is_terms_accepted: true,
+      });
+
+      toast.success(response.msg || "Account created successfully.");
+
+      window.location.href = "/";
+    } catch (err) {
+      setError(
+        err.response?.data?.msg ||
+          err.response?.data?.message ||
+          err.message ||
+          "Registration failed",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+  const handleResend = async () => {
+    setError("");
+
+    try {
+      setLoading(true);
+
+      await sendOtpService(email);
+
+      toast.success("Check your email for the new code.");
+    } catch (err) {
+      setError(
+        err.response?.data?.message || err.message || "Failed to resend OTP",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogle = () => {
+    alert("Google Sign-In is disabled.");
+  };
 
   if (showOtp) {
     return (
@@ -98,7 +197,10 @@ export default function Register() {
         </Button>
         <p className="text-center text-sm text-muted-foreground mt-4">
           Didn't receive the code?{" "}
-          <button onClick={handleResend} className="text-primary font-medium hover:underline">
+          <button
+            onClick={handleResend}
+            className="text-primary font-medium hover:underline"
+          >
             Resend
           </button>
         </p>
@@ -114,7 +216,10 @@ export default function Register() {
       footer={
         <>
           Already have an account?{" "}
-          <Link to="/login" className="text-primary font-medium hover:underline">
+          <Link
+            to="/login"
+            className="text-primary font-medium hover:underline"
+          >
             Log in
           </Link>
         </>
@@ -148,7 +253,10 @@ export default function Register() {
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
           <div className="relative">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
+            <Mail
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground"
+              aria-hidden="true"
+            />
             <Input
               id="email"
               type="email"
@@ -165,7 +273,10 @@ export default function Register() {
         <div className="space-y-2">
           <Label htmlFor="password">Password</Label>
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
+            <Lock
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground"
+              aria-hidden="true"
+            />
             <Input
               id="password"
               type="password"
@@ -181,7 +292,10 @@ export default function Register() {
         <div className="space-y-2">
           <Label htmlFor="confirm">Confirm Password</Label>
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
+            <Lock
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground"
+              aria-hidden="true"
+            />
             <Input
               id="confirm"
               type="password"
@@ -194,7 +308,46 @@ export default function Register() {
             />
           </div>
         </div>
-        <Button type="submit" className="w-full h-12 font-medium" disabled={loading}>
+
+        <div className="flex items-start gap-3">
+          <Checkbox
+            id="terms"
+            checked={accepted}
+            onCheckedChange={(checked) => setAccepted(!!checked)}
+            className="mt-1"
+          />
+
+          <label
+            htmlFor="terms"
+            className="text-sm text-muted-foreground leading-6 cursor-pointer"
+          >
+            I have read and agree to the{" "}
+            <a
+              href={termsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary underline"
+            >
+              Terms of Service
+            </a>{" "}
+            and{" "}
+            <a
+              href={privacyUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary underline"
+            >
+              Privacy Policy
+            </a>
+            . I confirm I am 17 years of age or older.
+          </label>
+        </div>
+
+        <Button
+          type="submit"
+          className="w-full h-12 font-medium"
+          disabled={loading}
+        >
           {loading ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />

@@ -128,8 +128,7 @@
 //   );
 // }
 
-
-import React, { useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -137,35 +136,59 @@ import { Label } from "../components/ui/label";
 import { LogIn, Mail, Lock, Loader2 } from "lucide-react";
 import AuthLayout from "../components/AuthLayout";
 import GoogleIcon from "../components/GoogleIcon";
+import { loginUser } from "../api/ApiServices/loginService";
+import { toast } from "react-toastify";
+import { useAuth } from "../lib/AuthContext";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-
+  const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     setError("");
 
     if (!email || !password) {
       setError("Please enter email and password.");
+      toast.error("Please enter email and password.");
       return;
     }
 
-    setLoading(true);
+    try {
+      setLoading(true);
 
-    // Simulate login
-    setTimeout(() => {
-      localStorage.setItem("isLoggedIn", "true");
-      localStorage.setItem("user", JSON.stringify({ email }));
+      const response = await loginUser({
+        email,
+        password,
+      });
 
+      if (response.status === 1) {
+        toast.success(response.msg);
+
+        // Store token and user in AuthContext + localStorage
+        login(response);
+
+        navigate("/", { replace: true });
+      } else {
+        setError(response.msg);
+        toast.error(response.msg);
+      }
+    } catch (err) {
+      const errorMessage =
+        err.response?.data?.msg ||
+        err.response?.data?.message ||
+        err.message ||
+        "Login failed";
+
+      setError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
       setLoading(false);
-      navigate("/", { replace: true });
-    }, 1000);
+    }
   };
 
   const handleGoogle = () => {
@@ -228,25 +251,30 @@ export default function Login() {
           </div>
         </div>
 
-        <div className="space-y-2">
-          <Label>Password</Label>
-          <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              type="password"
-              placeholder="••••••••"
-              className="pl-10 h-12"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </div>
-        </div>
+       <div className="space-y-2">
+  <Label>Password</Label>
+  <div className="relative">
+    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+    <Input
+      type="password"
+      placeholder="••••••••"
+      className="pl-10 h-12"
+      value={password}
+      onChange={(e) => setPassword(e.target.value)}
+    />
+  </div>
 
-        <Button
-          type="submit"
-          className="w-full h-12"
-          disabled={loading}
-        >
+  <div className="flex justify-end">
+    <Link
+      to="/forgot-password"
+      className="text-sm text-primary hover:underline"
+    >
+      Forgot Password?
+    </Link>
+  </div>
+</div>
+
+        <Button type="submit" className="w-full h-12" disabled={loading}>
           {loading ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />

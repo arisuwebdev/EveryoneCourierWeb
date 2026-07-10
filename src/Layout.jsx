@@ -1,9 +1,10 @@
 // import React, { useState, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "./utils";
-import { Package, User, Plus, Search, Home, Briefcase, BarChart2 } from "lucide-react";
-// import { base44 } from "@/api/base44Client";
-// import NotificationCenter from "@/components/notifications/NotificationCenter";
+import { Package, User, Plus, Search, Home, Briefcase, BarChart2,  LogOut} from "lucide-react";
+import { useAuth } from "../src/lib/AuthContext";
+
 
 const navigationItems = [
   { title: "Home", url: createPageUrl("Home"), icon: Home },
@@ -16,8 +17,9 @@ const navigationItems = [
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
-  // const [userId, setUserId] = useState(null);
+  const { logout } = useAuth();
 
+  // const [userId, setUserId] = useState(null);
   // useEffect(() => {
   //   const loadUser = async () => {
   //     try {
@@ -27,6 +29,17 @@ export default function Layout({ children, currentPageName }) {
   //   };
   //   loadUser();
   // }, []);
+
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      window.location.href = createPageUrl("Login");
+    } catch (error) {
+
+    }
+  };
+
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 to-blue-50">
@@ -39,7 +52,17 @@ export default function Layout({ children, currentPageName }) {
             </div>
             <span className="font-bold text-slate-900 text-base">Everyone's a Courier</span>
           </div>
-          {/* {userId && <NotificationCenter userId={userId} />} */}
+
+      <div className="flex items-center">
+  <button
+    onClick={handleLogout}
+    className="flex items-center gap-2 px-3 py-2 rounded-lg text-red-600 hover:bg-red-50 transition-colors duration-200"
+    title="Logout"
+  >
+    <LogOut className="w-5 h-5" />
+    <span className="text-sm font-medium">Logout</span>
+  </button>
+</div>
         </div>
       </header>
 
