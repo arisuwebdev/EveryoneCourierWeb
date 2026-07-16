@@ -14,77 +14,16 @@ import ReferralCard from "../components/dashboard/ReferralCard";
 import AIJobMatches from "../components/dashboard/AIJobMatches";
 
 export default function Dashboard() {
-  // const [user, setUser] = useState(null);
-  // const [jobs, setJobs] = useState([]);
-  // const [applications, setApplications] = useState([]);
-  // const [payments, setPayments] = useState([]);
-  // const [isLoading, setIsLoading] = useState(true);
-
-  // useEffect(() => {
-  //   loadDashboardData();
-  // }, []);
-
-  // const loadDashboardData = async () => {
-  //   try {
-  //     const currentUser = await base44.auth.me();
-  //     setUser(currentUser);
-
-  //     const userJobs = await DeliveryJob.filter({ customer_id: currentUser.id }, '-created_date', 10);
-  //     setJobs(userJobs);
-
-  //     const userApplications = await JobApplication.filter({ courier_id: currentUser.id }, '-created_date', 10);
-  //     setApplications(userApplications);
-
-  //     // Load payments for earnings tracking
-  //     const userPayments = await Payment.filter({ courier_id: currentUser.id, payment_status: 'completed' }, '-processed_at', 20);
-  //     setPayments(userPayments);
-  //   } catch (error) {
-  //     console.error("Error loading dashboard:", error);
-  //   }
-  //   setIsLoading(false);
-  // };
-
-  // if (isLoading) {
-  //   return (
-  //     <div className="min-h-screen flex items-center justify-center">
-  //       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-  //     </div>
-  //   );
-  // }
-
-  // if (!user) {
-  //   return (
-  //     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50">
-  //       <Card className="w-96 shadow-2xl border-0 bg-white/90 backdrop-blur-sm">
-  //         <CardContent className="p-8 text-center">
-  //           <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
-  //             <Package className="w-8 h-8 text-white" />
-  //           </div>
-  //           <h2 className="text-2xl font-bold mb-2">Welcome!</h2>
-  //           <p className="text-slate-600 mb-6">Please sign in to access your courier dashboard</p>
-  //           <Button
-  //             onClick={() => window.location.href = '/login'}
-  //             className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
-  //           >
-  //             Sign In
-  //           </Button>
-  //         </CardContent>
-  //       </Card>
-  //     </div>
-  //   );
-  // }
-
-
   const user = {
-  full_name: "John Doe",
-  user_type: "courier",
-  id_verified: false,
-};
+    full_name: "John Doe",
+    user_type: "courier",
+    id_verified: false,
+  };
 
-const jobs = [];
-const applications = [];
-const payments = [];
-const isLoading = false;
+  const jobs = [];
+  const applications = [];
+  const payments = [];
+  const isLoading = false;
 
   return (
     <div className="min-h-screen p-4 md:p-8">
@@ -158,26 +97,26 @@ const isLoading = false;
         )} */}
 
         <Card className="mb-6 border-amber-200 bg-amber-50">
-  <CardContent className="p-4">
-    <div className="flex items-center gap-3">
-      <AlertCircle className="w-5 h-5 text-amber-600" />
-      <div>
-        <p className="font-medium text-amber-900">
-          Complete your verification
-        </p>
-        <p className="text-sm text-amber-700">
-          Verify your ID to start posting jobs or applying as a courier.
-        </p>
-      </div>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <AlertCircle className="w-5 h-5 text-amber-600" />
+              <div>
+                <p className="font-medium text-amber-900">
+                  Complete your verification
+                </p>
+                <p className="text-sm text-amber-700">
+                  Verify your ID to start posting jobs or applying as a courier.
+                </p>
+              </div>
 
-      <Link to={createPageUrl("Profile")}>
-        <Button variant="outline" size="sm" className="ml-auto">
-          Verify Now
-        </Button>
-      </Link>
-    </div>
-  </CardContent>
-</Card>
+              <Link to={createPageUrl("Profile")}>
+                <Button variant="outline" size="sm" className="ml-auto">
+                  Verify Now
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Stats Overview */}
         {/* <StatsOverview
@@ -190,7 +129,7 @@ const isLoading = false;
 
         <AIJobMatches user={user} jobs={jobs} applications={applications} />
 
-        <ReferralCard />
+       <ReferralCard />
 
         <QuickActions user={user} />
         <RecentActivity
@@ -199,30 +138,27 @@ const isLoading = false;
           userType={user.user_type}
           isLoading={isLoading}
         /> */}
+       
 
-    <StatsOverview
-  user={user}
-  jobs={jobs}
-  applications={applications}
-  payments={payments}
-  isLoading={isLoading}
-/>
+        <StatsOverview
+          user={user}
+          jobs={jobs}
+          applications={applications}
+          payments={payments}
+          isLoading={isLoading}
+        />
 
-<AIJobMatches
-  user={user}
-  jobs={jobs}
-  applications={applications}
-/>
+        {/* <AIJobMatches user={user} jobs={jobs} applications={applications} /> */}
 
-<QuickActions user={user} />
+ <ReferralCard />
+        <QuickActions user={user} />
 
-<RecentActivity
-  jobs={jobs}
-  applications={applications}
-  userType={user.user_type}
-  isLoading={isLoading}
-/>
-
+        <RecentActivity
+          jobs={jobs}
+          applications={applications}
+          userType={user.user_type}
+          isLoading={isLoading}
+        />
       </div>
     </div>
   );

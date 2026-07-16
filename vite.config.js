@@ -18,7 +18,6 @@
 //   ]
 // });
 
-
 // import base44 from "@base44/vite-plugin";
 // import react from "@vitejs/plugin-react";
 // import { defineConfig } from "vite";
@@ -35,19 +34,74 @@
 //   ],
 // });
 
+// import { defineConfig } from "vite";
+// import react from "@vitejs/plugin-react";
+// import path from "path";
+
+// export default defineConfig(({ mode }) => ({
+//   plugins: [react()],
+
+//   // GitHub Pages needs this, local development needs "/"
+//   base: "/current-project/react-project/EveryoneCourior/",
+
+//   resolve: {
+//     alias: {
+//       "@": path.resolve(__dirname, "./src"),
+//     },
+//   },
+// }));
+
+
+// import { defineConfig } from "vite";
+// import react from "@vitejs/plugin-react";
+// import path from "path";
+
+// export default defineConfig({
+//   plugins: [react()],
+//   base: "/current-project/react-project/EveryoneCourior/",
+//   resolve: {
+//     alias: {
+//       "@": path.resolve(__dirname, "./src"),
+//     },
+//   },
+// });
+
+
+
+// for developement 
+
+// import { defineConfig } from "vite";
+// import react from "@vitejs/plugin-react";
+// import path from "path";
+
+// export default defineConfig({
+//   plugins: [react()],
+// base: "/current-project/react-project/EveryoneCourior/",
+
+//  // matches your cPanel folder path
+//   resolve: {
+//     alias: {
+//       "@": path.resolve(__dirname, "./src"),
+//     },
+//   },
+// });
+
+
+// for local
+
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
 
-export default defineConfig(({ mode }) => ({
+export default defineConfig({
   plugins: [react()],
 
-  // GitHub Pages needs this, local development needs "/"
-  base: mode === "production" ? "/EveryoneCourierWeb/" : "/",
+  base: "/current-project/react-project/EveryoneCourior/",
+  //  base: "/",
 
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
   },
-}));
+});

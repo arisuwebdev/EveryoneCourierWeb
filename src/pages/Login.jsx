@@ -172,7 +172,8 @@ export default function Login() {
         // Store token and user in AuthContext + localStorage
         login(response);
 
-        navigate("/", { replace: true });
+        navigate("/dashboard", { replace: true });
+
       } else {
         setError(response.msg);
         toast.error(response.msg);
@@ -251,28 +252,28 @@ export default function Login() {
           </div>
         </div>
 
-       <div className="space-y-2">
-  <Label>Password</Label>
-  <div className="relative">
-    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-    <Input
-      type="password"
-      placeholder="••••••••"
-      className="pl-10 h-12"
-      value={password}
-      onChange={(e) => setPassword(e.target.value)}
-    />
-  </div>
+        <div className="space-y-2">
+          <Label>Password</Label>
+          <div className="relative">
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              type="password"
+              placeholder="••••••••"
+              className="pl-10 h-12"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
 
-  <div className="flex justify-end">
-    <Link
-      to="/forgot-password"
-      className="text-sm text-primary hover:underline"
-    >
-      Forgot Password?
-    </Link>
-  </div>
-</div>
+          <div className="flex justify-end">
+            <Link
+              to="/forgot-password"
+              className="text-sm text-primary hover:underline"
+            >
+              Forgot Password?
+            </Link>
+          </div>
+        </div>
 
         <Button type="submit" className="w-full h-12" disabled={loading}>
           {loading ? (

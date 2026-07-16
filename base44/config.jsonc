@@ -1,9 +1,0 @@
-{
-  "name": "Everyone\u2019s a courier",
-  "site": {
-    "installCommand": "npm install",
-    "buildCommand": "npm run build",
-    "serveCommand": "npm run dev",
-    "outputDirectory": "./dist"
-  }
-}

@@ -1,6 +1,3 @@
-
-
-
 import axios from "axios";
 import { uploadIdCardApi } from "../apiEndPoint";
 
@@ -16,7 +13,7 @@ export const uploadIdCard = async (idCard, token) => {
         "Content-Type": "application/json",
         Accept: "application/json",
       },
-    }
+    },
   );
 
   return response.data;

@@ -1,8 +1,9 @@
 {
-  "name": "base44-app",
+"name": "everyone-courier",
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "homepage": "/current-project/react-project/EveryoneCourior",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

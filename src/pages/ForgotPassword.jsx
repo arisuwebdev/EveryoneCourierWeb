@@ -24,15 +24,14 @@ export default function ForgotPassword() {
       };
 
       const response = await forgotPassword(payload);
-     
-   if (response.status === 1) {
-  toast.success(response.msg);
-  setSent(true);
-} else {
-  toast.error(response.msg || "Something went wrong.");
-}
+
+      if (response.status === 1) {
+        toast.success(response.msg);
+        setSent(true);
+      } else {
+        toast.error(response.msg || "Something went wrong.");
+      }
     } catch (error) {
-      console.log(error.response);
 
       toast.error(
         error?.response?.data?.msg ||

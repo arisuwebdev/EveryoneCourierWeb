@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-// import { base44 } from "../api/base44Client";
 import { Button } from "../components/ui/button";
 import {
   Card,
@@ -24,6 +23,7 @@ import { useAuth } from "../lib/AuthContext";
 import { getProfile } from "../api/ApiServices/getProfileApiService";
 import { updateProfile } from "../api/ApiServices/updateProfileApiService";
 import { uploadIdCard } from "../api/ApiServices/uploadIdCardService";
+import StripeConnectOnboarding from "../components/payments/StripeConnectOnboarding";
 import { toast } from "react-toastify";
 
 export default function Profile() {
@@ -47,22 +47,18 @@ export default function Profile() {
   const loadUser = async () => {
     try {
       setIsLoading(true);
-
       const res = await getProfile(token);
-
       const profile = res.payload.user;
-
       setUser(profile);
 
       setProfileData({
         phone: profile.phone || "",
         address: profile.address || "",
         bio: profile.bio || "",
-        user_type: profile.user_type?.toLowerCase() || "customer",
+        user_type: (profile.user_type || "CUSTOMER").toUpperCase(),
         vehicle_type: profile.vehicle_type || "",
       });
     } catch (err) {
-     
     } finally {
       setIsLoading(false);
     }
@@ -101,55 +97,52 @@ export default function Profile() {
 
       alert(res?.msg || "Profile updated successfully!");
     } catch (error) {
-      console.error(error);
+
       alert(error?.response?.data?.msg || "Failed to update profile.");
     } finally {
       setIsUpdating(false);
     }
   };
-const handleIdUpload = async (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
+  const handleIdUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
 
-  setIsUploadingId(true);
+    setIsUploadingId(true);
 
-  try {
-    // Convert image to Base64
-    const reader = new FileReader();
+    try {
+      const reader = new FileReader();
 
-    reader.onloadend = async () => {
-      try {
-        const base64Image = reader.result; 
+      reader.onloadend = async () => {
+        try {
+          const base64Image = reader.result;
 
-        const res = await uploadIdCard(base64Image, token);
+          const res = await uploadIdCard(base64Image, token);
 
-        if (res.status === 1) {
-          alert(res.msg || "ID uploaded successfully!");
+          if (res.status === 1) {
+            toast.success(res.msg || "ID uploaded successfully!");
 
-          await loadUser();
-        } else {
-          alert(res.msg || "Upload failed.");
+            await loadUser();
+          } else {
+            toast.error(res.msg || "Upload failed.");
+          }
+        } catch (error) {
+          toast.error(error?.response?.data?.msg || "Failed to upload ID.");
+        } finally {
+          setIsUploadingId(false);
         }
-      } catch (error) {
-        console.error(error);
-        alert(error?.response?.data?.msg || "Failed to upload ID.");
-      } finally {
+      };
+
+      reader.onerror = () => {
         setIsUploadingId(false);
-      }
-    };
+        toast.error("Failed to read file.");
+      };
 
-    reader.onerror = () => {
+      reader.readAsDataURL(file);
+    } catch (error) {
       setIsUploadingId(false);
-      alert("Failed to read file.");
-    };
-
-    reader.readAsDataURL(file);
-  } catch (error) {
-    setIsUploadingId(false);
-    console.error(error);
-    alert("Something went wrong.");
-  }
-};
+      toast.error("Something went wrong.");
+    }
+  };
 
   if (isLoading) {
     return (
@@ -181,7 +174,7 @@ const handleIdUpload = async (e) => {
                   <div className="grid md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>Full Name</Label>
-                      <Input value={user?.name || ""} disabled />
+                      <Input value={user?.name || ""}/>
                     </div>
                     <div className="space-y-2">
                       <Label>Email</Label>
@@ -350,8 +343,8 @@ const handleIdUpload = async (e) => {
 
           {/* Stats Sidebar */}
           <div className="space-y-6">
-            {(profileData.user_type === "courier" ||
-              profileData.user_type === "both") && (
+            {(profileData.user_type === "COURIER" ||
+              profileData.user_type === "BOTH") && (
               <StripeConnectOnboarding user={user} />
             )}
             <Card className="shadow-xl border-0 bg-white/90 backdrop-blur-sm">
