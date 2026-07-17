@@ -1,56 +1,93 @@
-import React, { useState, useEffect } from "react";
-// import { base44 } from "@/api/base44Client";
+import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ArrowLeft, Mail, Phone, MapPin, Package, DollarSign, Star, CheckCircle2 } from "lucide-react";
+import {
+  ArrowLeft,
+  Mail,
+  Phone,
+  MapPin,
+  Package,
+  DollarSign,
+  Star,
+  CheckCircle2,
+} from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
+import { useParams, useSearchParams, useNavigate } from "react-router-dom";
+import { useAuth } from "../../lib/AuthContext";
+import { getJobDetails } from "../../api/ApiServices/jobrelated/getJobDetailsService";
+// TODO: wire these up once the corresponding endpoints exist on the backend.
+// import { updateJobStatus as updateJobStatusApi } from "../../api/ApiServices/jobrelated/updateJobStatusService";
+// import { submitReview } from "../../api/ApiServices/reviews/submitReviewService";
+import { toast } from "react-toastify";
 
 import JobStatusStepper from "./JobStatusStepper";
 import { useNotificationTrigger } from "../notifications/useNotificationTrigger";
 import CourierTracker from "../tracking/CourierTracker";
 import CustomerTrackingMap from "../tracking/CustomerTrackingMap";
-// import { stripeTransferPayout } from "@/functions/stripeTransferPayout";
-import ReviewModal from "../reviews/ReviewModal";
+
+// Statuses as returned by the API (uppercase enum values)
+const STATUS = {
+  OPEN: "OPEN",
+  ASSIGNED: "ASSIGNED",
+  PICKED_UP: "PICKED_UP",
+  DELIVERED: "DELIVERED",
+  CANCELLED: "CANCELLED",
+};
 
 function StarRating({ rating, setRating }) {
-  const [hovered, setHovered] = React.useState(0);
+  const [hovered, setHovered] = useState(0);
   return (
     <div className="flex gap-1">
-      {[1,2,3,4,5].map(star => (
-        <button key={star} onClick={() => setRating(star)}
-          onMouseEnter={() => setHovered(star)} onMouseLeave={() => setHovered(0)}
-          className="transition-transform hover:scale-110">
-          <Star className={`w-8 h-8 ${star <= (hovered || rating) ? "text-yellow-400 fill-yellow-400" : "text-slate-300"}`} />
+      {[1, 2, 3, 4, 5].map((star) => (
+        <button
+          key={star}
+          onClick={() => setRating(star)}
+          onMouseEnter={() => setHovered(star)}
+          onMouseLeave={() => setHovered(0)}
+          className="transition-transform hover:scale-110"
+        >
+          <Star
+            className={`w-8 h-8 ${
+              star <= (hovered || rating)
+                ? "text-yellow-400 fill-yellow-400"
+                : "text-slate-300"
+            }`}
+          />
         </button>
       ))}
     </div>
   );
 }
 
-function DeliveredSection({ job, isCustomer, courier, currentUser, hasReviewed, onReviewed }) {
-  const [rating, setRating] = React.useState(0);
-  const [comment, setComment] = React.useState("");
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
+function DeliveredSection({ isCustomer, courierName, hasReviewed, onReviewed }) {
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-const handleSubmit = async () => {
-  if (rating === 0) return;
-
-  setIsSubmitting(true);
-
-  // Simulate saving
-  setTimeout(() => {
-    setIsSubmitting(false);
-    onReviewed();
-  }, 1000);
-};
+  const handleSubmit = async () => {
+    if (rating === 0) return;
+    setIsSubmitting(true);
+    try {
+      // TODO: replace with a real API call once the review endpoint exists, e.g.
+      // await submitReview({ job_id: job.id, rating, comment });
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      onReviewed();
+    } catch (err) {
+      toast.error(err.response?.data?.msg || "Failed to submit review.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   if (!isCustomer) {
     return (
       <div className="text-center p-4 bg-green-50 rounded-xl border border-green-200">
         <CheckCircle2 className="w-8 h-8 text-green-600 mx-auto mb-2" />
         <p className="font-semibold text-green-700">Delivery Complete!</p>
-        <p className="text-sm text-green-600 mt-1">Waiting for the customer to leave a review.</p>
+        <p className="text-sm text-green-600 mt-1">
+          Waiting for the customer to leave a review.
+        </p>
       </div>
     );
   }
@@ -60,7 +97,9 @@ const handleSubmit = async () => {
       <div className="text-center p-4 bg-green-50 rounded-xl border border-green-200">
         <CheckCircle2 className="w-8 h-8 text-green-600 mx-auto mb-2" />
         <p className="font-semibold text-green-700">Thanks for your review!</p>
-        <p className="text-sm text-green-600 mt-1">Your feedback helps build trust in the network.</p>
+        <p className="text-sm text-green-600 mt-1">
+          Your feedback helps build trust in the network.
+        </p>
       </div>
     );
   }
@@ -71,16 +110,20 @@ const handleSubmit = async () => {
         <Star className="w-5 h-5 text-amber-500" />
         <p className="font-semibold text-slate-800">Rate your delivery experience</p>
       </div>
-      {courier && (
-        <p className="text-sm text-slate-600">How did <strong>{courier.full_name}</strong> do?</p>
+      {courierName && (
+        <p className="text-sm text-slate-600">
+          How did <strong>{courierName}</strong> do?
+        </p>
       )}
       <StarRating rating={rating} setRating={setRating} />
       {rating > 0 && (
-        <p className="text-xs text-slate-500">{["","Poor","Fair","Good","Very Good","Excellent"][rating]}</p>
+        <p className="text-xs text-slate-500">
+          {["", "Poor", "Fair", "Good", "Very Good", "Excellent"][rating]}
+        </p>
       )}
       <Textarea
         value={comment}
-        onChange={e => setComment(e.target.value)}
+        onChange={(e) => setComment(e.target.value)}
         placeholder="Leave a comment about your experience (optional)..."
         className="h-20 bg-white"
       />
@@ -95,92 +138,94 @@ const handleSubmit = async () => {
   );
 }
 
-export default function AssignedJobView({ job, currentUser, onBack }) {
-  const [otherUser, setOtherUser] = useState(null);
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [customer, setCustomer] = useState(null);
-  const [courier, setCourier] = useState(null);
-  const [hasReviewed, setHasReviewed] = useState(false);
-  const [jobStatus, setJobStatus] = useState(job.status);
-  const isCustomer = currentUser.id === job.customer_id;
-  
+export default function AssignedJobView() {
+  const { id } = useParams();
+  const [searchParams] = useSearchParams();
+  const type = searchParams.get("type");
+  const navigate = useNavigate();
+  const { token, user: currentUser } = useAuth();
   const { notifyJobCompleted } = useNotificationTrigger();
-  
-  useEffect(() => {
-    const loadUsers = async () => {
-      const otherUserId = isCustomer ? job.courier_id : job.customer_id;
-      if (otherUserId) {
-        const users = await base44.entities.User.list();
-        const user = users.find(u => u.id === otherUserId);
-        setOtherUser(user);
-      }
-      
-      // Load both customer and courier for notifications
-      const allUsers = await base44.entities.User.list();
-      const customerData = allUsers.find(u => u.id === job.customer_id);
-      const courierData = allUsers.find(u => u.id === job.courier_id);
-      setCustomer(customerData);
-      setCourier(courierData);
 
-      // Check if customer already reviewed this job
-      if (isCustomer && job.status === 'delivered') {
-        const existing = await base44.entities.Review.filter({ job_id: job.id, customer_id: currentUser.id });
-        setHasReviewed(existing.length > 0);
+  const [job, setJob] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [hasReviewed, setHasReviewed] = useState(false);
+
+  const fetchJobDetails = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await getJobDetails(id, type, token);
+      if (res.status === 1) {
+        setJob(res.payload.job);
+      } else {
+        toast.error(res.msg);
       }
-    };
-    loadUsers();
-  }, [job, isCustomer, currentUser.id]);
+    } catch (err) {
+      toast.error(err.response?.data?.msg || "Failed to load job.");
+    } finally {
+      setLoading(false);
+    }
+  }, [id, type, token]);
+
+  useEffect(() => {
+    fetchJobDetails();
+  }, [fetchJobDetails]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-slate-500">Loading job...</p>
+      </div>
+    );
+  }
+
+  if (!job) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-slate-500">Job not found.</p>
+      </div>
+    );
+  }
+
+  const isCustomer = String(currentUser?.id) === String(job.customer_id);
+  // The job details response currently only exposes customer_id / courier_id.
+  // If/when the API starts returning nested customer/courier user objects,
+  // swap these for job.customer / job.courier.
+  const otherUser = isCustomer ? job.courier : job.customer;
+  const price = parseFloat(job.price) || 0;
 
   const updateJobStatus = async (newStatus) => {
     setIsUpdating(true);
     try {
-      await base44.entities.DeliveryJob.update(job.id, { status: newStatus });
-      
-      // If delivery is complete, update courier's stats and notify
-      if (newStatus === 'delivered') {
-        const courierData = courier || await base44.entities.User.list().then(users => users.find(u => u.id === job.courier_id));
-        if (courierData) {
-          await base44.entities.User.update(job.courier_id, {
-            completed_deliveries: (courierData.completed_deliveries || 0) + 1
-          });
-        }
-        
-        // Send notifications
-        if (customer && courier) {
-          await notifyJobCompleted(job, customer.full_name, courier.full_name);
-        }
-        
-        // Trigger Stripe payout transfer to courier if not already a split payment
-        const payments = await base44.entities.Payment.filter({ job_id: job.id });
-        if (payments.length > 0) {
-          const payment = payments[0];
-          const courierUser = courierData;
-          // Only do a manual transfer if no split was set at payment intent creation
-          if (courierUser?.stripe_account_id && payment.transaction_id && !payment.split_payment) {
-            const payoutCents = Math.round(payment.courier_payout * 100);
-            await stripeTransferPayout({
-              job_id: job.id,
-              payment_intent_id: payment.transaction_id,
-              courier_stripe_account_id: courierUser.stripe_account_id,
-              courier_payout_cents: payoutCents,
-            });
-          }
-          await base44.entities.Payment.update(payment.id, { payment_status: 'completed' });
-        }
+      // TODO: replace with the real status-update endpoint, e.g.
+      // await updateJobStatusApi(job.id, newStatus, token);
+
+      if (newStatus === STATUS.DELIVERED && job.customer && job.courier) {
+        await notifyJobCompleted(job, job.customer.full_name, job.courier.full_name);
       }
-      
-      setJobStatus(newStatus);
-      if (newStatus !== 'delivered') onBack();
+
+      setJob((prev) => ({ ...prev, status: newStatus }));
+
+      if (newStatus === STATUS.DELIVERED && isCustomer && job.status === STATUS.DELIVERED) {
+        // reset review flag if it were ever re-delivered (not expected, kept for safety)
+        setHasReviewed(false);
+      }
+
+      if (newStatus !== STATUS.DELIVERED) {
+        navigate(-1);
+      }
     } catch (error) {
       console.error("Error updating job status:", error);
+      toast.error("Failed to update job status.");
+    } finally {
+      setIsUpdating(false);
     }
-    setIsUpdating(false);
   };
 
   return (
     <div className="min-h-screen p-4 md:p-8">
       <div className="max-w-4xl mx-auto">
-        <Button variant="outline" onClick={onBack} className="mb-4">
+        <Button variant="outline" onClick={() => navigate(-1)} className="mb-4">
           <ArrowLeft className="w-4 h-4 mr-2" /> Back to My Jobs
         </Button>
 
@@ -193,8 +238,7 @@ export default function AssignedJobView({ job, currentUser, onBack }) {
               <CardContent className="space-y-6">
                 <JobStatusStepper currentStatus={job.status} />
 
-                {/* Location tracking — only when job is active */}
-                {(jobStatus === 'assigned' || jobStatus === 'picked_up') && (
+                {(job.status === STATUS.ASSIGNED || job.status === STATUS.PICKED_UP) && (
                   <div>
                     {!isCustomer ? (
                       <CourierTracker job={job} />
@@ -203,7 +247,7 @@ export default function AssignedJobView({ job, currentUser, onBack }) {
                     )}
                   </div>
                 )}
-                
+
                 <div className="space-y-4">
                   <div className="flex items-start gap-3">
                     <MapPin className="w-5 h-5 text-blue-500 mt-0.5" />
@@ -226,44 +270,53 @@ export default function AssignedJobView({ job, currentUser, onBack }) {
                       <p className="text-slate-900">{job.package_description}</p>
                     </div>
                   </div>
-                   <div className="flex items-start gap-3">
+                  <div className="flex items-start gap-3">
                     <DollarSign className="w-5 h-5 text-amber-500 mt-0.5" />
                     <div>
                       <p className="text-sm font-medium text-slate-600">Payment</p>
-                      <p className="font-bold text-slate-900">${job.price.toFixed(2)}</p>
+                      <p className="font-bold text-slate-900">${price.toFixed(2)}</p>
                     </div>
                   </div>
                 </div>
-                
-                {jobStatus !== 'delivered' && jobStatus !== 'cancelled' && (
+
+                {job.status !== STATUS.DELIVERED && job.status !== STATUS.CANCELLED && (
                   <div className="pt-6 border-t">
                     <h3 className="font-semibold mb-4">Actions</h3>
                     <div className="flex gap-4">
-                      {!isCustomer && job.status === 'assigned' && (
-                        <Button onClick={() => updateJobStatus('picked_up')} disabled={isUpdating}>
+                      {!isCustomer && job.status === STATUS.ASSIGNED && (
+                        <Button
+                          onClick={() => updateJobStatus(STATUS.PICKED_UP)}
+                          disabled={isUpdating}
+                        >
                           Mark as Picked Up
                         </Button>
                       )}
-                       {!isCustomer && job.status === 'picked_up' && (
-                        <Button onClick={() => updateJobStatus('delivered')} disabled={isUpdating} className="bg-green-600 hover:bg-green-700">
+                      {!isCustomer && job.status === STATUS.PICKED_UP && (
+                        <Button
+                          onClick={() => updateJobStatus(STATUS.DELIVERED)}
+                          disabled={isUpdating}
+                          className="bg-green-600 hover:bg-green-700"
+                        >
                           Mark as Delivered
                         </Button>
                       )}
-                      {/* Customer can cancel before pickup */}
-                      {isCustomer && job.status === 'assigned' && (
-                         <Button variant="destructive" onClick={() => updateJobStatus('cancelled')} disabled={isUpdating}>
+                      {isCustomer && job.status === STATUS.ASSIGNED && (
+                        <Button
+                          variant="destructive"
+                          onClick={() => updateJobStatus(STATUS.CANCELLED)}
+                          disabled={isUpdating}
+                        >
                           Cancel Job
                         </Button>
                       )}
                     </div>
                   </div>
                 )}
-                {jobStatus === 'delivered' && (
+
+                {job.status === STATUS.DELIVERED && (
                   <DeliveredSection
-                    job={job}
                     isCustomer={isCustomer}
-                    courier={courier}
-                    currentUser={currentUser}
+                    courierName={otherUser?.full_name}
                     hasReviewed={hasReviewed}
                     onReviewed={() => setHasReviewed(true)}
                   />
@@ -271,28 +324,34 @@ export default function AssignedJobView({ job, currentUser, onBack }) {
               </CardContent>
             </Card>
           </div>
-          
+
           <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>{isCustomer ? 'Your Courier' : 'Your Customer'}</CardTitle>
+                <CardTitle>{isCustomer ? "Your Courier" : "Your Customer"}</CardTitle>
               </CardHeader>
               <CardContent className="text-center">
                 {otherUser ? (
                   <>
                     <Avatar className="w-20 h-20 mx-auto mb-4">
                       <AvatarImage src={otherUser.avatar_url} />
-                      <AvatarFallback>{otherUser.full_name?.charAt(0) || 'U'}</AvatarFallback>
+                      <AvatarFallback>{otherUser.full_name?.charAt(0) || "U"}</AvatarFallback>
                     </Avatar>
                     <p className="font-bold">{otherUser.full_name}</p>
                     <p className="text-sm text-slate-500">{otherUser.email}</p>
                     <div className="flex justify-center gap-2 mt-4">
-                      <Button variant="outline" size="icon"><Mail className="w-4 h-4"/></Button>
-                      <Button variant="outline" size="icon"><Phone className="w-4 h-4"/></Button>
+                      <Button variant="outline" size="icon">
+                        <Mail className="w-4 h-4" />
+                      </Button>
+                      <Button variant="outline" size="icon">
+                        <Phone className="w-4 h-4" />
+                      </Button>
                     </div>
                   </>
                 ) : (
-                  <p>Loading...</p>
+                  <p className="text-sm text-slate-400">
+                    {isCustomer ? "No courier assigned yet." : "Customer details unavailable."}
+                  </p>
                 )}
               </CardContent>
             </Card>

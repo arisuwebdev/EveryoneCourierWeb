@@ -106,7 +106,6 @@
 
 // export default App;
 
-
 import { Toaster } from "./components/ui/toaster";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClientInstance } from "./lib/query-client";
@@ -140,6 +139,7 @@ import TermsOfService from "./pages/TermsOfService";
 import TermsAcceptanceModal from "./components/TermsAcceptanceModal";
 import UserNotRegisteredError from "./components/UserNotRegisteredError";
 import PageNotFound from "./lib/PageNotFound";
+import AssignedJobView from "./components/jobs/AssignedJobView";
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError } = useAuth();
@@ -173,19 +173,84 @@ const AuthenticatedApp = () => {
         <Route path="/TermsOfService" element={<TermsOfService />} />
 
         {/* App Routes */}
-        <Route path="/home" element={ <Layout currentPageName="Home">   <Home />   </Layout>   }  />
+        <Route
+          path="/home"
+          element={
+            <Layout currentPageName="Home">
+              {" "}
+              <Home />{" "}
+            </Layout>
+          }
+        />
 
-        <Route path="/dashboard"  element={ <Layout currentPageName="Dashboard">   <Dashboard /> </Layout> } />
+        <Route
+          path="/dashboard"
+          element={
+            <Layout currentPageName="Dashboard">
+              {" "}
+              <Dashboard />{" "}
+            </Layout>
+          }
+        />
 
-        <Route    path="/my-jobs"  element={ <Layout currentPageName="MyJobs">  <MyJobs />   </Layout>  } />
+        <Route
+          path="/my-jobs"
+          element={
+            <Layout currentPageName="MyJobs">
+              {" "}
+              <MyJobs />{" "}
+            </Layout>
+          }
+        />
 
-        <Route    path="/post-job" element={ <Layout currentPageName="PostJob">  <PostJob />  </Layout>  }  />
+        <Route
+          path="/post-job"
+          element={
+            <Layout currentPageName="PostJob">
+              {" "}
+              <PostJob />{" "}
+            </Layout>
+          }
+        />
 
-        <Route     path="/find-jobs" element={ <Layout currentPageName="FindJobs">  <FindJobs />  </Layout>  } />
+        <Route
+          path="/find-jobs"
+          element={
+            <Layout currentPageName="FindJobs">
+              {" "}
+              <FindJobs />{" "}
+            </Layout>
+          }
+        />
 
-        <Route      path="/profile" element={ <Layout currentPageName="Profile">  <Profile />  </Layout>   }  />
+        <Route
+          path="/profile"
+          element={
+            <Layout currentPageName="Profile">
+              {" "}
+              <Profile />{" "}
+            </Layout>
+          }
+        />
 
-        <Route     path="/analytics" element={ <Layout currentPageName="Analytics">   <Analytics />   </Layout>   }   />
+        <Route
+          path="/analytics"
+          element={
+            <Layout currentPageName="Analytics">
+              {" "}
+              <Analytics />{" "}
+            </Layout>
+          }
+        />
+
+        <Route
+          path="/my-jobs/:id"
+          element={
+            <Layout currentPageName="MyJobs">
+              <AssignedJobView />
+            </Layout>
+          }
+        />
 
         {/* 404 */}
         <Route path="*" element={<PageNotFound />} />
@@ -198,8 +263,8 @@ export default function App() {
   return (
     <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>
-       <Router basename="/current-project/react-project/EveryoneCourior">
-         {/* <Router> */}
+        {/* <Router basename="/current-project/react-project/EveryoneCourior"> */}
+        <Router>
           <AuthenticatedApp />
         </Router>
         <Toaster />

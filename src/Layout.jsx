@@ -38,7 +38,7 @@ export default function Layout({ children }) {
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 to-blue-50">
       {/* Top Header */}
       <header className="bg-white/90 backdrop-blur-sm border-b border-slate-200/60 px-4 py-3 sticky top-0 z-40">
-        <div className="flex items-center justify-between max-w-2xl mx-auto w-full">
+<div className="flex items-center justify-between w-full px-2">
           <Link to="/home" className="flex items-center gap-2">
             <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-lg flex items-center justify-center shadow">
               <Package className="w-4 h-4 text-white" />
@@ -119,12 +119,6 @@ export default function Layout({ children }) {
               </Link>
 
               <div className="flex items-center gap-5 text-sm text-slate-500">
-                <Link
-                  to="/about"
-                  className="hover:text-blue-600 transition-colors"
-                >
-                  About
-                </Link>
                 <Link
                   to="/contact"
                   className="hover:text-blue-600 transition-colors"

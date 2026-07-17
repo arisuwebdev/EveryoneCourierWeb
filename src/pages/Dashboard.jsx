@@ -138,7 +138,6 @@ export default function Dashboard() {
           userType={user.user_type}
           isLoading={isLoading}
         /> */}
-       
 
         <StatsOverview
           user={user}
@@ -150,7 +149,7 @@ export default function Dashboard() {
 
         {/* <AIJobMatches user={user} jobs={jobs} applications={applications} /> */}
 
- <ReferralCard />
+        <ReferralCard />
         <QuickActions user={user} />
 
         <RecentActivity

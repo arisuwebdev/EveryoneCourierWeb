@@ -26,3 +26,16 @@ export const getPrivacyPolicyUrlApi =  baseUrl + "/getPrivacyPolicyUrl";
 export const getTermsOfServiceUrlApi =  baseUrl + "/getTermsOfServiceUrl";
 
 export const getTermsAcceptedApi =  baseUrl + "/saveTermsAccepted";
+
+
+// job related
+
+export const saveJobApi =  baseUrl + "/saveJob";
+
+export const confirmJobPaymentApi =  baseUrl + "/confirmJobPayment";
+
+export const getJobApi =  baseUrl + "/getJob";
+
+export const findJobApi =  baseUrl + "/findJob";
+
+export const applyJobApi =  baseUrl + "/applyJob";

@@ -71,38 +71,38 @@ export default function Profile() {
     }));
   };
 
-  const handleUpdateProfile = async (e) => {
-    e.preventDefault();
-    setIsUpdating(true);
+const handleUpdateProfile = async (e) => {
+  e.preventDefault();
+  setIsUpdating(true);
 
-    try {
-      const res = await updateProfile(profileData, token);
+  try {
+    const res = await updateProfile(profileData, token);
 
-      if (res?.payload?.user) {
-        setUser(res.payload.user);
+    if (res?.payload?.user) {
+      setUser(res.payload.user);
 
-        setProfileData({
-          phone: res.payload.user.phone || "",
-          address: res.payload.user.address || "",
-          bio: res.payload.user.bio || "",
-          user_type: res.payload.user.user_type?.toLowerCase() || "customer",
-          vehicle_type: res.payload.user.vehicle_type || "",
-        });
-      } else {
-        setUser((prev) => ({
-          ...prev,
-          ...profileData,
-        }));
-      }
-
-      alert(res?.msg || "Profile updated successfully!");
-    } catch (error) {
-
-      alert(error?.response?.data?.msg || "Failed to update profile.");
-    } finally {
-      setIsUpdating(false);
+      setProfileData({
+        phone: res.payload.user.phone || "",
+        address: res.payload.user.address || "",
+        bio: res.payload.user.bio || "",
+        user_type: res.payload.user.user_type?.toLowerCase() || "customer",
+        vehicle_type: res.payload.user.vehicle_type || "",
+      });
+    } else {
+      setUser((prev) => ({
+        ...prev,
+        ...profileData,
+      }));
     }
-  };
+
+    toast.success(res?.msg || "Profile updated successfully!");
+  } catch (error) {
+    toast.error(error?.response?.data?.msg || "Failed to update profile.");
+  } finally {
+    setIsUpdating(false);
+  }
+};
+
   const handleIdUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;

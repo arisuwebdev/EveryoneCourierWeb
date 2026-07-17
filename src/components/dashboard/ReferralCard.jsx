@@ -6,7 +6,7 @@ import { Share2, Copy, CheckCheck, Users } from "lucide-react";
 export default function ReferralCard() {
   const [copied, setCopied] = useState(false);
 
-  const appUrl = window.location.origin;
+const appUrl = `${window.location.origin}${import.meta.env.BASE_URL}`;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(appUrl);
