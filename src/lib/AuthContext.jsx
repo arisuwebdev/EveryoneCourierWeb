@@ -77,10 +77,12 @@ export const AuthProvider = ({ children }) => {
   );
 
   const login = (data) => {
+    const expiryTime = Date.now() + 60 * 60 * 1000; // 1 hour
     localStorage.setItem("token", data.payload.token);
     localStorage.setItem("user", JSON.stringify(data.payload.user));
     localStorage.setItem("isLoggedIn", "true");
-
+    localStorage.setItem("tokenExpiry", String(expiryTime));
+    
     setToken(data.payload.token);
     setUser(data.payload.user);
   };

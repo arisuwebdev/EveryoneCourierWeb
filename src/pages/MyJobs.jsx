@@ -14,7 +14,7 @@ export default function MyJobs() {
   const [myPostings, setMyPostings] = useState([]);
   const [myDeliveries, setMyDeliveries] = useState([]);
   const [activeTab, setActiveTab] = useState("postings");
-  const { token } = useAuth();
+  const { user, token } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -45,7 +45,22 @@ export default function MyJobs() {
         <Card
           key={job.id}
           className="hover:shadow-md transition-shadow cursor-pointer"
-          onClick={() => navigate(`/my-jobs/${job.id}?type=${type}`)}
+          //here check status if status is open then go application list or go assignlist page
+          onClick={() => {
+            // CUSTOMER
+            if (user?.user_type === "CUSTOMER") {
+              if (job.status === "OPEN") {
+                navigate(`/my-jobs/${job.id}/applicants?type=postings`);
+              } else {
+                navigate(`/my-jobs/${job.id}/assigned?type=postings`);
+              }
+            }
+
+            // COURIER
+            else if (user?.user_type === "COURIER") {
+              navigate(`/my-jobs/${job.id}/assigned?type=deliveries`);
+            }
+          }}
         >
           <CardContent className="p-4 flex justify-between items-center">
             <div>

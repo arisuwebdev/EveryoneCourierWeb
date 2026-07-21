@@ -1,6 +1,4 @@
-// import React, { useState, useEffect, useCallback } from "react";
 
-// import { base44 } from "@/api/base44Client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Package } from "lucide-react";
 
@@ -89,40 +87,6 @@ const { token, user } = useAuth();
   //   applyFilters();
   // }, [applyFilters]);
 
-  // const handleApply = async (jobId) => {
-  //   if (!user?.id_verified) {
-  //     alert("Please verify your identity before applying for jobs");
-  //     return;
-  //   }
-
-  //   try {
-  //     await base44.entities.JobApplication.create({
-  //       job_id: jobId,
-  //       courier_id: user.id,
-  //       message: "I'm interested in this delivery job and can handle it professionally."
-  //     });
-
-  //     // Get job details and notify customer
-  //     const job = jobs.find(j => j.id === jobId);
-  //     if (job) {
-  //       await notifyJobApplication(job, user.full_name);
-  //     }
-
-  //     alert("Application submitted successfully!");
-  //   } catch (error) {
-  //     console.error("Error applying for job:", error);
-  //     alert("Error submitting application. Please try again.");
-  //   }
-  // };
-
-  // if (!user) {
-  //   return (
-  //     <div className="min-h-screen flex items-center justify-center">
-  //       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-  //     </div>
-  //   );
-  // }
-
   const handleApply = (jobId) => {
     console.log("Applied for job:", jobId);
     alert("Application submitted successfully!");
@@ -146,10 +110,6 @@ const { token, user } = useAuth();
       if (filters.maxPrice) params.price_max = filters.maxPrice;
 
       if (filters.urgent) params.urgent = 1;
-
-      // Add vehicle when you have that filter
-      // if (filters.vehicleRequired !== "all")
-      //   params.vehicle_required = filters.vehicleRequired.toUpperCase();
 
       const res = await findJob(params, token);
 
@@ -212,6 +172,7 @@ const { token, user } = useAuth();
                       job={job}
                       onApply={handleApply}
                       userVerified={user?.id_verified}
+                      userType={user?.user_type}
                     />
                   ))}
                   

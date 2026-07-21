@@ -16,9 +16,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../../lib/AuthContext";
 import { getJobDetails } from "../../api/ApiServices/jobrelated/getJobDetailsService";
-// TODO: wire these up once the corresponding endpoints exist on the backend.
-// import { updateJobStatus as updateJobStatusApi } from "../../api/ApiServices/jobrelated/updateJobStatusService";
-// import { submitReview } from "../../api/ApiServices/reviews/submitReviewService";
 import { toast } from "react-toastify";
 
 import JobStatusStepper from "./JobStatusStepper";
@@ -60,7 +57,12 @@ function StarRating({ rating, setRating }) {
   );
 }
 
-function DeliveredSection({ isCustomer, courierName, hasReviewed, onReviewed }) {
+function DeliveredSection({
+  isCustomer,
+  courierName,
+  hasReviewed,
+  onReviewed,
+}) {
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -108,7 +110,9 @@ function DeliveredSection({ isCustomer, courierName, hasReviewed, onReviewed }) 
     <div className="p-5 bg-gradient-to-br from-amber-50 to-yellow-50 rounded-xl border border-amber-200 space-y-4">
       <div className="flex items-center gap-2">
         <Star className="w-5 h-5 text-amber-500" />
-        <p className="font-semibold text-slate-800">Rate your delivery experience</p>
+        <p className="font-semibold text-slate-800">
+          Rate your delivery experience
+        </p>
       </div>
       {courierName && (
         <p className="text-sm text-slate-600">
@@ -187,11 +191,10 @@ export default function AssignedJobView() {
     );
   }
 
-  const isCustomer = String(currentUser?.id) === String(job.customer_id);
-  // The job details response currently only exposes customer_id / courier_id.
-  // If/when the API starts returning nested customer/courier user objects,
-  // swap these for job.customer / job.courier.
-  const otherUser = isCustomer ? job.courier : job.customer;
+  const isCustomer = String(currentUser?.user_id) === String(job.customer_id);
+
+  const isCourier = String(currentUser?.user_id) === String(job.courier_id);
+
   const price = parseFloat(job.price) || 0;
 
   const updateJobStatus = async (newStatus) => {
@@ -201,12 +204,20 @@ export default function AssignedJobView() {
       // await updateJobStatusApi(job.id, newStatus, token);
 
       if (newStatus === STATUS.DELIVERED && job.customer && job.courier) {
-        await notifyJobCompleted(job, job.customer.full_name, job.courier.full_name);
+        await notifyJobCompleted(
+          job,
+          job.customer.full_name,
+          job.courier.full_name,
+        );
       }
 
       setJob((prev) => ({ ...prev, status: newStatus }));
 
-      if (newStatus === STATUS.DELIVERED && isCustomer && job.status === STATUS.DELIVERED) {
+      if (
+        newStatus === STATUS.DELIVERED &&
+        isCustomer &&
+        job.status === STATUS.DELIVERED
+      ) {
         // reset review flag if it were ever re-delivered (not expected, kept for safety)
         setHasReviewed(false);
       }
@@ -215,7 +226,6 @@ export default function AssignedJobView() {
         navigate(-1);
       }
     } catch (error) {
-      console.error("Error updating job status:", error);
       toast.error("Failed to update job status.");
     } finally {
       setIsUpdating(false);
@@ -238,12 +248,16 @@ export default function AssignedJobView() {
               <CardContent className="space-y-6">
                 <JobStatusStepper currentStatus={job.status} />
 
-                {(job.status === STATUS.ASSIGNED || job.status === STATUS.PICKED_UP) && (
+                {(job.status === STATUS.ASSIGNED ||
+                  job.status === STATUS.PICKED_UP) && (
                   <div>
-                    {!isCustomer ? (
+                    {isCourier ? (
                       <CourierTracker job={job} />
                     ) : (
-                      <CustomerTrackingMap job={job} courierName={otherUser?.full_name} />
+                      <CustomerTrackingMap
+                        job={job}
+                        courierName={job.courier_name}
+                      />
                     )}
                   </div>
                 )}
@@ -252,71 +266,84 @@ export default function AssignedJobView() {
                   <div className="flex items-start gap-3">
                     <MapPin className="w-5 h-5 text-blue-500 mt-0.5" />
                     <div>
-                      <p className="text-sm font-medium text-slate-600">Pickup</p>
+                      <p className="text-sm font-medium text-slate-600">
+                        Pickup
+                      </p>
                       <p className="text-slate-900">{job.pickup_address}</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
                     <MapPin className="w-5 h-5 text-green-500 mt-0.5" />
                     <div>
-                      <p className="text-sm font-medium text-slate-600">Delivery</p>
+                      <p className="text-sm font-medium text-slate-600">
+                        Delivery
+                      </p>
                       <p className="text-slate-900">{job.delivery_address}</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
                     <Package className="w-5 h-5 text-purple-500 mt-0.5" />
                     <div>
-                      <p className="text-sm font-medium text-slate-600">Package</p>
-                      <p className="text-slate-900">{job.package_description}</p>
+                      <p className="text-sm font-medium text-slate-600">
+                        Package
+                      </p>
+                      <p className="text-slate-900">
+                        {job.package_description}
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
                     <DollarSign className="w-5 h-5 text-amber-500 mt-0.5" />
                     <div>
-                      <p className="text-sm font-medium text-slate-600">Payment</p>
-                      <p className="font-bold text-slate-900">${price.toFixed(2)}</p>
+                      <p className="text-sm font-medium text-slate-600">
+                        Payment
+                      </p>
+                      <p className="font-bold text-slate-900">
+                        ${price.toFixed(2)}
+                      </p>
                     </div>
                   </div>
                 </div>
 
-                {job.status !== STATUS.DELIVERED && job.status !== STATUS.CANCELLED && (
-                  <div className="pt-6 border-t">
-                    <h3 className="font-semibold mb-4">Actions</h3>
-                    <div className="flex gap-4">
-                      {!isCustomer && job.status === STATUS.ASSIGNED && (
-                        <Button
-                          onClick={() => updateJobStatus(STATUS.PICKED_UP)}
-                          disabled={isUpdating}
-                        >
-                          Mark as Picked Up
-                        </Button>
-                      )}
-                      {!isCustomer && job.status === STATUS.PICKED_UP && (
-                        <Button
-                          onClick={() => updateJobStatus(STATUS.DELIVERED)}
-                          disabled={isUpdating}
-                          className="bg-green-600 hover:bg-green-700"
-                        >
-                          Mark as Delivered
-                        </Button>
-                      )}
-                      {isCustomer && job.status === STATUS.ASSIGNED && (
-                        <Button
-                          variant="destructive"
-                          onClick={() => updateJobStatus(STATUS.CANCELLED)}
-                          disabled={isUpdating}
-                        >
-                          Cancel Job
-                        </Button>
-                      )}
+                {job.status !== STATUS.DELIVERED &&
+                  job.status !== STATUS.CANCELLED && (
+                    <div className="pt-6 border-t">
+                      <h3 className="font-semibold mb-4">Actions</h3>
+                      <div className="flex gap-4">
+                        {isCourier && job.status === STATUS.ASSIGNED && (
+                          <Button
+                            onClick={() => updateJobStatus(STATUS.PICKED_UP)}
+                            disabled={isUpdating}
+                          >
+                            Mark as Picked Up
+                          </Button>
+                        )}
+                        {isCourier && job.status === STATUS.PICKED_UP && (
+                          <Button
+                            onClick={() => updateJobStatus(STATUS.DELIVERED)}
+                            disabled={isUpdating}
+                            className="bg-green-600 hover:bg-green-700"
+                          >
+                            Mark as Delivered
+                          </Button>
+                        )}
+                        {isCustomer && job.status === STATUS.ASSIGNED && (
+                          <Button
+                            variant="destructive"
+                            onClick={() => updateJobStatus(STATUS.CANCELLED)}
+                            disabled={isUpdating}
+                          >
+                            Cancel Job
+                          </Button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
                 {job.status === STATUS.DELIVERED && (
                   <DeliveredSection
                     isCustomer={isCustomer}
-                    courierName={otherUser?.full_name}
+                    courierName={job.courier_name}
                     hasReviewed={hasReviewed}
                     onReviewed={() => setHasReviewed(true)}
                   />
@@ -328,31 +355,38 @@ export default function AssignedJobView() {
           <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>{isCustomer ? "Your Courier" : "Your Customer"}</CardTitle>
+                <CardTitle>
+                  {isCustomer ? "Your Courier" : "Your Customer"}
+                </CardTitle>
               </CardHeader>
+
               <CardContent className="text-center">
-                {otherUser ? (
-                  <>
-                    <Avatar className="w-20 h-20 mx-auto mb-4">
-                      <AvatarImage src={otherUser.avatar_url} />
-                      <AvatarFallback>{otherUser.full_name?.charAt(0) || "U"}</AvatarFallback>
-                    </Avatar>
-                    <p className="font-bold">{otherUser.full_name}</p>
-                    <p className="text-sm text-slate-500">{otherUser.email}</p>
-                    <div className="flex justify-center gap-2 mt-4">
-                      <Button variant="outline" size="icon">
-                        <Mail className="w-4 h-4" />
-                      </Button>
-                      <Button variant="outline" size="icon">
-                        <Phone className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </>
-                ) : (
-                  <p className="text-sm text-slate-400">
-                    {isCustomer ? "No courier assigned yet." : "Customer details unavailable."}
-                  </p>
-                )}
+                <Avatar className="w-20 h-20 mx-auto mb-4">
+                  <AvatarFallback>
+                    {(isCustomer
+                      ? job.courier_name
+                      : job.customer_name
+                    )?.charAt(0) || "U"}
+                  </AvatarFallback>
+                </Avatar>
+
+                <p className="font-bold">
+                  {isCustomer ? job.courier_name : job.customer_name}
+                </p>
+
+                <p className="text-sm text-slate-500">
+                  {isCustomer ? job.courier_email : job.customer_email}
+                </p>
+
+                <div className="flex justify-center gap-2 mt-4">
+                  <Button variant="outline" size="icon">
+                    <Mail className="w-4 h-4" />
+                  </Button>
+
+                  <Button variant="outline" size="icon">
+                    <Phone className="w-4 h-4" />
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </div>

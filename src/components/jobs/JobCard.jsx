@@ -219,8 +219,6 @@
 //   );
 // }
 
-
-
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -241,20 +239,18 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 
-export default function JobCard({ job, onApply, userVerified }) {
+export default function JobCard({ job, onApply, userVerified, userType }) {
+  const { token } = useAuth();
 
-const { token } = useAuth();
+  const [message, setMessage] = useState("");
 
-const [message, setMessage] = useState("");
-const [pickupTime, setPickupTime] = useState("");
-const [deliveryTime, setDeliveryTime] = useState("");
   const price = Number(job.price || 0);
   const courierPayout = price * 0.9;
 
   const packageSize = job.package_size?.toLowerCase() || "";
   const vehicleRequired = job.vehicle_required?.toLowerCase() || "";
 
-
+  const canApply = Number(userVerified) === 1 && userType === "COURIER";
 
   const getSizeIcon = (size) => {
     switch (size) {
@@ -284,44 +280,39 @@ const [deliveryTime, setDeliveryTime] = useState("");
 
   const getVehicleIcon = (vehicle) => {
     switch (vehicle) {
-      case "bicycle":
+      case "BYCYCLE":
         return "🚲";
-      case "motorcycle":
+      case "MOTORCYCLE":
         return "🏍️";
-      case "car":
+      case "CAR":
         return "🚗";
-      case "van":
+      case "VAN":
         return "🚐";
-      case "ute":
+      case "UTE":
         return "🛻";
       default:
         return "🚚";
     }
   };
 
-const handleApply = async () => {
+  const handleApply = async () => {
+    try {
+      const payload = {
+        job_id: job.id,
+        message,
+      };
 
-  try {
-    const payload = {
-      job_id: job.id,
-      message,
-      estimated_pickup_time: pickupTime,
-      estimated_delivery_time: deliveryTime,
-    };
+      const response = await ApplyJob(payload, token);
 
-    const response = await ApplyJob(payload, token);
+      toast.success(response.message || "Job applied successfully");
 
-    toast.success(response.message || "Job applied successfully");
-
-    if (onApply) {
-      onApply();
+      if (onApply) {
+        onApply();
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to apply for job.");
     }
-  } catch (error) {
-    toast.error(
-      error.response?.data?.message || "Failed to apply for job."
-    );
-  }
-};
+  };
 
   return (
     <Card className="shadow-lg border-0 bg-white/90 backdrop-blur-sm hover:shadow-xl transition-all duration-300">
@@ -332,7 +323,7 @@ const handleApply = async () => {
               {job.title}
             </CardTitle>
 
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               {job.urgent && (
                 <Badge className="bg-red-100 text-red-800 border-red-200">
                   <Zap className="w-3 h-3 mr-1" />
@@ -341,15 +332,16 @@ const handleApply = async () => {
               )}
 
               <Badge className={getSizeColor(packageSize)}>
+                <Package className="w-3 h-3 mr-1" />
                 {getSizeIcon(packageSize)} {packageSize}
               </Badge>
 
-              {vehicleRequired !== "any" && vehicleRequired && (
-                <Badge className="bg-blue-100 text-blue-800">
-                  <Truck className="w-3 h-3 mr-1" />
-                  {getVehicleIcon(vehicleRequired)} {vehicleRequired}
-                </Badge>
-              )}
+              <Badge className="bg-blue-100 text-blue-800">
+                <Truck className="w-3 h-3 mr-1" />
+                {getVehicleIcon(vehicleRequired)}{" "}
+                {vehicleRequired.charAt(0).toUpperCase() +
+                  vehicleRequired.slice(1)}
+              </Badge>
             </div>
           </div>
 
@@ -367,19 +359,22 @@ const handleApply = async () => {
       </CardHeader>
 
       <CardContent className="space-y-4 p-6">
-        <div className="flex items-start gap-3">
-          <MapPin className="w-5 h-5 text-blue-500 mt-1" />
-          <div>
-            <p className="font-medium">Pickup</p>
-            <p>{job.pickup_address}</p>
+        {/* Pickup / Delivery */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="flex items-start gap-3">
+            <MapPin className="w-5 h-5 text-blue-500 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-slate-600">Pickup</p>
+              <p className="text-slate-900">{job.pickup_address}</p>
+            </div>
           </div>
-        </div>
 
-        <div className="flex items-start gap-3">
-          <MapPin className="w-5 h-5 text-green-500 mt-1" />
-          <div>
-            <p className="font-medium">Delivery</p>
-            <p>{job.delivery_address}</p>
+          <div className="flex items-start gap-3">
+            <MapPin className="w-5 h-5 text-green-500 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-slate-600">Delivery</p>
+              <p className="text-slate-900">{job.delivery_address}</p>
+            </div>
           </div>
         </div>
 
@@ -391,24 +386,34 @@ const handleApply = async () => {
           </div>
         </div>
 
-        {job.pickup_date && (
-          <div className="flex items-center gap-2">
-            <Calendar className="w-4 h-4" />
-            {format(new Date(job.pickup_date), "MMM d, yyyy")}
-          </div>
-        )}
+        {(job.pickup_date || job.delivery_date) && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {job.pickup_date && (
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-slate-500" />
+                <span className="text-sm text-slate-600">
+                  Pickup: {format(new Date(job.pickup_date), "MMM d, yyyy")}
+                </span>
+              </div>
+            )}
 
-        {job.delivery_date && (
-          <div className="flex items-center gap-2">
-            <Calendar className="w-4 h-4" />
-            {format(new Date(job.delivery_date), "MMM d, yyyy")}
+            {job.delivery_date && (
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-slate-500" />
+                <span className="text-sm text-slate-600">
+                  Delivery: {format(new Date(job.delivery_date), "MMM d, yyyy")}
+                </span>
+              </div>
+            )}
           </div>
         )}
 
         {job.special_instructions && (
-          <div className="rounded bg-yellow-50 p-3 border">
-            <strong>Instructions:</strong>
-            <p>{job.special_instructions}</p>
+          <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
+            <p className="text-sm font-semibold text-yellow-800 mb-1">
+              Special Instructions
+            </p>
+            <p className="text-sm text-slate-700">{job.special_instructions}</p>
           </div>
         )}
 
@@ -426,31 +431,24 @@ const handleApply = async () => {
             onChange={(e) => setMessage(e.target.value)}
           />
 
-          <Input
-            placeholder="Estimated Pickup Time"
-            value={pickupTime}
-            onChange={(e) => setPickupTime(e.target.value)}
-          />
-
-          <Input
-            placeholder="Estimated Delivery Time"
-            value={deliveryTime}
-            onChange={(e) => setDeliveryTime(e.target.value)}
-          />
-
-          {!userVerified && (
+          {userType === "CUSTOMER" ? (
+            <div className="flex items-center gap-2 text-red-600 text-sm">
+              <AlertCircle className="w-4 h-4" />
+              Customers cannot apply for delivery jobs.
+            </div>
+          ) : Number(userVerified) !== 1 ? (
             <div className="flex items-center gap-2 text-amber-600 text-sm">
               <AlertCircle className="w-4 h-4" />
               Please verify your identity first.
             </div>
-          )}
-<Button
-  onClick={handleApply}
-  className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
-  disabled={!userVerified}
->
-  Apply for This Job
-</Button>
+          ) : null}
+          <Button
+            onClick={handleApply}
+            className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
+            disabled={!userVerified}
+          >
+            Apply for This Job
+          </Button>
         </div>
       </CardContent>
     </Card>

@@ -33,9 +33,9 @@ export default function CourierTracker({ job }) {
   const [apiKey, setApiKey] = useState(null);
 
   // Fetch API key
-  useEffect(() => {
-    getGoogleMapsKey().then(res => setApiKey(res.data.key));
-  }, []);
+ useEffect(() => {
+  setApiKey("YOUR_GOOGLE_MAPS_API_KEY");
+}, []);
 
   // Init map
   useEffect(() => {

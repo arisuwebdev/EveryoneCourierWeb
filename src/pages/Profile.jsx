@@ -32,6 +32,8 @@ export default function Profile() {
   const [isUpdating, setIsUpdating] = useState(false);
   const [isUploadingId, setIsUploadingId] = useState(false);
   const [profileData, setProfileData] = useState({
+    name: "",
+    email: "",
     phone: "",
     address: "",
     bio: "",
@@ -52,6 +54,8 @@ export default function Profile() {
       setUser(profile);
 
       setProfileData({
+        name: profile.name || "",
+        email: profile.email || "",
         phone: profile.phone || "",
         address: profile.address || "",
         bio: profile.bio || "",
@@ -71,37 +75,39 @@ export default function Profile() {
     }));
   };
 
-const handleUpdateProfile = async (e) => {
-  e.preventDefault();
-  setIsUpdating(true);
+  const handleUpdateProfile = async (e) => {
+    e.preventDefault();
+    setIsUpdating(true);
 
-  try {
-    const res = await updateProfile(profileData, token);
+    try {
+      const res = await updateProfile(profileData, token);
 
-    if (res?.payload?.user) {
-      setUser(res.payload.user);
+      if (res?.payload?.user) {
+        setUser(res.payload.user);
 
-      setProfileData({
-        phone: res.payload.user.phone || "",
-        address: res.payload.user.address || "",
-        bio: res.payload.user.bio || "",
-        user_type: res.payload.user.user_type?.toLowerCase() || "customer",
-        vehicle_type: res.payload.user.vehicle_type || "",
-      });
-    } else {
-      setUser((prev) => ({
-        ...prev,
-        ...profileData,
-      }));
+        setProfileData({
+           name: res.payload.user.name || "",
+           email: res.payload.user.email || "",
+          phone: res.payload.user.phone || "",
+          address: res.payload.user.address || "",
+          bio: res.payload.user.bio || "",
+          user_type: res.payload.user.user_type?.toLowerCase() || "customer",
+          vehicle_type: res.payload.user.vehicle_type || "",
+        });
+      } else {
+        setUser((prev) => ({
+          ...prev,
+          ...profileData,
+        }));
+      }
+
+      toast.success(res?.msg || "Profile updated successfully!");
+    } catch (error) {
+      toast.error(error?.response?.data?.msg || "Failed to update profile.");
+    } finally {
+      setIsUpdating(false);
     }
-
-    toast.success(res?.msg || "Profile updated successfully!");
-  } catch (error) {
-    toast.error(error?.response?.data?.msg || "Failed to update profile.");
-  } finally {
-    setIsUpdating(false);
-  }
-};
+  };
 
   const handleIdUpload = async (e) => {
     const file = e.target.files[0];
@@ -174,11 +180,16 @@ const handleUpdateProfile = async (e) => {
                   <div className="grid md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>Full Name</Label>
-                      <Input value={user?.name || ""}/>
+                      <Input
+                        value={profileData.name}
+                        onChange={(e) =>
+                          handleInputChange("name", e.target.value)
+                        }
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label>Email</Label>
-                      <Input value={user?.email || ""} disabled />
+                      <Input value={profileData.email} disabled/>
                     </div>
                   </div>
 
@@ -259,9 +270,11 @@ const handleUpdateProfile = async (e) => {
                           <SelectItem value="motorcycle">
                             🏍️ Motorcycle
                           </SelectItem>
-                          <SelectItem value="car">🚗 Car</SelectItem>
-                          <SelectItem value="van">🚐 Van</SelectItem>
-                          <SelectItem value="ute">🛻 Ute</SelectItem>
+                          <SelectItem value="CAR">🚗 Car</SelectItem>
+                          <SelectItem value="VAN">🚐 Van</SelectItem>
+                          <SelectItem value="UTE">🛻 Ute</SelectItem>
+                           <SelectItem value="MOTORCYCLE">🏍️ Motorcycle</SelectItem>
+                            <SelectItem value="BICYCLE">🚲 Bicycle</SelectItem>
                         </SelectContent>
                       </Select>
                       <p className="text-xs text-slate-500">

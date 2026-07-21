@@ -2,7 +2,7 @@ import React from 'react';
 import { Check } from "lucide-react";
 
 export default function JobStatusStepper({ currentStatus }) {
-  const statuses = ['open', 'assigned', 'picked_up', 'delivered'];
+  const statuses = ['OPEN', 'ASSIGNED', 'PICKED_UP','DELIVERED'];
   const currentIndex = statuses.indexOf(currentStatus);
 
   const getStepClass = (index) => {
@@ -10,7 +10,7 @@ export default function JobStatusStepper({ currentStatus }) {
       return "bg-blue-600 text-white"; // Completed
     }
     if (index === currentIndex) {
-      return "bg-blue-200 text-blue-800 border-2 border-blue-600 animate-pulse"; // Current
+      return "bg-blue-200 text-blue-800 border-2 border-blue-600 animate-pulse"; 
     }
     return "bg-slate-200 text-slate-500"; // Future
   };

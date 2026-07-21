@@ -140,6 +140,7 @@ import TermsAcceptanceModal from "./components/TermsAcceptanceModal";
 import UserNotRegisteredError from "./components/UserNotRegisteredError";
 import PageNotFound from "./lib/PageNotFound";
 import AssignedJobView from "./components/jobs/AssignedJobView";
+import ApplicantList from "./components/jobs/ApplicantList";
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError } = useAuth();
@@ -242,12 +243,20 @@ const AuthenticatedApp = () => {
             </Layout>
           }
         />
+<Route
+  path="/my-jobs/:id/assigned"
+  element={
+    <Layout currentPageName="MyJobs">
+      <AssignedJobView />
+    </Layout>
+  }
+/>
 
         <Route
-          path="/my-jobs/:id"
+          path="/my-jobs/:id/applicants"
           element={
             <Layout currentPageName="MyJobs">
-              <AssignedJobView />
+             <ApplicantList/>
             </Layout>
           }
         />
