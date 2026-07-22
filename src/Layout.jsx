@@ -164,7 +164,8 @@ import {
   Bell,
 } from "lucide-react";
 import { useAuth } from "../src/lib/AuthContext";
-
+import { getPrivacyPolicyUrl } from "./api/ApiServices/getPrivacyPolicyUrlApiService";
+import { getTermsOfServiceUrl } from "./api/ApiServices/getTermsOfServiceUrlApiService";
 // Links shown inline in the desktop nav (Post Job is rendered separately as a CTA button)
 const navigationItems = [
   { title: "Home", url: "/home", icon: Home },
@@ -188,6 +189,30 @@ export default function Layout({ children }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { logout, isAuthenticated, user } = useAuth();
+
+  const handlePrivacyClick = async () => {
+    try {
+      const response = await getPrivacyPolicyUrl();
+
+      if (response?.status === 1 && response?.payload?.privacyPolicyUrl) {
+        window.open(response.payload.privacyPolicyUrl, "_blank");
+      }
+    } catch (error) {
+      console.error("Failed to load privacy policy.", error);
+    }
+  };
+
+  const handleTermsClick = async () => {
+    try {
+      const response = await getTermsOfServiceUrl();
+
+      if (response?.status === 1 && response?.payload?.termsOfServiceUrl) {
+        window.open(response.payload.termsOfServiceUrl, "_blank");
+      }
+    } catch (error) {
+      console.error("Failed to load terms of service.", error);
+    }
+  };
 
   const handleLogout = async () => {
     await logout();
@@ -248,13 +273,15 @@ export default function Layout({ children }) {
           <div className="flex items-center gap-2 md:gap-3 shrink-0">
             {isAuthenticated && (
               <>
-                <Link
-                  to="/post-job"
-                  className="hidden md:flex items-center gap-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-medium px-4 py-2 rounded-full shadow hover:shadow-md hover:scale-[1.02] transition"
-                >
-                  <Plus className="w-4 h-4" />
-                  Post Job
-                </Link>
+                {user?.user_type !== "COURIER" && (
+                  <Link
+                    to="/post-job"
+                    className="hidden md:flex items-center gap-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-medium px-4 py-2 rounded-full shadow hover:shadow-md hover:scale-[1.02] transition"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Post Job
+                  </Link>
+                )}
 
                 <button
                   type="button"
@@ -335,49 +362,93 @@ export default function Layout({ children }) {
         </nav>
       )}
 
-      {/* Footer (logged out) */}
-      {!isAuthenticated && (
-        <footer className="bg-white border-t border-slate-200/60 px-4 py-6">
-          <div className="max-w-2xl mx-auto w-full">
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-              <Link to="/home" className="flex items-center gap-2">
-                <div className="w-7 h-7 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-lg flex items-center justify-center shadow">
-                  <Package className="w-3.5 h-3.5 text-white" />
+      {/* Footer */}
+      <footer className="bg-white border-t border-slate-200/60">
+        <div className="max-w-6xl mx-auto w-full px-6 py-10">
+          <div className="grid grid-cols-1 sm:grid-cols-[1.4fr_1fr_1fr] gap-8">
+            {/* Brand + blurb */}
+            <div className="flex flex-col gap-3">
+              <Link to="/home" className="flex items-center gap-2 w-fit">
+                <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-lg flex items-center justify-center shadow">
+                  <Package className="w-4 h-4 text-white" />
                 </div>
-                <span className="font-semibold text-slate-800 text-sm">
-                  Everyone's a Courier
-                </span>
+                <div className="flex flex-col leading-none">
+                  <span className="font-bold text-slate-900 text-sm">
+                    Everyone's a Courier
+                  </span>
+                  <span className="text-[10px] font-medium text-blue-600 tracking-wide">
+                    RouteRunner
+                  </span>
+                </div>
               </Link>
-
-              <div className="flex items-center gap-5 text-sm text-slate-500">
-                <Link
-                  to="/contact"
-                  className="hover:text-blue-600 transition-colors"
-                >
-                  Contact
-                </Link>
-                <Link
-                  to="/terms"
-                  className="hover:text-blue-600 transition-colors"
-                >
-                  Terms
-                </Link>
-                <Link
-                  to="/privacy"
-                  className="hover:text-blue-600 transition-colors"
-                >
-                  Privacy
-                </Link>
-              </div>
+              <p className="text-sm text-slate-500 max-w-xs">
+                Local deliveries, run by people nearby. Post a job or pick one
+                up in minutes.
+              </p>
             </div>
 
-            <div className="mt-4 pt-4 border-t border-slate-100 text-center text-xs text-slate-400">
-              © {new Date().getFullYear()} Everyone's a Courier. All rights
-              reserved.
+            {/* Product links */}
+            <div className="flex flex-col gap-3">
+              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                Product
+              </span>
+              <Link
+                to="/find-jobs"
+                className="text-sm text-slate-600 hover:text-blue-600 transition-colors w-fit"
+              >
+                Find Jobs
+              </Link>
+              <Link
+                to="/post-job"
+                className="text-sm text-slate-600 hover:text-blue-600 transition-colors w-fit"
+              >
+                Post a Job
+              </Link>
+              <Link
+                to="/analytics"
+                className="text-sm text-slate-600 hover:text-blue-600 transition-colors w-fit"
+              >
+                Analytics
+              </Link>
+            </div>
+
+            {/* Company / legal links */}
+            <div className="flex flex-col gap-3">
+              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                Company
+              </span>
+              <Link
+                to="/contact"
+                className="text-sm text-slate-600 hover:text-blue-600 transition-colors w-fit"
+              >
+                Contact
+              </Link>
+              <button
+                type="button"
+                onClick={handleTermsClick}
+                className="text-sm text-slate-600 hover:text-blue-600 transition-colors w-fit text-left"
+              >
+                Terms
+              </button>
+              <button
+                type="button"
+                onClick={handlePrivacyClick}
+                className="text-sm text-slate-600 hover:text-blue-600 transition-colors w-fit text-left"
+              >
+                Privacy
+              </button>
             </div>
           </div>
-        </footer>
-      )}
+
+          <div className="mt-8 pt-6 border-t border-slate-100 flex flex-col-reverse sm:flex-row items-center justify-between gap-3">
+            <span className="text-xs text-slate-400">
+              © {new Date().getFullYear()} Everyone's a Courier. All rights
+              reserved.
+            </span>
+            <div className="h-1 w-16 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600" />
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
