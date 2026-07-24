@@ -250,7 +250,8 @@ export default function JobCard({ job, onApply, userVerified, userType }) {
   const packageSize = job.package_size?.toLowerCase() || "";
   const vehicleRequired = job.vehicle_required?.toLowerCase() || "";
 
-  const canApply = Number(userVerified) === 1 && userType === "COURIER";
+  const canApply = Number(userVerified) === 1 && (userType === "COURIER" || userType === "BOTH");
+
 
   const getSizeIcon = (size) => {
     switch (size) {
@@ -304,13 +305,16 @@ export default function JobCard({ job, onApply, userVerified, userType }) {
 
       const response = await ApplyJob(payload, token);
 
-      toast.success(response.message || "Job applied successfully");
+      toast.success(response.msg || "Job applied successfully");
 
-      if (onApply) {
-        onApply();
-      }
+      onApply?.(job.id);
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to apply for job.");
+      const apiMessage =
+        error.response?.data?.msg ||
+        error.response?.data?.message ||
+        "Failed to apply for job.";
+
+      toast.error(apiMessage);
     }
   };
 
@@ -442,10 +446,18 @@ export default function JobCard({ job, onApply, userVerified, userType }) {
               Please verify your identity first.
             </div>
           ) : null}
-          <Button
+          {/* <Button
             onClick={handleApply}
             className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
             disabled={!userVerified}
+          >
+            Apply for This Job
+          </Button> */}
+
+          <Button
+            onClick={handleApply}
+            className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
+            disabled={!canApply}
           >
             Apply for This Job
           </Button>

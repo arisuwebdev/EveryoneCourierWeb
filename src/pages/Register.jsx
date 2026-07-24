@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { registerUser } from "../api/ApiServices/registerService";
 import { sendOtpService } from "../api/ApiServices/sentOtpService";
 import { Button } from "../components/ui/button";
@@ -19,6 +19,7 @@ import { Checkbox } from "../components/ui/checkbox";
 import { getTermsOfServiceUrl } from "../api/ApiServices/getTermsOfServiceUrlApiService";
 import { getPrivacyPolicyUrl } from "../api/ApiServices/getPrivacyPolicyUrlApiService";
 import { useEffect } from "react";
+import { useAuth } from "../lib/AuthContext";
 
 export default function Register() {
   const [email, setEmail] = useState("");
@@ -31,6 +32,8 @@ export default function Register() {
   const [accepted, setAccepted] = useState(false);
   const [termsUrl, setTermsUrl] = useState("");
   const [privacyUrl, setPrivacyUrl] = useState("");
+  const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -117,7 +120,9 @@ export default function Register() {
 
       toast.success(response.msg || "Account created successfully.");
 
-      window.location.href = "/";
+      login(response);
+
+      navigate("/dashboard", { replace: true });
     } catch (err) {
       setError(
         err.response?.data?.msg ||

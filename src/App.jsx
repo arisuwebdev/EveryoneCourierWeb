@@ -141,6 +141,7 @@ import UserNotRegisteredError from "./components/UserNotRegisteredError";
 import PageNotFound from "./lib/PageNotFound";
 import AssignedJobView from "./components/jobs/AssignedJobView";
 import ApplicantList from "./components/jobs/ApplicantList";
+import ScrollToTop from "./components/ScrollToTop";
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError } = useAuth();
@@ -274,6 +275,8 @@ export default function App() {
       <QueryClientProvider client={queryClientInstance}>
         {/* <Router basename="/current-project/react-project/EveryoneCourior"> */}
         <Router>
+          {/* here scrolltotop use for need to show top any navigate after  */}
+          <ScrollToTop/>
           <AuthenticatedApp />
         </Router>
         <Toaster />

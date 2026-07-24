@@ -22,6 +22,8 @@ import JobStatusStepper from "./JobStatusStepper";
 import { useNotificationTrigger } from "../notifications/useNotificationTrigger";
 import CourierTracker from "../tracking/CourierTracker";
 import CustomerTrackingMap from "../tracking/CustomerTrackingMap";
+import { updateJobStatus } from "../../api/ApiServices/jobstatusupdate/updateJobStatusService";
+import { customerSaveReview } from "../../api/ApiServices/jobstatusupdate/customerSaveJobReviewService";
 
 // Statuses as returned by the API (uppercase enum values)
 const STATUS = {
@@ -34,6 +36,7 @@ const STATUS = {
 
 function StarRating({ rating, setRating }) {
   const [hovered, setHovered] = useState(0);
+
   return (
     <div className="flex gap-1">
       {[1, 2, 3, 4, 5].map((star) => (
@@ -58,23 +61,46 @@ function StarRating({ rating, setRating }) {
 }
 
 function DeliveredSection({
+  jobId,
+  token,
   isCustomer,
   courierName,
   hasReviewed,
   onReviewed,
+  rating,
+  review,
+  reviewJustSubmitted,
+  setReviewJustSubmitted,
 }) {
-  const [rating, setRating] = useState(0);
+  // const [rating, setRating] = useState(0);
+  const [selectedRating, setSelectedRating] = useState(0);
   const [comment, setComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // const [reviewJustSubmitted, setReviewJustSubmitted] = useState(false);
 
   const handleSubmit = async () => {
     if (rating === 0) return;
+
     setIsSubmitting(true);
+
     try {
-      // TODO: replace with a real API call once the review endpoint exists, e.g.
-      // await submitReview({ job_id: job.id, rating, comment });
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      onReviewed();
+      const payload = {
+        job_id: jobId,
+        rating: selectedRating,
+        review: comment || "",
+      };
+
+      const res = await customerSaveReview(payload, token);
+
+      if (res.status !== 1) {
+        toast.error(res.msg || "Failed to submit review.");
+        return;
+      }
+
+      toast.success(res.msg || "Review submitted successfully.");
+      setReviewJustSubmitted(true);
+
+      await onReviewed();
     } catch (err) {
       toast.error(err.response?.data?.msg || "Failed to submit review.");
     } finally {
@@ -86,15 +112,43 @@ function DeliveredSection({
     return (
       <div className="text-center p-4 bg-green-50 rounded-xl border border-green-200">
         <CheckCircle2 className="w-8 h-8 text-green-600 mx-auto mb-2" />
-        <p className="font-semibold text-green-700">Delivery Complete!</p>
-        <p className="text-sm text-green-600 mt-1">
-          Waiting for the customer to leave a review.
-        </p>
+
+        {hasReviewed ? (
+          <>
+            <p className="font-semibold text-green-700">
+              {reviewJustSubmitted
+                ? "Customer has reviewed your delivery!"
+                : "Delivery Completed"}
+            </p>
+
+            <p className="text-sm text-green-600 mt-1">
+              {reviewJustSubmitted
+                ? "Thank you for completing this delivery."
+                : "The customer has already reviewed this delivery."}
+            </p>
+
+            <div className="mt-3">
+              <p className="font-medium">⭐ {Number(rating).toFixed(1)}/5</p>
+
+              {review && (
+                <p className="text-slate-600 italic mt-2">"{review}"</p>
+              )}
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="font-semibold text-green-700">Delivery Complete!</p>
+
+            <p className="text-sm text-green-600 mt-1">
+              Waiting for the customer to leave a review.
+            </p>
+          </>
+        )}
       </div>
     );
   }
 
-  if (hasReviewed) {
+  if (isCustomer && reviewJustSubmitted) {
     return (
       <div className="text-center p-4 bg-green-50 rounded-xl border border-green-200">
         <CheckCircle2 className="w-8 h-8 text-green-600 mx-auto mb-2" />
@@ -102,6 +156,28 @@ function DeliveredSection({
         <p className="text-sm text-green-600 mt-1">
           Your feedback helps build trust in the network.
         </p>
+      </div>
+    );
+  }
+
+  if (isCustomer && hasReviewed) {
+    return (
+      <div className="text-center p-4 bg-green-50 rounded-xl border border-green-200">
+        <CheckCircle2 className="w-8 h-8 text-green-600 mx-auto mb-2" />
+        <p className="font-semibold text-green-700">Delivery Completed</p>
+        <p className="text-sm text-green-600 mt-1">
+          You have already submitted your review.
+        </p>
+
+        {/* <p className="mt-3 font-medium">
+        ⭐ {Number(rating).toFixed(1)}/5
+      </p>
+
+      {review && (
+        <p className="text-slate-600 italic mt-2">
+          "{review}"
+        </p>
+      )} */}
       </div>
     );
   }
@@ -119,7 +195,7 @@ function DeliveredSection({
           How did <strong>{courierName}</strong> do?
         </p>
       )}
-      <StarRating rating={rating} setRating={setRating} />
+      <StarRating rating={selectedRating} setRating={setSelectedRating} />
       {rating > 0 && (
         <p className="text-xs text-slate-500">
           {["", "Poor", "Fair", "Good", "Very Good", "Excellent"][rating]}
@@ -153,7 +229,8 @@ export default function AssignedJobView() {
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [hasReviewed, setHasReviewed] = useState(false);
+
+  const [reviewJustSubmitted, setReviewJustSubmitted] = useState(false);
 
   const fetchJobDetails = useCallback(async () => {
     try {
@@ -177,31 +254,46 @@ export default function AssignedJobView() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-slate-500">Loading job...</p>
+      <div className="bg-gray-50 min-h-screen py-10 px-4 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading job details...</p>
+        </div>
       </div>
     );
   }
 
   if (!job) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-slate-500">Job not found.</p>
+      <div className="bg-gray-50 min-h-screen py-10 px-4 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600">Job not found.</p>
+        </div>
       </div>
     );
   }
-
   const isCustomer = String(currentUser?.user_id) === String(job.customer_id);
 
   const isCourier = String(currentUser?.user_id) === String(job.courier_id);
 
+  const hasReviewed = Boolean(job?.customer_reviewed_at);
   const price = parseFloat(job.price) || 0;
 
-  const updateJobStatus = async (newStatus) => {
+  const PostupdateJobStatus = async (newStatus) => {
     setIsUpdating(true);
+
     try {
-      // TODO: replace with the real status-update endpoint, e.g.
-      // await updateJobStatusApi(job.id, newStatus, token);
+      const payload = {
+        job_id: job.id, // or job.job_id depending on your API response
+        status: newStatus,
+      };
+
+      const res = await updateJobStatus(payload, token);
+
+      if (res.status !== 1) {
+        toast.error(res.msg || "Failed to update job status.");
+        return;
+      }
 
       if (newStatus === STATUS.DELIVERED && job.customer && job.courier) {
         await notifyJobCompleted(
@@ -211,22 +303,18 @@ export default function AssignedJobView() {
         );
       }
 
-      setJob((prev) => ({ ...prev, status: newStatus }));
+      setJob((prev) => ({
+        ...prev,
+        status: newStatus,
+      }));
 
-      if (
-        newStatus === STATUS.DELIVERED &&
-        isCustomer &&
-        job.status === STATUS.DELIVERED
-      ) {
-        // reset review flag if it were ever re-delivered (not expected, kept for safety)
-        setHasReviewed(false);
-      }
+      toast.success(res.msg || "Job status updated successfully.");
 
       if (newStatus !== STATUS.DELIVERED) {
         navigate(-1);
       }
     } catch (error) {
-      toast.error("Failed to update job status.");
+      toast.error(error.response?.data?.msg || "Failed to update job status.");
     } finally {
       setIsUpdating(false);
     }
@@ -312,7 +400,9 @@ export default function AssignedJobView() {
                       <div className="flex gap-4">
                         {isCourier && job.status === STATUS.ASSIGNED && (
                           <Button
-                            onClick={() => updateJobStatus(STATUS.PICKED_UP)}
+                            onClick={() =>
+                              PostupdateJobStatus(STATUS.PICKED_UP)
+                            }
                             disabled={isUpdating}
                           >
                             Mark as Picked Up
@@ -320,7 +410,9 @@ export default function AssignedJobView() {
                         )}
                         {isCourier && job.status === STATUS.PICKED_UP && (
                           <Button
-                            onClick={() => updateJobStatus(STATUS.DELIVERED)}
+                            onClick={() =>
+                              PostupdateJobStatus(STATUS.DELIVERED)
+                            }
                             disabled={isUpdating}
                             className="bg-green-600 hover:bg-green-700"
                           >
@@ -330,7 +422,9 @@ export default function AssignedJobView() {
                         {isCustomer && job.status === STATUS.ASSIGNED && (
                           <Button
                             variant="destructive"
-                            onClick={() => updateJobStatus(STATUS.CANCELLED)}
+                            onClick={() =>
+                              PostupdateJobStatus(STATUS.CANCELLED)
+                            }
                             disabled={isUpdating}
                           >
                             Cancel Job
@@ -342,10 +436,16 @@ export default function AssignedJobView() {
 
                 {job.status === STATUS.DELIVERED && (
                   <DeliveredSection
+                    jobId={job.id}
+                    token={token}
                     isCustomer={isCustomer}
                     courierName={job.courier_name}
                     hasReviewed={hasReviewed}
-                    onReviewed={() => setHasReviewed(true)}
+                    rating={job.customer_given_rating}
+                    review={job.customer_given_review}
+                    onReviewed={fetchJobDetails}
+                    reviewJustSubmitted={reviewJustSubmitted}
+                    setReviewJustSubmitted={setReviewJustSubmitted}
                   />
                 )}
               </CardContent>

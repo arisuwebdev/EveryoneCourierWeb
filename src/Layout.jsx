@@ -151,7 +151,8 @@
 //   );
 // }
 
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate, } from "react-router-dom";
+import { useState } from "react";
 import {
   Package,
   User,
@@ -162,13 +163,18 @@ import {
   BarChart2,
   LogOut,
   Bell,
+  Mail,
+  Phone,
+  MapPin,
+  ChevronDown,
 } from "lucide-react";
 import { useAuth } from "../src/lib/AuthContext";
 import { getPrivacyPolicyUrl } from "./api/ApiServices/getPrivacyPolicyUrlApiService";
 import { getTermsOfServiceUrl } from "./api/ApiServices/getTermsOfServiceUrlApiService";
+
 // Links shown inline in the desktop nav (Post Job is rendered separately as a CTA button)
 const navigationItems = [
-  { title: "Home", url: "/home", icon: Home },
+  { title: "Dashboard", url: "/dashboard", icon: Home },
   { title: "My Jobs", url: "/my-jobs", icon: Briefcase },
   { title: "Find Jobs", url: "/find-jobs", icon: Search },
   { title: "Profile", url: "/profile", icon: User },
@@ -177,11 +183,10 @@ const navigationItems = [
 
 // Same items, with Post Job re-inserted in the middle, for the mobile bottom nav
 const mobileNavigationItems = [
-  { title: "Home", url: "/home", icon: Home },
+  { title: "Dashboard", url: "/dashboard", icon: Home },
   { title: "My Jobs", url: "/my-jobs", icon: Briefcase },
   { title: "Post Job", url: "/post-job", icon: Plus },
   { title: "Find Jobs", url: "/find-jobs", icon: Search },
-  { title: "Profile", url: "/profile", icon: User },
   { title: "Analytics", url: "/analytics", icon: BarChart2 },
 ];
 
@@ -189,6 +194,8 @@ export default function Layout({ children }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { logout, isAuthenticated, user } = useAuth();
+  const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
+  const [isMobileAccountMenuOpen, setIsMobileAccountMenuOpen] = useState(false);
 
   const handlePrivacyClick = async () => {
     try {
@@ -197,9 +204,7 @@ export default function Layout({ children }) {
       if (response?.status === 1 && response?.payload?.privacyPolicyUrl) {
         window.open(response.payload.privacyPolicyUrl, "_blank");
       }
-    } catch (error) {
-      console.error("Failed to load privacy policy.", error);
-    }
+    } catch (error) {}
   };
 
   const handleTermsClick = async () => {
@@ -209,9 +214,7 @@ export default function Layout({ children }) {
       if (response?.status === 1 && response?.payload?.termsOfServiceUrl) {
         window.open(response.payload.termsOfServiceUrl, "_blank");
       }
-    } catch (error) {
-      console.error("Failed to load terms of service.", error);
-    }
+    } catch (error) {}
   };
 
   const handleLogout = async () => {
@@ -250,22 +253,31 @@ export default function Layout({ children }) {
           {/* Desktop inline nav links */}
           {isAuthenticated && (
             <nav className="hidden md:flex items-center gap-1">
-              {navigationItems.map((item) => {
-                const isActive = location.pathname === item.url;
-                return (
-                  <Link
-                    key={item.title}
-                    to={item.url}
-                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      isActive
-                        ? "text-blue-600 bg-blue-50"
-                        : "text-slate-600 hover:text-blue-600 hover:bg-slate-50"
-                    }`}
-                  >
-                    {item.title}
-                  </Link>
-                );
-              })}
+              {navigationItems
+                .filter(
+                  (item) =>
+                    !(
+                      user?.user_type === "CUSTOMER" &&
+                      item.url === "/find-jobs"
+                    ),
+                )
+                .map((item) => {
+                  const isActive = location.pathname === item.url;
+
+                  return (
+                    <Link
+                      key={item.title}
+                      to={item.url}
+                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                        isActive
+                          ? "text-blue-600 bg-blue-50"
+                          : "text-slate-600 hover:text-blue-600 hover:bg-slate-50"
+                      }`}
+                    >
+                      {item.title}
+                    </Link>
+                  );
+                })}
             </nav>
           )}
 
@@ -292,25 +304,102 @@ export default function Layout({ children }) {
                   <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500" />
                 </button>
 
-                <div className="hidden md:flex items-center gap-2 pl-2 border-l border-slate-200">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-200 to-slate-300 flex items-center justify-center text-xs font-semibold text-slate-700">
-                    {initials}
-                  </div>
-                  <span className="text-sm font-medium text-slate-700">
-                    {user?.name || "Account"}
-                  </span>
-                </div>
+                {/* Account dropdown */}
+                <div className="hidden md:block relative pl-2 border-l border-slate-200">
+                  <button
+                    type="button"
+                    onClick={() => setIsAccountMenuOpen((prev) => !prev)}
+                    className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-slate-50 transition"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-200 to-slate-300 flex items-center justify-center text-xs font-semibold text-slate-700">
+                      {initials}
+                    </div>
+                    <span className="text-sm font-medium text-slate-700">
+                      {user?.name || "Account"}
+                    </span>
+                    <ChevronDown
+                      className={`w-4 h-4 text-slate-400 transition-transform ${
+                        isAccountMenuOpen ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
 
-                <button
-                  onClick={handleLogout}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-red-600 hover:bg-red-50"
-                >
-                  <LogOut className="w-5 h-5" />
-                  <span className="hidden sm:inline">Logout</span>
-                </button>
+                  {isAccountMenuOpen && (
+                    <>
+                      {/* backdrop to close on outside click */}
+                      <div
+                        className="fixed inset-0 z-40"
+                        onClick={() => setIsAccountMenuOpen(false)}
+                      />
+                      <div className="absolute right-0 top-full mt-2 w-44 bg-white rounded-xl shadow-lg border border-slate-200 py-1.5 z-50">
+                        <button
+                          onClick={() => {
+                            setIsAccountMenuOpen(false);
+                            handleLogout();
+                          }}
+                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg mx-1"
+                        >
+                          <LogOut className="w-4 h-4" />
+                          Logout
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
               </>
             )}
           </div>
+
+          {/* Account dropdown (Desktop) */}
+<div className="hidden md:block relative pl-2 border-l border-slate-200">
+  ...
+</div>
+
+{/* Mobile Account */}
+<div className="md:hidden relative">
+  <button
+    type="button"
+    onClick={() => setIsMobileAccountMenuOpen((prev) => !prev)}
+    className="flex items-center justify-center"
+  >
+    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-slate-200 to-slate-300 flex items-center justify-center text-xs font-semibold text-slate-700">
+      {initials}
+    </div>
+  </button>
+
+  {isMobileAccountMenuOpen && (
+    <>
+      <div
+        className="fixed inset-0 z-40"
+        onClick={() => setIsMobileAccountMenuOpen(false)}
+      />
+
+      <div className="absolute right-0 top-full mt-2 w-44 bg-white rounded-xl shadow-lg border border-slate-200 py-1.5 z-50">
+        <button
+          onClick={() => {
+            setIsMobileAccountMenuOpen(false);
+            navigate("/profile");
+          }}
+          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded-lg mx-1"
+        >
+          <User className="w-4 h-4" />
+          Profile
+        </button>
+
+        <button
+          onClick={() => {
+            setIsMobileAccountMenuOpen(false);
+            handleLogout();
+          }}
+          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg mx-1"
+        >
+          <LogOut className="w-4 h-4" />
+          Logout
+        </button>
+      </div>
+    </>
+  )}
+</div>
         </div>
       </header>
 
@@ -361,91 +450,105 @@ export default function Layout({ children }) {
           </div>
         </nav>
       )}
+      
 
       {/* Footer */}
-      <footer className="bg-white border-t border-slate-200/60">
-        <div className="max-w-6xl mx-auto w-full px-6 py-10">
-          <div className="grid grid-cols-1 sm:grid-cols-[1.4fr_1fr_1fr] gap-8">
-            {/* Brand + blurb */}
-            <div className="flex flex-col gap-3">
-              <Link to="/home" className="flex items-center gap-2 w-fit">
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-lg flex items-center justify-center shadow">
-                  <Package className="w-4 h-4 text-white" />
+      <footer className="bg-gradient-to-b from-white to-slate-50 border-t border-slate-200">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 py-12">
+          {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-10"> */}
+          <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr_1fr] gap-4">
+            {/* Brand */}
+            <div>
+              <Link
+                to="/home"
+                className="flex items-center gap-3 mb-4 group w-fit"
+              >
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
+                  <Package className="w-6 h-6 text-white" />
                 </div>
-                <div className="flex flex-col leading-none">
-                  <span className="font-bold text-slate-900 text-sm">
+
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900">
                     Everyone's a Courier
-                  </span>
-                  <span className="text-[10px] font-medium text-blue-600 tracking-wide">
+                  </h2>
+                  <p className="text-xs font-semibold tracking-[0.2em] uppercase text-blue-600">
                     RouteRunner
-                  </span>
+                  </p>
                 </div>
               </Link>
-              <p className="text-sm text-slate-500 max-w-xs">
-                Local deliveries, run by people nearby. Post a job or pick one
-                up in minutes.
+
+              <p className="text-slate-500 text-sm leading-7 max-w-sm">
+                Fast, secure and community-powered deliveries. Post delivery
+                jobs or earn money by delivering packages nearby.
               </p>
             </div>
 
-            {/* Product links */}
-            <div className="flex flex-col gap-3">
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                Product
-              </span>
-              <Link
-                to="/find-jobs"
-                className="text-sm text-slate-600 hover:text-blue-600 transition-colors w-fit"
-              >
-                Find Jobs
-              </Link>
-              <Link
-                to="/post-job"
-                className="text-sm text-slate-600 hover:text-blue-600 transition-colors w-fit"
-              >
-                Post a Job
-              </Link>
-              <Link
-                to="/analytics"
-                className="text-sm text-slate-600 hover:text-blue-600 transition-colors w-fit"
-              >
-                Analytics
-              </Link>
+            {/* Quick Links */}
+            <div>
+              <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wider mb-5">
+                Quick Links
+              </h3>
+
+              <div className="flex flex-col gap-3">
+                <Link
+                  to="/home"
+                  className="text-slate-600 hover:text-blue-600 transition-colors"
+                >
+                  Home
+                </Link>
+
+                <button
+                  onClick={handleTermsClick}
+                  className="text-left text-slate-600 hover:text-blue-600 transition-colors"
+                >
+                  Terms & Conditions
+                </button>
+
+                <button
+                  onClick={handlePrivacyClick}
+                  className="text-left text-slate-600 hover:text-blue-600 transition-colors"
+                >
+                  Privacy Policy
+                </button>
+              </div>
             </div>
 
-            {/* Company / legal links */}
-            <div className="flex flex-col gap-3">
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                Company
-              </span>
-              <Link
-                to="/contact"
-                className="text-sm text-slate-600 hover:text-blue-600 transition-colors w-fit"
-              >
+            {/* Contact */}
+            <div>
+              <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wider mb-5">
                 Contact
-              </Link>
-              <button
-                type="button"
-                onClick={handleTermsClick}
-                className="text-sm text-slate-600 hover:text-blue-600 transition-colors w-fit text-left"
-              >
-                Terms
-              </button>
-              <button
-                type="button"
-                onClick={handlePrivacyClick}
-                className="text-sm text-slate-600 hover:text-blue-600 transition-colors w-fit text-left"
-              >
-                Privacy
-              </button>
+              </h3>
+
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <Mail className="w-5 h-5 text-blue-600" />
+                  <span className="text-slate-600 text-sm">
+                    support@everyonecourier.com
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <Phone className="w-5 h-5 text-blue-600" />
+                  <span className="text-slate-600 text-sm">0401 636 261</span>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <MapPin className="w-5 h-5 text-blue-600" />
+                  <span className="text-slate-600 text-sm">Australia</span>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div className="mt-8 pt-6 border-t border-slate-100 flex flex-col-reverse sm:flex-row items-center justify-between gap-3">
-            <span className="text-xs text-slate-400">
-              © {new Date().getFullYear()} Everyone's a Courier. All rights
-              reserved.
-            </span>
-            <div className="h-1 w-16 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600" />
+          {/* Bottom Section */}
+          <div className="mt-12 pt-6 border-t border-slate-200 flex justify-center">
+            <p className="text-sm text-slate-500 text-center">
+              © {new Date().getFullYear()}{" "}
+              <span className="font-semibold text-slate-700">
+                Everyone's a Courier
+              </span>
+              . All rights reserved.
+            </p>
           </div>
         </div>
       </footer>

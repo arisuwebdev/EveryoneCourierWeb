@@ -44,4 +44,8 @@ export const getJobApplicationApi =  baseUrl + "/getJobApplicants";
 
 export const getAssignJobApi =  baseUrl + "/assignJob";
 
+export const updateJobStatusApi =  baseUrl + "/updateJobStatus";
+
+export const customerSaveJobReview =  baseUrl + "/saveJobReview";
+
 

@@ -86,8 +86,8 @@ export default function Profile() {
         setUser(res.payload.user);
 
         setProfileData({
-           name: res.payload.user.name || "",
-           email: res.payload.user.email || "",
+          name: res.payload.user.name || "",
+          email: res.payload.user.email || "",
           phone: res.payload.user.phone || "",
           address: res.payload.user.address || "",
           bio: res.payload.user.bio || "",
@@ -189,7 +189,7 @@ export default function Profile() {
                     </div>
                     <div className="space-y-2">
                       <Label>Email</Label>
-                      <Input value={profileData.email} disabled/>
+                      <Input value={profileData.email} disabled />
                     </div>
                   </div>
 
@@ -273,8 +273,10 @@ export default function Profile() {
                           <SelectItem value="CAR">🚗 Car</SelectItem>
                           <SelectItem value="VAN">🚐 Van</SelectItem>
                           <SelectItem value="UTE">🛻 Ute</SelectItem>
-                           <SelectItem value="MOTORCYCLE">🏍️ Motorcycle</SelectItem>
-                            <SelectItem value="BICYCLE">🚲 Bicycle</SelectItem>
+                          <SelectItem value="MOTORCYCLE">
+                            🏍️ Motorcycle
+                          </SelectItem>
+                          <SelectItem value="BICYCLE">🚲 Bicycle</SelectItem>
                         </SelectContent>
                       </Select>
                       <p className="text-xs text-slate-500">
@@ -360,32 +362,133 @@ export default function Profile() {
               profileData.user_type === "BOTH") && (
               <StripeConnectOnboarding user={user} />
             )}
+
             <Card className="shadow-xl border-0 bg-white/90 backdrop-blur-sm">
               <CardHeader>
                 <CardTitle>Account Stats</CardTitle>
               </CardHeader>
+
               <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-600">Completed Deliveries</span>
-                  <Badge variant="secondary">
-                    {user?.completed_deliveries || 0}
-                  </Badge>
-                </div>
+                {/* CUSTOMER */}
+                {user?.user_type === "CUSTOMER" && (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-600">ID Verification</span>
+                      <Badge
+                        variant={user?.id_verified ? "default" : "secondary"}
+                      >
+                        {user?.id_verified ? "Verified" : "Pending"}
+                      </Badge>
+                    </div>
 
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-600">Rating</span>
-                  <div className="flex items-center gap-1">
-                    <Star className="w-4 h-4 text-yellow-500 fill-current" />
-                    {/* <span>{user?.rating ? user.rating.toFixed(1) : 'No ratings yet'}</span> */}
-                  </div>
-                </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-600">Email Verification</span>
+                      <Badge
+                        variant={
+                          Number(user?.is_email_verified)
+                            ? "default"
+                            : "secondary"
+                        }
+                      >
+                        {Number(user?.is_email_verified)
+                          ? "Verified"
+                          : "Pending"}
+                      </Badge>
+                    </div>
 
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-600">Verification Status</span>
-                  <Badge variant={user?.id_verified ? "default" : "secondary"}>
-                    {user?.id_verified ? "Verified" : "Pending"}
-                  </Badge>
-                </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-600">Phone Verification</span>
+                      <Badge
+                        variant={
+                          Number(user?.is_phone_verified)
+                            ? "default"
+                            : "secondary"
+                        }
+                      >
+                        {Number(user?.is_phone_verified)
+                          ? "Verified"
+                          : "Pending"}
+                      </Badge>
+                    </div>
+                  </>
+                )}
+
+                {/* COURIER */}
+                {user?.user_type === "COURIER" && (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-600">Rating</span>
+                      <div className="flex items-center gap-1">
+                        <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                        <span>{Number(user?.rating || 0).toFixed(1)}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-600">
+                        Completed Deliveries
+                      </span>
+                      <Badge variant="secondary">
+                        {user?.completed_deliveries || 0}
+                      </Badge>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-600">ID Verification</span>
+                      <Badge
+                        variant={user?.id_verified ? "default" : "secondary"}
+                      >
+                        {user?.id_verified ? "Verified" : "Pending"}
+                      </Badge>
+                    </div>
+                  </>
+                )}
+
+                {/* BOTH */}
+                {user?.user_type === "BOTH" && (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-600">Rating</span>
+                      <div className="flex items-center gap-1">
+                        <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                        <span>{Number(user?.rating || 0).toFixed(1)}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-600">
+                        Completed Deliveries
+                      </span>
+                      <Badge variant="secondary">
+                        {user?.completed_deliveries || 0}
+                      </Badge>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-600">ID Verification</span>
+                      <Badge
+                        variant={user?.id_verified ? "default" : "secondary"}
+                      >
+                        {user?.id_verified ? "Verified" : "Pending"}
+                      </Badge>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-600">Email Verification</span>
+                      <Badge
+                        variant={
+                          Number(user?.is_email_verified)
+                            ? "default"
+                            : "secondary"
+                        }
+                      >
+                        {Number(user?.is_email_verified)
+                          ? "Verified"
+                          : "Pending"}
+                      </Badge>
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
           </div>

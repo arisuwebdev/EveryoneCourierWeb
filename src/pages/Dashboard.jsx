@@ -1,6 +1,3 @@
-import React, { useState, useEffect } from "react";
-// import { DeliveryJob, JobApplication, Payment } from "@/entities/all";
-// import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "react-router-dom";
@@ -12,13 +9,10 @@ import RecentActivity from "../components/dashboard/RecentActivity";
 import QuickActions from "../components/dashboard/QuickActions";
 import ReferralCard from "../components/dashboard/ReferralCard";
 import AIJobMatches from "../components/dashboard/AIJobMatches";
+import { useAuth } from "../lib/AuthContext";
 
 export default function Dashboard() {
-  const user = {
-    full_name: "John Doe",
-    user_type: "courier",
-    id_verified: false,
-  };
+  const { user } = useAuth();
 
   const jobs = [];
   const applications = [];
@@ -44,7 +38,7 @@ export default function Dashboard() {
           Welcome back!
         </h1>
 
-        <p className="text-slate-600">
+        <p className="text-slate-600 mb-6">
           Find delivery jobs and manage your deliveries.
         </p>
 
@@ -96,29 +90,32 @@ export default function Dashboard() {
           </Card>
         )} */}
 
-        <Card className="mb-6 border-amber-200 bg-amber-50">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <AlertCircle className="w-5 h-5 text-amber-600" />
-              <div>
-                <p className="font-medium text-amber-900">
-                  Complete your verification
-                </p>
-                <p className="text-sm text-amber-700">
-                  Verify your ID to start posting jobs or applying as a courier.
-                </p>
+        {user && Number(user.id_verified) !== 1 && (
+          <Card className="mb-6 border-amber-200 bg-amber-50">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <AlertCircle className="w-5 h-5 text-amber-600" />
+
+                <div>
+                  <p className="font-medium text-amber-900">
+                    Complete your verification
+                  </p>
+                  <p className="text-sm text-amber-700">
+                    Verify your ID to start posting jobs or applying as a
+                    courier.
+                  </p>
+                </div>
+
+                <Link to={createPageUrl("Profile")}>
+                  <Button variant="outline" size="sm" className="ml-auto">
+                    Verify Now
+                  </Button>
+                </Link>
               </div>
+            </CardContent>
+          </Card>
+        )}
 
-              <Link to={createPageUrl("Profile")}>
-                <Button variant="outline" size="sm" className="ml-auto">
-                  Verify Now
-                </Button>
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Stats Overview */}
         {/* <StatsOverview
           user={user}
           jobs={jobs}
