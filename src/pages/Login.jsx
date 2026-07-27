@@ -139,6 +139,9 @@ import GoogleIcon from "../components/GoogleIcon";
 import { loginUser } from "../api/ApiServices/loginService";
 import { toast } from "react-toastify";
 import { useAuth } from "../lib/AuthContext";
+import { useGoogleLogin } from "@react-oauth/google";
+import { GoogleLogin } from "@react-oauth/google";
+import { jwtDecode } from "jwt-decode";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -173,7 +176,6 @@ export default function Login() {
         login(response);
 
         navigate("/dashboard", { replace: true });
-
       } else {
         setError(response.msg);
         toast.error(response.msg);
@@ -192,8 +194,23 @@ export default function Login() {
     }
   };
 
+  const googleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      console.log("Google Access Token:", tokenResponse.access_token);
+
+      // Send access_token to your backend
+      // const response = await googleLoginApi({
+      //   access_token: tokenResponse.access_token,
+      // });
+    },
+
+    onError: () => {
+      toast.error("Google Login Failed");
+    },
+  });
+
   const handleGoogle = () => {
-    alert("Google login is not implemented.");
+    googleLogin();
   };
 
   return (
@@ -213,14 +230,36 @@ export default function Login() {
         </>
       }
     >
-      <Button
-        variant="outline"
-        className="w-full h-12 text-sm font-medium mb-6"
-        onClick={handleGoogle}
-      >
-        <GoogleIcon className="w-5 h-5 mr-2" />
-        Continue with Google
-      </Button>
+      <div className="mb-6 flex justify-center">
+        <GoogleLogin
+          onSuccess={(credentialResponse) => {
+            const user = jwtDecode(credentialResponse.credential);
+
+            console.log(user);
+
+            /*
+      user.sub
+      user.name
+      user.email
+      user.picture
+      user.email_verified
+      */
+
+            // Example API call
+            // googleLoginApi({
+            //   google_id: user.sub,
+            //   name: user.name,
+            //   email: user.email,
+            //   profile_image: user.picture,
+            // });
+
+            toast.success("Google Login Success");
+          }}
+          onError={() => {
+            toast.error("Google Login Failed");
+          }}
+        />
+      </div>
 
       <div className="relative mb-6">
         <div className="absolute inset-0 flex items-center">

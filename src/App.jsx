@@ -142,6 +142,7 @@ import PageNotFound from "./lib/PageNotFound";
 import AssignedJobView from "./components/jobs/AssignedJobView";
 import ApplicantList from "./components/jobs/ApplicantList";
 import ScrollToTop from "./components/ScrollToTop";
+import ProtectedRoute from "./lib/ProtectedRoute";
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError } = useAuth();
@@ -188,77 +189,93 @@ const AuthenticatedApp = () => {
         <Route
           path="/dashboard"
           element={
-            <Layout currentPageName="Dashboard">
-              {" "}
-              <Dashboard />{" "}
-            </Layout>
+            <ProtectedRoute>
+              <Layout currentPageName="Dashboard">
+                {" "}
+                <Dashboard />{" "}
+              </Layout>
+            </ProtectedRoute>
           }
         />
 
         <Route
           path="/my-jobs"
           element={
-            <Layout currentPageName="MyJobs">
-              {" "}
-              <MyJobs />{" "}
-            </Layout>
+            <ProtectedRoute>
+              <Layout currentPageName="MyJobs">
+                {" "}
+                <MyJobs />{" "}
+              </Layout>
+            </ProtectedRoute>
           }
         />
 
         <Route
           path="/post-job"
           element={
-            <Layout currentPageName="PostJob">
-              {" "}
-              <PostJob />{" "}
-            </Layout>
+            <ProtectedRoute>
+              <Layout currentPageName="PostJob">
+                {" "}
+                <PostJob />{" "}
+              </Layout>
+            </ProtectedRoute>
           }
         />
 
         <Route
           path="/find-jobs"
           element={
-            <Layout currentPageName="FindJobs">
-              {" "}
-              <FindJobs />{" "}
-            </Layout>
+            <ProtectedRoute>
+              <Layout currentPageName="FindJobs">
+                {" "}
+                <FindJobs />{" "}
+              </Layout>
+            </ProtectedRoute>
           }
         />
 
         <Route
           path="/profile"
           element={
-            <Layout currentPageName="Profile">
-              {" "}
-              <Profile />{" "}
-            </Layout>
+            <ProtectedRoute>
+              <Layout currentPageName="Profile">
+                {" "}
+                <Profile />{" "}
+              </Layout>
+            </ProtectedRoute>
           }
         />
 
         <Route
           path="/analytics"
           element={
-            <Layout currentPageName="Analytics">
-              {" "}
-              <Analytics />{" "}
-            </Layout>
+            <ProtectedRoute>
+              <Layout currentPageName="Analytics">
+                {" "}
+                <Analytics />{" "}
+              </Layout>
+            </ProtectedRoute>
           }
         />
-<Route
-  path="/my-jobs/:id/assigned"
-  element={
-    <Layout currentPageName="MyJobs">
-      <AssignedJobView />
-    </Layout>
-  }
-/>
+        <Route
+          path="/my-jobs/:id/assigned"
+          element={
+            <ProtectedRoute>
+              <Layout currentPageName="MyJobs">
+                <AssignedJobView />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
 
         <Route
           path="/my-jobs/:id/applicants"
           element={
-            <Layout currentPageName="MyJobs">
-             <ApplicantList/>
-            </Layout>
+            <ProtectedRoute>
+              <Layout currentPageName="MyJobs">
+                <ApplicantList />
+              </Layout>
+            </ProtectedRoute>
           }
         />
 
@@ -276,7 +293,7 @@ export default function App() {
         {/* <Router basename="/current-project/react-project/EveryoneCourior"> */}
         <Router>
           {/* here scrolltotop use for need to show top any navigate after  */}
-          <ScrollToTop/>
+          <ScrollToTop />
           <AuthenticatedApp />
         </Router>
         <Toaster />

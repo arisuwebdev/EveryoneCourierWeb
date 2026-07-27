@@ -95,6 +95,10 @@ export default function MyJobs() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [activeTab, currentPage, lastPage, loading, loadingMore]);
 
+  useEffect(() => {
+    console.log("MyJobs user:", user);
+  }, [user]);
+
   const renderJobList = (jobs, type) => {
     if (loading) {
       return (

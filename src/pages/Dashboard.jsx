@@ -23,24 +23,16 @@ export default function Dashboard() {
     <div className="min-h-screen p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        {/* <div className="mb-8">
+        <div className="mb-8">
           <h1 className="text-3xl font-bold text-slate-900 mb-2">
-            Welcome back, {user.full_name}!
+            Welcome back, {user.name}!
           </h1>
           <p className="text-slate-600">
-            {user.user_type === 'courier' ? 'Find delivery jobs along your route' : 
-             user.user_type === 'customer' ? 'Manage your delivery requests' : 
+            {user.user_type === 'COURIER' ? 'Find delivery jobs along your route' : 
+             user.user_type === 'CUSTOMER' ? 'Manage your delivery requests' : 
              'Post jobs or find delivery opportunities'}
           </p>
-        </div> */}
-
-        <h1 className="text-3xl font-bold text-slate-900 mb-2">
-          Welcome back!
-        </h1>
-
-        <p className="text-slate-600 mb-6">
-          Find delivery jobs and manage your deliveries.
-        </p>
+        </div>
 
         {/* Launch Notice */}
         <Card className="mb-6 border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50">
@@ -152,7 +144,6 @@ export default function Dashboard() {
         <RecentActivity
           jobs={jobs}
           applications={applications}
-          userType={user.user_type}
           isLoading={isLoading}
         />
       </div>

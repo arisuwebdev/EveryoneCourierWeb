@@ -37,10 +37,10 @@ export default function Profile() {
     phone: "",
     address: "",
     bio: "",
-    user_type: "customer",
+    user_type: "CUSTOMER",
     vehicle_type: "",
   });
-  const { token } = useAuth();
+  const { token, updateUser } = useAuth();
 
   useEffect(() => {
     loadUser();
@@ -59,7 +59,7 @@ export default function Profile() {
         phone: profile.phone || "",
         address: profile.address || "",
         bio: profile.bio || "",
-        user_type: (profile.user_type || "CUSTOMER").toUpperCase(),
+        user_type: (res.payload.user.user_type || "CUSTOMER").toUpperCase(),
         vehicle_type: profile.vehicle_type || "",
       });
     } catch (err) {
@@ -82,7 +82,10 @@ export default function Profile() {
     try {
       const res = await updateProfile(profileData, token);
 
+      console.log("Update response:", res.payload.user);
+
       if (res?.payload?.user) {
+        updateUser(res.payload.user);
         setUser(res.payload.user);
 
         setProfileData({
@@ -267,15 +270,12 @@ export default function Profile() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="bicycle">🚲 Bicycle</SelectItem>
-                          <SelectItem value="motorcycle">
+                          <SelectItem value="MOTORCYCLE">
                             🏍️ Motorcycle
                           </SelectItem>
                           <SelectItem value="CAR">🚗 Car</SelectItem>
                           <SelectItem value="VAN">🚐 Van</SelectItem>
                           <SelectItem value="UTE">🛻 Ute</SelectItem>
-                          <SelectItem value="MOTORCYCLE">
-                            🏍️ Motorcycle
-                          </SelectItem>
                           <SelectItem value="BICYCLE">🚲 Bicycle</SelectItem>
                         </SelectContent>
                       </Select>

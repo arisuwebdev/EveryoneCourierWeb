@@ -1,11 +1,14 @@
-import React from 'react';
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Package, MapPin, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from "../../lib/AuthContext";
 
-export default function RecentActivity({ jobs, applications, userType, isLoading }) {
+export default function RecentActivity({ jobs, applications, isLoading }) {
+    const { user } = useAuth();
+    const userType = user?.user_type; 
   const getStatusColor = (status) => {
     switch (status) {
       case 'open': return 'bg-blue-100 text-blue-800';
@@ -24,7 +27,7 @@ export default function RecentActivity({ jobs, applications, userType, isLoading
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Package className="w-5 h-5" />
-            {userType === 'courier' ? 'Recent Applications' : 'Recent Jobs Posted'}
+            {userType === 'COURIER' ? 'Recent Applications' : 'Recent Jobs Posted'}
           </CardTitle>
         </CardHeader>
         <CardContent>
