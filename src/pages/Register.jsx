@@ -50,7 +50,7 @@ export default function Register() {
       toast.error(message);
       return;
     }
-    console.log("accepted:", accepted);
+
 
     try {
       setLoading(true);
@@ -98,7 +98,7 @@ export default function Register() {
             "#",
         );
       } catch (error) {
-        console.error(error);
+
       }
     };
 

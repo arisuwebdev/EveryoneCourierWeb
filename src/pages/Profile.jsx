@@ -53,15 +53,16 @@ export default function Profile() {
       const profile = res.payload.user;
       setUser(profile);
 
-      setProfileData({
-        name: profile.name || "",
-        email: profile.email || "",
-        phone: profile.phone || "",
-        address: profile.address || "",
-        bio: profile.bio || "",
-        user_type: (res.payload.user.user_type || "CUSTOMER").toUpperCase(),
-        vehicle_type: profile.vehicle_type || "",
-      });
+ setProfileData({
+  name: res.payload.user.name || "",
+  email: res.payload.user.email || "",
+  phone: res.payload.user.phone || "",
+  address: res.payload.user.address || "",
+  bio: res.payload.user.bio || "",
+  user_type: (res.payload.user.user_type || "CUSTOMER").toUpperCase(),
+  vehicle_type: res.payload.user.vehicle_type || "",
+});
+
     } catch (err) {
     } finally {
       setIsLoading(false);
@@ -94,7 +95,7 @@ export default function Profile() {
           phone: res.payload.user.phone || "",
           address: res.payload.user.address || "",
           bio: res.payload.user.bio || "",
-          user_type: res.payload.user.user_type?.toLowerCase() || "customer",
+          user_type: (res.payload.user.user_type || "CUSTOMER").toUpperCase(),
           vehicle_type: res.payload.user.vehicle_type || "",
         });
       } else {

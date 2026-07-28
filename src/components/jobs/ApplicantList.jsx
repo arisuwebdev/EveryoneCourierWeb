@@ -61,7 +61,7 @@ const handleAssignCourier = async (application) => {
       toast.error(res.msg || "Failed to assign courier.");
     }
   } catch (error) {
-    console.error(error);
+
     toast.error(error.response?.data?.msg || "Failed to assign courier.");
   } finally {
     setIsAssigning(false);
