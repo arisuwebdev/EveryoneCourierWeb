@@ -19,6 +19,8 @@ export const updateProfileApi =  baseUrl + "/updateProfile";
 
 export const uploadIdCardApi =  baseUrl + "/uploadIdCard";
 
+export const googleLoginApi =  baseUrl + "/auth/social-login";
+
 //priacy and policy
 
 export const getPrivacyPolicyUrlApi =  baseUrl + "/getPrivacyPolicyUrl";
@@ -49,3 +51,6 @@ export const updateJobStatusApi =  baseUrl + "/updateJobStatus";
 export const customerSaveJobReview =  baseUrl + "/saveJobReview";
 
 
+// dashboard
+
+export const dashboardStatsApi =  baseUrl + "/dashboardStats";

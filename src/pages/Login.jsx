@@ -139,9 +139,9 @@ import GoogleIcon from "../components/GoogleIcon";
 import { loginUser } from "../api/ApiServices/loginService";
 import { toast } from "react-toastify";
 import { useAuth } from "../lib/AuthContext";
-import { useGoogleLogin } from "@react-oauth/google";
-import { GoogleLogin } from "@react-oauth/google";
 import { jwtDecode } from "jwt-decode";
+import { GoogleLogin } from "@react-oauth/google";
+import { googleLogin } from "../api/ApiServices/auth/googleLoginService";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -194,25 +194,6 @@ export default function Login() {
     }
   };
 
-  const googleLogin = useGoogleLogin({
-    onSuccess: async (tokenResponse) => {
-      console.log("Google Access Token:", tokenResponse.access_token);
-
-      // Send access_token to your backend
-      // const response = await googleLoginApi({
-      //   access_token: tokenResponse.access_token,
-      // });
-    },
-
-    onError: () => {
-      toast.error("Google Login Failed");
-    },
-  });
-
-  const handleGoogle = () => {
-    googleLogin();
-  };
-
   return (
     <AuthLayout
       icon={LogIn}
@@ -232,28 +213,35 @@ export default function Login() {
     >
       <div className="mb-6 flex justify-center">
         <GoogleLogin
-          onSuccess={(credentialResponse) => {
-            const user = jwtDecode(credentialResponse.credential);
+          onSuccess={async (credentialResponse) => {
+            try {
+              const user = jwtDecode(credentialResponse.credential);
 
-            console.log(user);
+              console.log("Google User:", user);
 
-            /*
-      user.sub
-      user.name
-      user.email
-      user.picture
-      user.email_verified
-      */
+              const response = await googleLogin({
+                name: user.name,
+                email: user.email,
+                socialId: user.sub,
+              });
 
-            // Example API call
-            // googleLoginApi({
-            //   google_id: user.sub,
-            //   name: user.name,
-            //   email: user.email,
-            //   profile_image: user.picture,
-            // });
+              if (response.status === 1) {
+                toast.success(response.msg);
 
-            toast.success("Google Login Success");
+                // Save login
+                login(response);
+
+                navigate("/dashboard", { replace: true });
+              } else {
+                toast.error(response.msg);
+              }
+            } catch (err) {
+              toast.error(
+                err.response?.data?.msg ||
+                  err.response?.data?.message ||
+                  "Google Login Failed",
+              );
+            }
           }}
           onError={() => {
             toast.error("Google Login Failed");
