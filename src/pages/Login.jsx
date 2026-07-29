@@ -142,6 +142,7 @@ import { useAuth } from "../lib/AuthContext";
 import { jwtDecode } from "jwt-decode";
 import { GoogleLogin } from "@react-oauth/google";
 import { googleLogin } from "../api/ApiServices/auth/googleLoginService";
+import { requestNotificationPermission } from "../firebaseNotification";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -174,6 +175,9 @@ export default function Login() {
 
         // Store token and user in AuthContext + localStorage
         login(response);
+
+        // Get FCM token
+        await requestNotificationPermission();
 
         navigate("/dashboard", { replace: true });
       } else {

@@ -22,7 +22,7 @@ export default function QuickActions() {
       icon: Search,
       url: "/find-jobs",
       color: "bg-green-500 hover:bg-green-600",
-       disabled: user?.user_type === "CUSTOMER",
+      disabled: user?.user_type === "CUSTOMER",
     },
     {
       title: "Update Profile",
@@ -45,8 +45,7 @@ export default function QuickActions() {
               <Button
                 key={index}
                 disabled
-                variant="outline"
-                className="w-full h-auto p-6 flex flex-col items-center gap-3 opacity-50 cursor-not-allowed border-2 border-slate-200"
+                className={`w-full h-auto p-6 flex flex-col items-center gap-3 text-white opacity-50 cursor-not-allowed border-2 border-transparent ${action.color}`}
               >
                 <action.icon className="w-8 h-8" />
                 <div className="text-center">

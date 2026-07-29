@@ -1,14 +1,17 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Package, MapPin, Clock } from "lucide-react";
+import { Package, MapPin, Clock,ArrowRight } from "lucide-react";
 import { format } from "date-fns";
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "../../lib/AuthContext";
 import { getDashboardStats } from "../../api/ApiServices/dashboard/dashboardService";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 export default function RecentActivity() {
   const { token, user } = useAuth();
+  const navigate = useNavigate();
 
   const [jobs, setJobs] = useState([]);
   const [applications, setApplications] = useState([]);
@@ -41,28 +44,21 @@ export default function RecentActivity() {
   const getStatusColor = (status = "") => {
     switch (status.toUpperCase()) {
       case "OPEN":
-        return "bg-blue-100 text-blue-800";
-
+        return "bg-blue-100 text-blue-800 border border-blue-200 hover:bg-blue-200";
       case "PENDING":
-        return "bg-yellow-100 text-yellow-800";
-
+        return "bg-yellow-100 text-yellow-800 border border-yellow-200 hover:bg-yellow-200";
       case "ASSIGNED":
-        return "bg-orange-100 text-orange-800";
-
+        return "bg-orange-100 text-orange-800 border border-orange-200 hover:bg-orange-200";
       case "ACCEPTED":
-        return "bg-green-100 text-green-800";
-
+        return "bg-green-100 text-green-800 border border-green-200 hover:bg-green-200";
       case "PICKED_UP":
-        return "bg-purple-100 text-purple-800";
-
+        return "bg-purple-100 text-purple-800 border border-purple-200 hover:bg-purple-200";
       case "DELIVERED":
-        return "bg-emerald-100 text-emerald-800";
-
+        return "bg-emerald-100 text-emerald-800 border border-emerald-200 hover:bg-emerald-200";
       case "CANCELLED":
-        return "bg-red-100 text-red-800";
-
+        return "bg-red-100 text-red-800 border border-red-200 hover:bg-red-200";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-gray-100 text-gray-800 border border-gray-200 hover:bg-gray-200";
     }
   };
 
@@ -70,11 +66,20 @@ export default function RecentActivity() {
     <div className="grid lg:grid-cols-2 gap-8">
       {/* Recent Jobs Posted/Applied */}
       <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <Package className="w-5 h-5" />
             {isCourier ? "Recent Applications" : "Recent Jobs Posted"}
           </CardTitle>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate("/my-jobs")}
+            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 group"
+          >
+            View All
+            <ArrowRight className="w-4 h-4 ml-1 transition-transform group-hover:translate-x-1" />
+          </Button>
         </CardHeader>
         <CardContent>
           {isLoading ? (
