@@ -53,16 +53,15 @@ export default function Profile() {
       const profile = res.payload.user;
       setUser(profile);
 
- setProfileData({
-  name: res.payload.user.name || "",
-  email: res.payload.user.email || "",
-  phone: res.payload.user.phone || "",
-  address: res.payload.user.address || "",
-  bio: res.payload.user.bio || "",
-  user_type: (res.payload.user.user_type || "CUSTOMER").toUpperCase(),
-  vehicle_type: res.payload.user.vehicle_type || "",
-});
-
+      setProfileData({
+        name: res.payload.user.name || "",
+        email: res.payload.user.email || "",
+        phone: res.payload.user.phone || "",
+        address: res.payload.user.address || "",
+        bio: res.payload.user.bio || "",
+        user_type: (res.payload.user.user_type || "CUSTOMER").toUpperCase(),
+        vehicle_type: res.payload.user.vehicle_type || "",
+      });
     } catch (err) {
     } finally {
       setIsLoading(false);
@@ -359,11 +358,7 @@ export default function Profile() {
 
           {/* Stats Sidebar */}
           <div className="space-y-6">
-            {(profileData.user_type === "COURIER" ||
-              profileData.user_type === "BOTH") && (
-              <StripeConnectOnboarding user={user} />
-            )}
-
+            {/* ACCOUNT STATS FIRST */}
             <Card className="shadow-xl border-0 bg-white/90 backdrop-blur-sm">
               <CardHeader>
                 <CardTitle>Account Stats</CardTitle>
@@ -392,21 +387,6 @@ export default function Profile() {
                         }
                       >
                         {Number(user?.is_email_verified)
-                          ? "Verified"
-                          : "Pending"}
-                      </Badge>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <span className="text-slate-600">Phone Verification</span>
-                      <Badge
-                        variant={
-                          Number(user?.is_phone_verified)
-                            ? "default"
-                            : "secondary"
-                        }
-                      >
-                        {Number(user?.is_phone_verified)
                           ? "Verified"
                           : "Pending"}
                       </Badge>
@@ -492,6 +472,12 @@ export default function Profile() {
                 )}
               </CardContent>
             </Card>
+
+            {/* STRIPE CONNECT BELOW ACCOUNT STATS */}
+            {(profileData.user_type === "COURIER" ||
+              profileData.user_type === "BOTH") && (
+              <StripeConnectOnboarding user={user} />
+            )}
           </div>
         </div>
       </div>
