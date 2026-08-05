@@ -152,7 +152,7 @@
 // }
 
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Package,
   User,
@@ -171,6 +171,8 @@ import {
 import { useAuth } from "../src/lib/AuthContext";
 import { getPrivacyPolicyUrl } from "./api/ApiServices/getPrivacyPolicyUrlApiService";
 import { getTermsOfServiceUrl } from "./api/ApiServices/getTermsOfServiceUrlApiService";
+import { getNotificationCount } from "./api/ApiServices/notification/getNotficationCountService";
+import { getNotificationList } from "./api/ApiServices/notification/getNotificationListService";
 
 // Links shown inline in the desktop nav (Post Job is rendered separately as a CTA button)
 const navigationItems = [
@@ -193,9 +195,74 @@ const mobileNavigationItems = [
 export default function Layout({ children }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { logout, isAuthenticated, user } = useAuth();
+  const { logout, isAuthenticated, user, token } = useAuth();
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
   const [isMobileAccountMenuOpen, setIsMobileAccountMenuOpen] = useState(false);
+
+  // for notification
+
+  const [notificationCount, setNotificationCount] = useState(0);
+  const [notifications, setNotifications] = useState([]);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const [isNotificationLoading, setIsNotificationLoading] = useState(false);
+
+  useEffect(() => {
+    if (!isAuthenticated || !token) {
+      setNotificationCount(0);
+      return;
+    }
+
+    const fetchNotificationCount = async () => {
+      try {
+        const response = await getNotificationCount(token);
+        if (response?.status === 1) {
+          const total =
+            response?.payload?.notificationList?.total || 0;
+
+          setNotificationCount(total);
+        }
+      } catch (error) {
+  
+        setNotificationCount(0);
+      }
+    };
+
+    fetchNotificationCount();
+  }, [isAuthenticated, token]);
+
+  const handleNotificationClick = async () => {
+
+    if (isNotificationOpen) {
+      setIsNotificationOpen(false);
+      return;
+    }
+
+    setIsNotificationOpen(true);
+
+    if (!token) {
+ 
+      return;
+    }
+
+    try {
+      setIsNotificationLoading(true);
+      const response = await getNotificationList(token);
+
+      if (response?.status === 1) {
+        const list =
+          response?.payload?.notificationList?.data || [];
+
+        setNotifications(list);
+      } else {
+        setNotifications([]);
+      }
+    } catch (error) {
+      setNotifications([]);
+    } finally {
+      setIsNotificationLoading(false);
+    }
+  };
+
 
   const handlePrivacyClick = async () => {
     try {
@@ -204,7 +271,7 @@ export default function Layout({ children }) {
       if (response?.status === 1 && response?.payload?.privacyPolicyUrl) {
         window.open(response.payload.privacyPolicyUrl, "_blank");
       }
-    } catch (error) {}
+    } catch (error) { }
   };
 
   const handleTermsClick = async () => {
@@ -214,7 +281,7 @@ export default function Layout({ children }) {
       if (response?.status === 1 && response?.payload?.termsOfServiceUrl) {
         window.open(response.payload.termsOfServiceUrl, "_blank");
       }
-    } catch (error) {}
+    } catch (error) { }
   };
 
   const handleLogout = async () => {
@@ -268,11 +335,10 @@ export default function Layout({ children }) {
                     <Link
                       key={item.title}
                       to={item.url}
-                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                        isActive
+                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isActive
                           ? "text-blue-600 bg-blue-50"
                           : "text-slate-600 hover:text-blue-600 hover:bg-slate-50"
-                      }`}
+                        }`}
                     >
                       {item.title}
                     </Link>
@@ -295,14 +361,93 @@ export default function Layout({ children }) {
                   </Link>
                 )}
 
-                <button
-                  type="button"
-                  className="hidden md:flex relative p-2 rounded-full text-slate-500 hover:bg-slate-100 transition"
-                  aria-label="Notifications"
-                >
-                  <Bell className="w-5 h-5" />
-                  <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500" />
-                </button>
+                {/* for notification  */}
+                <div className="hidden md:block relative">
+                  <button
+                    type="button"
+                    onClick={handleNotificationClick}
+                    className="relative p-2 rounded-full text-slate-500 hover:bg-slate-100 transition"
+                    aria-label="Notifications"
+                  >
+                    <Bell className="w-5 h-5" />
+
+                    {notificationCount > 0 && (
+                      <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold">
+                        {notificationCount > 99 ? "99+" : notificationCount}
+                      </span>
+                    )}
+                  </button>
+
+                  {isNotificationOpen && (
+                    <>
+                      {/* Backdrop */}
+                      <div
+                        className="fixed inset-0 z-40"
+                        onClick={() => setIsNotificationOpen(false)}
+                      />
+
+                      {/* Notification dropdown */}
+                      <div className="absolute right-0 top-full mt-3 w-80 bg-white rounded-xl shadow-xl border border-slate-200 z-50 overflow-hidden">
+                        {/* Header */}
+                        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200">
+                          <h3 className="text-sm font-semibold text-slate-800">
+                            Notifications
+                          </h3>
+
+                          {notificationCount > 0 && (
+                            <span className="text-xs text-blue-600 font-medium">
+                              {notificationCount} notification
+                              {notificationCount !== 1 ? "s" : ""}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Body */}
+                        <div className="max-h-80 overflow-y-auto">
+                          {isNotificationLoading ? (
+                            <div className="px-4 py-8 text-center text-sm text-slate-500">
+                              Loading notifications...
+                            </div>
+                          ) : notifications.length === 0 ? (
+                            <div className="px-4 py-8 text-center">
+                              <Bell className="w-8 h-8 mx-auto mb-2 text-slate-300" />
+
+                              <p className="text-sm font-medium text-slate-600">
+                                No notifications
+                              </p>
+
+                              <p className="text-xs text-slate-400 mt-1">
+                                You don't have any notifications yet.
+                              </p>
+                            </div>
+                          ) : (
+                            notifications.map((notification, index) => (
+                              <div
+                                key={notification.id || index}
+                                className="px-4 py-3 border-b border-slate-100 hover:bg-slate-50 transition"
+                              >
+                                <p className="text-sm font-medium text-slate-800">
+                                  {notification.title ||
+                                    notification.notification_title ||
+                                    "Notification"}
+                                </p>
+
+                                <p className="text-xs text-slate-500 mt-1">
+                                  {notification.message ||
+                                    notification.description ||
+                                    notification.notification_message ||
+                                    ""}
+                                </p>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* for notification  */}
 
                 {/* Account dropdown */}
                 <div className="hidden md:block relative pl-2 border-l border-slate-200">
@@ -318,9 +463,8 @@ export default function Layout({ children }) {
                       {user?.name || "Account"}
                     </span>
                     <ChevronDown
-                      className={`w-4 h-4 text-slate-400 transition-transform ${
-                        isAccountMenuOpen ? "rotate-180" : ""
-                      }`}
+                      className={`w-4 h-4 text-slate-400 transition-transform ${isAccountMenuOpen ? "rotate-180" : ""
+                        }`}
                     />
                   </button>
 
@@ -423,13 +567,12 @@ export default function Layout({ children }) {
                 <Link
                   key={item.title}
                   to={item.url}
-                  className={`flex flex-col items-center justify-center flex-1 py-1.5 px-1 rounded-xl transition-all duration-200 ${
-                    isPost
+                  className={`flex flex-col items-center justify-center flex-1 py-1.5 px-1 rounded-xl transition-all duration-200 ${isPost
                       ? "relative -top-4 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-2xl shadow-lg w-14 h-14 flex-none mx-2"
                       : isActive
                         ? "text-blue-600"
                         : "text-slate-400"
-                  }`}
+                    }`}
                 >
                   <item.icon
                     className={`${isPost ? "w-6 h-6" : "w-5 h-5"} mb-0.5`}
@@ -437,9 +580,8 @@ export default function Layout({ children }) {
 
                   {!isPost && (
                     <span
-                      className={`text-[10px] font-medium leading-tight ${
-                        isActive ? "text-blue-600" : "text-slate-400"
-                      }`}
+                      className={`text-[10px] font-medium leading-tight ${isActive ? "text-blue-600" : "text-slate-400"
+                        }`}
                     >
                       {item.title}
                     </span>

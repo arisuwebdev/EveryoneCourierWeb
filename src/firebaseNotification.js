@@ -4,6 +4,7 @@ import { getFirebaseMessaging } from "./firebase";
 const VAPID_KEY =
   "BADctGxuMz2FEnz8bxJPCieRNbDTHRGYWptZ0ZA0KuN9UtuW6wAvTVNscB97w3ea3zPy5J60XiGF6JsOP1tpEEY";
 
+
 export const requestNotificationPermission = async () => {
   try {
     const permission = await Notification.requestPermission();
@@ -20,20 +21,23 @@ export const requestNotificationPermission = async () => {
       return null;
     }
 
-    const token = await getToken(messaging, {
+    const fcmToken = await getToken(messaging, {
       vapidKey: VAPID_KEY,
     });
 
-    if (token) {
-      console.log("FCM Token:", token);
-
-      // TODO:
-      // Send this token to your backend API
-      return token;
+    if (!fcmToken) {
+      console.log("No FCM token available.");
+      return null;
     }
 
-    console.log("No registration token available.");
-    return null;
+    const deviceData = {
+      device_type: "WEB",
+      fcm_token: fcmToken,
+    };
+
+    console.log("Device Data:", deviceData);
+
+    return deviceData;
   } catch (error) {
     console.error("Notification Error:", error);
     return null;

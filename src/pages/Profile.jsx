@@ -25,6 +25,7 @@ import { updateProfile } from "../api/ApiServices/updateProfileApiService";
 import { uploadIdCard } from "../api/ApiServices/uploadIdCardService";
 import StripeConnectOnboarding from "../components/payments/StripeConnectOnboarding";
 import { toast } from "react-toastify";
+import { auth, RecaptchaVerifier, signInWithPhoneNumber } from "../firebase";
 
 export default function Profile() {
   const [user, setUser] = useState(null);
@@ -41,6 +42,12 @@ export default function Profile() {
     vehicle_type: "",
   });
   const { token, updateUser } = useAuth();
+  const [phoneVerified, setPhoneVerified] = useState(false);
+  const [otpModalOpen, setOtpModalOpen] = useState(false);
+  const [otp, setOtp] = useState("");
+  const [confirmationResult, setConfirmationResult] = useState(null);
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
 
   useEffect(() => {
     loadUser();
@@ -75,14 +82,137 @@ export default function Profile() {
     }));
   };
 
+  const handleSendOtp = async () => {
+  let phoneNumber = profileData.phone.trim();
+
+  if (!phoneNumber) {
+    toast.error("Please enter your mobile number.");
+    return;
+  }
+
+  if (!phoneNumber.startsWith("+")) {
+    phoneNumber = `+91${phoneNumber}`;
+  }
+
+  try {
+    setIsSendingOtp(true);
+
+    const container = document.getElementById(
+      "recaptcha-container"
+    );
+
+    if (!container) {
+      toast.error("reCAPTCHA container not found.");
+      return;
+    }
+
+    // Clear old Firebase verifier
+    if (window.recaptchaVerifier) {
+      window.recaptchaVerifier.clear();
+      window.recaptchaVerifier = null;
+    }
+
+    // Clear the container itself
+    container.innerHTML = "";
+
+    // Create new verifier
+    const recaptchaVerifier = new RecaptchaVerifier(
+      auth,
+      container,
+      {
+        size: "invisible",
+        callback: () => {
+          console.log("reCAPTCHA solved");
+        },
+        "expired-callback": () => {
+          console.log("reCAPTCHA expired");
+        },
+      }
+    );
+
+    window.recaptchaVerifier = recaptchaVerifier;
+
+    console.log("Sending OTP to:", phoneNumber);
+
+    // Don't call render() manually
+    const confirmation = await signInWithPhoneNumber(
+      auth,
+      phoneNumber,
+      recaptchaVerifier
+    );
+
+    setConfirmationResult(confirmation);
+    setOtp("");
+    setOtpModalOpen(true);
+
+    toast.success("OTP sent successfully!");
+
+  } catch (error) {
+    console.error("OTP Error:", error);
+
+    if (window.recaptchaVerifier) {
+      window.recaptchaVerifier.clear();
+      window.recaptchaVerifier = null;
+    }
+
+    toast.error(
+      error?.message || "Failed to send OTP."
+    );
+
+  } finally {
+    setIsSendingOtp(false);
+  }
+};
+
+  const handleVerifyOtp = async () => {
+    if (!confirmationResult) {
+      toast.error("Please request OTP again.");
+      return;
+    }
+
+    if (otp.length !== 6) {
+      toast.error("Please enter 6 digit OTP.");
+      return;
+    }
+
+    try {
+      setIsVerifyingOtp(true);
+
+      const result = await confirmationResult.confirm(otp);
+
+      console.log("Firebase verified user:", result.user);
+
+      setPhoneVerified(true);
+      setOtpModalOpen(false);
+      setOtp("");
+      setConfirmationResult(null);
+
+      toast.success("Mobile number verified successfully!");
+
+      // IMPORTANT:
+      // Here you should call your backend API
+      // to save phone_verified / phone_verified_at.
+    } catch (error) {
+      console.error("OTP verification error:", error);
+
+      if (error.code === "auth/invalid-verification-code") {
+        toast.error("Invalid OTP.");
+      } else if (error.code === "auth/code-expired") {
+        toast.error("OTP expired. Please request a new OTP.");
+      } else {
+        toast.error("OTP verification failed.");
+      }
+    } finally {
+      setIsVerifyingOtp(false);
+    }
+  };
+
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
     setIsUpdating(true);
 
     try {
       const res = await updateProfile(profileData, token);
-
-      console.log("Update response:", res.payload.user);
 
       if (res?.payload?.user) {
         updateUser(res.payload.user);
@@ -180,6 +310,7 @@ export default function Profile() {
               </CardHeader>
               <CardContent className="p-6">
                 <form onSubmit={handleUpdateProfile} className="space-y-4">
+
                   <div className="grid md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>Full Name</Label>
@@ -196,18 +327,36 @@ export default function Profile() {
                     </div>
                   </div>
 
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">Phone Number</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Phone Number</Label>
+
+                    <div className="flex gap-2">
                       <Input
                         id="phone"
                         value={profileData.phone}
                         onChange={(e) =>
                           handleInputChange("phone", e.target.value)
                         }
-                        placeholder="Your phone number"
+                        placeholder="+91 8597092231"
+                        disabled={phoneVerified}
+                        className="flex-1"
                       />
+
+                      {phoneVerified ? (
+                        <div className="flex items-center px-4 bg-green-50 text-green-700 border border-green-200 rounded-md">
+                          ✓ Verified
+                        </div>
+                      ) : (
+                        <Button
+                          type="button"
+                          onClick={handleSendOtp}
+                          disabled={isSendingOtp}
+                        >
+                          {isSendingOtp ? "Sending..." : "Verify"}
+                        </Button>
+                      )}
                     </div>
+
                     <div className="space-y-2">
                       <Label>Account Type</Label>
                       <Select
@@ -292,6 +441,7 @@ export default function Profile() {
                   >
                     {isUpdating ? "Updating..." : "Update Profile"}
                   </Button>
+                  <div id="recaptcha-container"></div>
                 </form>
               </CardContent>
             </Card>
@@ -480,6 +630,64 @@ export default function Profile() {
             )}
           </div>
         </div>
+        {otpModalOpen && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+    <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl">
+      
+      <div className="mb-4">
+        <h2 className="text-xl font-semibold text-slate-900">
+          Verify Mobile Number
+        </h2>
+
+        <p className="mt-1 text-sm text-slate-600">
+          Enter the 6-digit OTP sent to your mobile number.
+        </p>
+      </div>
+
+      <div className="space-y-4">
+
+        <div>
+          <Label htmlFor="otp">OTP</Label>
+
+          <Input
+            id="otp"
+            value={otp}
+            onChange={(e) => setOtp(e.target.value)}
+            placeholder="Enter 6-digit OTP"
+            maxLength={6}
+            className="mt-2"
+          />
+        </div>
+
+        <div className="flex gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            className="flex-1"
+            onClick={() => {
+              setOtpModalOpen(false);
+              setOtp("");
+            }}
+          >
+            Cancel
+          </Button>
+
+          <Button
+            type="button"
+            className="flex-1 bg-blue-600"
+            onClick={handleVerifyOtp}
+            disabled={isVerifyingOtp}
+          >
+            {isVerifyingOtp ? "Verifying..." : "Verify OTP"}
+          </Button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+)}
+
+
       </div>
     </div>
   );

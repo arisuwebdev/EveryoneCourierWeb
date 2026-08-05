@@ -64,49 +64,64 @@
 
 import { createContext, useContext, useState } from "react";
 import { logoutUser } from "../api/ApiServices/logoutService";
+import { updateDeviceNotificationToken } from "../api/ApiServices/notification/deviceTokenNotificationService";
+import { requestNotificationPermission } from "../firebaseNotification";
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(
-    JSON.parse(localStorage.getItem("user"))
-  );
+  const [user, setUser] = useState(JSON.parse(localStorage.getItem("user")));
 
-  const [token, setToken] = useState(
-    localStorage.getItem("token")
-  );
+  const [token, setToken] = useState(localStorage.getItem("token"));
 
-  const login = (data) => {
-    const expiryTime = Date.now() + 60 * 60 * 1000; // 1 hour
+  const login = async (data) => {
+    const expiryTime = Date.now() + 60 * 60 * 1000;
+
     localStorage.setItem("token", data.payload.token);
     localStorage.setItem("user", JSON.stringify(data.payload.user));
     localStorage.setItem("isLoggedIn", "true");
     localStorage.setItem("tokenExpiry", String(expiryTime));
-    
+
     setToken(data.payload.token);
     setUser(data.payload.user);
-  };
-const updateUser = (updatedUser) => {
-  localStorage.setItem("user", JSON.stringify(updatedUser));
-  setUser(updatedUser);
-};
 
- const logout = async () => {
-  try {
-    if (token) {
-      await logoutUser(token);
+    // Update device notification token
+    try {
+      const notificationData = await requestNotificationPermission();
+
+      if (notificationData) {
+        await updateDeviceNotificationToken(
+          data.payload.token,
+          notificationData.device_type,
+          notificationData.fcm_token,
+        );
+
+        console.log("Device token updated successfully");
+      }
+    } catch (error) {
+      console.error("Failed to update device notification token:", error);
     }
-  } catch (error) {
-    
-  } finally {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    localStorage.removeItem("isLoggedIn");
+  };
+  const updateUser = (updatedUser) => {
+    localStorage.setItem("user", JSON.stringify(updatedUser));
+    setUser(updatedUser);
+  };
 
-    setToken(null);
-    setUser(null);
-  }
-};
+  const logout = async () => {
+    try {
+      if (token) {
+        await logoutUser(token);
+      }
+    } catch (error) {
+    } finally {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      localStorage.removeItem("isLoggedIn");
+
+      setToken(null);
+      setUser(null);
+    }
+  };
 
   return (
     <AuthContext.Provider
@@ -115,7 +130,7 @@ const updateUser = (updatedUser) => {
         token,
         login,
         logout,
-          updateUser,
+        updateUser,
         isAuthenticated: !!token,
       }}
     >

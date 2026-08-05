@@ -54,3 +54,13 @@ export const customerSaveJobReview =  baseUrl + "/saveJobReview";
 // dashboard
 
 export const dashboardStatsApi =  baseUrl + "/dashboardStats";
+
+// deviceToken 
+
+export const deviceNotificationTokenApi =  baseUrl + "/updateDeviceToken";
+
+export const getNotificationCountApi =  baseUrl + "/getNotificationCount";
+
+export const getNotificationListApi =  baseUrl + "/getNotificationList";
+
+
