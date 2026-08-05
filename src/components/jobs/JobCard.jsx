@@ -239,8 +239,11 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 
-export default function JobCard({ job, onApply, userVerified, userType }) {
-  const { token } = useAuth();
+export default function JobCard({ job, onApply }) {
+  const { token, user } = useAuth();
+
+  const userVerified = user?.id_verified;
+  const userType = user?.user_type;
 
   const [message, setMessage] = useState("");
 

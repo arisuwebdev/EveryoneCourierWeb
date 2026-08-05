@@ -17,12 +17,21 @@ import {
   SelectValue,
 } from "../components/ui/select";
 import { Badge } from "../components/ui/badge";
-import { Upload, Shield, Star, CheckCircle, AlertCircle } from "lucide-react";
+import {
+  Upload,
+  Shield,
+  Star,
+  CheckCircle,
+  AlertCircle,
+  Camera,
+  User,
+} from "lucide-react";
 import { Alert, AlertDescription } from "../components/ui/alert";
 import { useAuth } from "../lib/AuthContext";
 import { getProfile } from "../api/ApiServices/getProfileApiService";
 import { updateProfile } from "../api/ApiServices/updateProfileApiService";
 import { uploadIdCard } from "../api/ApiServices/uploadIdCardService";
+import { uploadProfilePic } from "../api/ApiServices/profile/getUploadProfilePicService";
 import StripeConnectOnboarding from "../components/payments/StripeConnectOnboarding";
 import { toast } from "react-toastify";
 import { auth, RecaptchaVerifier, signInWithPhoneNumber } from "../firebase";
@@ -48,6 +57,8 @@ export default function Profile() {
   const [confirmationResult, setConfirmationResult] = useState(null);
   const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState(null);
 
   useEffect(() => {
     loadUser();
@@ -75,6 +86,72 @@ export default function Profile() {
     }
   };
 
+
+const handleAvatarUpload = async (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  const isImage = file.type.startsWith("image/");
+  const isUnderLimit = file.size <= 5 * 1024 * 1024;
+
+  if (!isImage) {
+    toast.error("Please upload an image file");
+    return;
+  }
+
+  if (!isUnderLimit) {
+    toast.error("Image must be smaller than 5MB");
+    return;
+  }
+
+  const localUrl = URL.createObjectURL(file);
+  setAvatarPreview(localUrl);
+
+  try {
+    setIsUploadingAvatar(true);
+
+    const base64Image = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+
+      reader.readAsDataURL(file);
+    });
+
+    const res = await uploadProfilePic(token, base64Image);
+    const updatedUrl = res?.profile_pic || base64Image;
+
+    setUser((prev) => ({
+      ...prev,
+      profile_pic: updatedUrl,
+    }));
+
+  updateUser?.({
+  ...user,
+  profile_pic: updatedUrl,
+});
+
+    toast.success("Profile picture updated");
+  } catch (err) {
+    console.log("Upload Profile Pic Error:", err);
+
+    const errorMessage =
+      err?.response?.data?.msg ||
+      err?.response?.data?.payload?.verrors ||
+      "Failed to upload profile picture";
+
+    toast.error(errorMessage);
+
+    setAvatarPreview(null);
+  } finally {
+    setIsUploadingAvatar(false);
+    e.target.value = "";
+  }
+};
+
+
+
   const handleInputChange = (field, value) => {
     setProfileData((prev) => ({
       ...prev,
@@ -83,43 +160,38 @@ export default function Profile() {
   };
 
   const handleSendOtp = async () => {
-  let phoneNumber = profileData.phone.trim();
+    let phoneNumber = profileData.phone.trim();
 
-  if (!phoneNumber) {
-    toast.error("Please enter your mobile number.");
-    return;
-  }
-
-  if (!phoneNumber.startsWith("+")) {
-    phoneNumber = `+91${phoneNumber}`;
-  }
-
-  try {
-    setIsSendingOtp(true);
-
-    const container = document.getElementById(
-      "recaptcha-container"
-    );
-
-    if (!container) {
-      toast.error("reCAPTCHA container not found.");
+    if (!phoneNumber) {
+      toast.error("Please enter your mobile number.");
       return;
     }
 
-    // Clear old Firebase verifier
-    if (window.recaptchaVerifier) {
-      window.recaptchaVerifier.clear();
-      window.recaptchaVerifier = null;
+    if (!phoneNumber.startsWith("+")) {
+      phoneNumber = `+91${phoneNumber}`;
     }
 
-    // Clear the container itself
-    container.innerHTML = "";
+    try {
+      setIsSendingOtp(true);
 
-    // Create new verifier
-    const recaptchaVerifier = new RecaptchaVerifier(
-      auth,
-      container,
-      {
+      const container = document.getElementById("recaptcha-container");
+
+      if (!container) {
+        toast.error("reCAPTCHA container not found.");
+        return;
+      }
+
+      // Clear old Firebase verifier
+      if (window.recaptchaVerifier) {
+        window.recaptchaVerifier.clear();
+        window.recaptchaVerifier = null;
+      }
+
+      // Clear the container itself
+      container.innerHTML = "";
+
+      // Create new verifier
+      const recaptchaVerifier = new RecaptchaVerifier(auth, container, {
         size: "invisible",
         callback: () => {
           console.log("reCAPTCHA solved");
@@ -127,42 +199,37 @@ export default function Profile() {
         "expired-callback": () => {
           console.log("reCAPTCHA expired");
         },
+      });
+
+      window.recaptchaVerifier = recaptchaVerifier;
+
+      console.log("Sending OTP to:", phoneNumber);
+
+      // Don't call render() manually
+      const confirmation = await signInWithPhoneNumber(
+        auth,
+        phoneNumber,
+        recaptchaVerifier,
+      );
+
+      setConfirmationResult(confirmation);
+      setOtp("");
+      setOtpModalOpen(true);
+
+      toast.success("OTP sent successfully!");
+    } catch (error) {
+      console.error("OTP Error:", error);
+
+      if (window.recaptchaVerifier) {
+        window.recaptchaVerifier.clear();
+        window.recaptchaVerifier = null;
       }
-    );
 
-    window.recaptchaVerifier = recaptchaVerifier;
-
-    console.log("Sending OTP to:", phoneNumber);
-
-    // Don't call render() manually
-    const confirmation = await signInWithPhoneNumber(
-      auth,
-      phoneNumber,
-      recaptchaVerifier
-    );
-
-    setConfirmationResult(confirmation);
-    setOtp("");
-    setOtpModalOpen(true);
-
-    toast.success("OTP sent successfully!");
-
-  } catch (error) {
-    console.error("OTP Error:", error);
-
-    if (window.recaptchaVerifier) {
-      window.recaptchaVerifier.clear();
-      window.recaptchaVerifier = null;
+      toast.error(error?.message || "Failed to send OTP.");
+    } finally {
+      setIsSendingOtp(false);
     }
-
-    toast.error(
-      error?.message || "Failed to send OTP."
-    );
-
-  } finally {
-    setIsSendingOtp(false);
-  }
-};
+  };
 
   const handleVerifyOtp = async () => {
     if (!confirmationResult) {
@@ -309,8 +376,47 @@ export default function Profile() {
                 <CardTitle>Profile Information</CardTitle>
               </CardHeader>
               <CardContent className="p-6">
-                <form onSubmit={handleUpdateProfile} className="space-y-4">
+                {/* profile picture  */}
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="relative">
+                    <div className="w-20 h-20 rounded-full overflow-hidden bg-slate-100 border-2 border-white shadow-md flex items-center justify-center">
+                      {avatarPreview || user?.profile_pic ? (
+                        <img
+                          src={avatarPreview || user.profile_pic}
+                          alt="Profile"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <User className="w-8 h-8 text-slate-400" />
+                      )}
+                      {isUploadingAvatar && (
+                        <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center">
+                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                        </div>
+                      )}
+                    </div>
+                    <input
+                      id="avatar-upload"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarUpload}
+                      className="hidden"
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        document.getElementById("avatar-upload").click()
+                      }
+                      disabled={isUploadingAvatar}
+                      className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center shadow-md transition-colors"
+                      aria-label="Change profile picture"
+                    >
+                      <Camera className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
 
+                <form onSubmit={handleUpdateProfile} className="space-y-4">
                   <div className="grid md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>Full Name</Label>
@@ -630,64 +736,60 @@ export default function Profile() {
             )}
           </div>
         </div>
+        {/* this is mobile number verify time modal open  */}
         {otpModalOpen && (
-  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-    <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl">
-      
-      <div className="mb-4">
-        <h2 className="text-xl font-semibold text-slate-900">
-          Verify Mobile Number
-        </h2>
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl">
+              <div className="mb-4">
+                <h2 className="text-xl font-semibold text-slate-900">
+                  Verify Mobile Number
+                </h2>
 
-        <p className="mt-1 text-sm text-slate-600">
-          Enter the 6-digit OTP sent to your mobile number.
-        </p>
-      </div>
+                <p className="mt-1 text-sm text-slate-600">
+                  Enter the 6-digit OTP sent to your mobile number.
+                </p>
+              </div>
 
-      <div className="space-y-4">
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="otp">OTP</Label>
 
-        <div>
-          <Label htmlFor="otp">OTP</Label>
+                  <Input
+                    id="otp"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value)}
+                    placeholder="Enter 6-digit OTP"
+                    maxLength={6}
+                    className="mt-2"
+                  />
+                </div>
 
-          <Input
-            id="otp"
-            value={otp}
-            onChange={(e) => setOtp(e.target.value)}
-            placeholder="Enter 6-digit OTP"
-            maxLength={6}
-            className="mt-2"
-          />
-        </div>
+                <div className="flex gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => {
+                      setOtpModalOpen(false);
+                      setOtp("");
+                    }}
+                  >
+                    Cancel
+                  </Button>
 
-        <div className="flex gap-3">
-          <Button
-            type="button"
-            variant="outline"
-            className="flex-1"
-            onClick={() => {
-              setOtpModalOpen(false);
-              setOtp("");
-            }}
-          >
-            Cancel
-          </Button>
-
-          <Button
-            type="button"
-            className="flex-1 bg-blue-600"
-            onClick={handleVerifyOtp}
-            disabled={isVerifyingOtp}
-          >
-            {isVerifyingOtp ? "Verifying..." : "Verify OTP"}
-          </Button>
-        </div>
-
-      </div>
-    </div>
-  </div>
-)}
-
-
+                  <Button
+                    type="button"
+                    className="flex-1 bg-blue-600"
+                    onClick={handleVerifyOtp}
+                    disabled={isVerifyingOtp}
+                  >
+                    {isVerifyingOtp ? "Verifying..." : "Verify OTP"}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

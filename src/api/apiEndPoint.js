@@ -63,4 +63,18 @@ export const getNotificationCountApi =  baseUrl + "/getNotificationCount";
 
 export const getNotificationListApi =  baseUrl + "/getNotificationList";
 
+// profile
+
+export const getUploadProfile =  baseUrl + "/uploadProfilePic";
+
+// payout 
+
+export const getStripeConnectStatus =  baseUrl + "/stripeConnectStatus";
+
+export const getStripeConnectOnboarding =  baseUrl + "/stripeConnectOnboardingLink";
+
+
+
+
+
 

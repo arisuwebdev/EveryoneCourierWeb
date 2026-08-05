@@ -20,6 +20,9 @@ import { getTermsOfServiceUrl } from "../api/ApiServices/getTermsOfServiceUrlApi
 import { getPrivacyPolicyUrl } from "../api/ApiServices/getPrivacyPolicyUrlApiService";
 import { useEffect } from "react";
 import { useAuth } from "../lib/AuthContext";
+import { jwtDecode } from "jwt-decode";
+import { GoogleLogin } from "@react-oauth/google";
+import { googleLogin } from "../api/ApiServices/auth/googleLoginService";
 
 export default function Register() {
   const [email, setEmail] = useState("");
@@ -230,14 +233,43 @@ export default function Register() {
         </>
       }
     >
-      <Button
-        variant="outline"
-        className="w-full h-12 text-sm font-medium mb-6"
-        onClick={handleGoogle}
-      >
-        <GoogleIcon className="w-5 h-5 mr-2" />
-        Continue with Google
-      </Button>
+       <div className="mb-6 flex justify-center">
+        <GoogleLogin
+          onSuccess={async (credentialResponse) => {
+            try {
+              const user = jwtDecode(credentialResponse.credential);
+
+              console.log("Google User:", user);
+
+              const response = await googleLogin({
+                name: user.name,
+                email: user.email,
+                socialId: user.sub,
+              });
+
+              if (response.status === 1) {
+                toast.success(response.msg);
+
+                // Save login
+                login(response);
+
+                navigate("/dashboard", { replace: true });
+              } else {
+                toast.error(response.msg);
+              }
+            } catch (err) {
+              toast.error(
+                err.response?.data?.msg ||
+                  err.response?.data?.message ||
+                  "Google Login Failed",
+              );
+            }
+          }}
+          onError={() => {
+            toast.error("Google Login Failed");
+          }}
+        />
+      </div>
 
       <div className="relative mb-6">
         <div className="absolute inset-0 flex items-center">

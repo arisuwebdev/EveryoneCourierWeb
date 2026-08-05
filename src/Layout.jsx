@@ -216,10 +216,10 @@ export default function Layout({ children }) {
       try {
         const response = await getNotificationCount(token);
         if (response?.status === 1) {
-          const total =
-            response?.payload?.notificationList?.total || 0;
+         
+            const count = response?.payload?.count || 0;
 
-          setNotificationCount(total);
+          setNotificationCount(count);
         }
       } catch (error) {
   

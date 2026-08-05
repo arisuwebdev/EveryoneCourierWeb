@@ -19,7 +19,15 @@ import { Switch } from "../components/ui/switch";
 import { Label } from "../components/ui/label";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "../utils";
-import { MapPin, Package, DollarSign, AlertTriangle } from "lucide-react";
+import {
+  MapPin,
+  Package,
+  DollarSign,
+  AlertTriangle,
+  Phone,
+  Scale,
+  Ruler,
+} from "lucide-react";
 import { Alert, AlertDescription } from "../components/ui/alert";
 import PaymentBreakdown from "../components/payments/PaymentBreakdown";
 import PaymentModal from "../components/payments/PaymentModal";
@@ -38,8 +46,12 @@ export default function PostJob() {
     title: "",
     pickup_address: "",
     delivery_address: "",
+    pickup_contact_phone: "",
+    receiver_contact_phone: "",
     package_description: "",
     package_size: "medium",
+    weight: "",
+    dimensions: "",
     vehicle_required: "any",
     price: "",
     urgent: false,
@@ -102,6 +114,10 @@ export default function PostJob() {
         delivery_date: jobData.delivery_date,
         special_instructions: jobData.special_instructions,
         urgent: jobData.urgent,
+        pickup_contact_phone: jobData.pickup_contact_phone,
+        receiver_contact_phone: jobData.receiver_contact_phone,
+        weight: jobData.weight ? Number(jobData.weight) : null,
+        dimensions: jobData.dimensions,
       };
 
       const response = await saveJob(payload, token);
@@ -200,6 +216,54 @@ export default function PostJob() {
                     </div>
                   </div>
 
+                  {/* Contact Phones */}
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="pickup_contact_phone">
+                        Pickup Contact Phone
+                      </Label>
+                      <div className="relative">
+                        <Phone className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
+                        <Input
+                          id="pickup_contact_phone"
+                          type="tel"
+                          value={jobData.pickup_contact_phone}
+                          onChange={(e) =>
+                            handleInputChange(
+                              "pickup_contact_phone",
+                              e.target.value,
+                            )
+                          }
+                          placeholder="Pickup contact number"
+                          className="pl-10"
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="receiver_contact_phone">
+                        Receiver Contact Phone
+                      </Label>
+                      <div className="relative">
+                        <Phone className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
+                        <Input
+                          id="receiver_contact_phone"
+                          type="tel"
+                          value={jobData.receiver_contact_phone}
+                          onChange={(e) =>
+                            handleInputChange(
+                              "receiver_contact_phone",
+                              e.target.value,
+                            )
+                          }
+                          placeholder="Receiver phone number"
+                          className="pl-10"
+                          required
+                        />
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Package Details */}
                   <div className="space-y-2">
                     <Label htmlFor="package">Package Description</Label>
@@ -213,6 +277,45 @@ export default function PostJob() {
                       className="h-24"
                       required
                     />
+                  </div>
+
+                  {/* Weight & Dimensions */}
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="weight">Weight (kg)</Label>
+                      <div className="relative">
+                        <Scale className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
+                        <Input
+                          id="weight"
+                          type="number"
+                          min="0"
+                          step="0.1"
+                          value={jobData.weight}
+                          onChange={(e) =>
+                            handleInputChange("weight", e.target.value)
+                          }
+                          placeholder="e.g., 2.5"
+                          className="pl-10"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="dimensions">
+                        Dimensions (L x W x H cm)
+                      </Label>
+                      <div className="relative">
+                        <Ruler className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
+                        <Input
+                          id="dimensions"
+                          value={jobData.dimensions}
+                          onChange={(e) =>
+                            handleInputChange("dimensions", e.target.value)
+                          }
+                          placeholder="e.g., 30 x 20 x 15"
+                          className="pl-10"
+                        />
+                      </div>
+                    </div>
                   </div>
 
                   {/* Package Size, Vehicle & Price */}
@@ -418,7 +521,7 @@ export default function PostJob() {
         <PaymentModal
           isOpen={showPaymentModal}
           onClose={() => setShowPaymentModal(false)}
-          jobAmount={(paymentData?.amount || 0) / 100}
+         jobAmount={paymentData?.amount || 0}
           jobId={paymentData?.job_id}
           clientSecret={paymentData?.client_secret}
           publishableKey={paymentData?.publishable_key}
