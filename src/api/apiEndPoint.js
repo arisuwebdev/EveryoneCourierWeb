@@ -71,7 +71,7 @@ export const getUploadProfile =  baseUrl + "/uploadProfilePic";
 
 export const getStripeConnectStatus =  baseUrl + "/stripeConnectStatus";
 
-export const getStripeConnectOnboarding =  baseUrl + "/stripeConnectOnboardingLink";
+export const StripeConnectOnboardingLink =  baseUrl + "/stripeConnectOnboardingLink";
 
 
 

@@ -38,6 +38,7 @@ import { toast } from "react-toastify";
 export default function PostJob() {
   const navigate = useNavigate();
   const { token } = useAuth();
+  const today = new Date().toISOString().split("T")[0];
   const [paymentData, setPaymentData] = useState(null);
   // const [user, setUser] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -333,13 +334,13 @@ export default function PostJob() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="small">
-                            Small (fits in a bag)
+                            Small 
                           </SelectItem>
                           <SelectItem value="medium">
-                            Medium (box size)
+                            Medium 
                           </SelectItem>
                           <SelectItem value="large">
-                            Large (requires car trunk)
+                            Large 
                           </SelectItem>
                         </SelectContent>
                       </Select>
@@ -420,6 +421,7 @@ export default function PostJob() {
                       <Input
                         id="pickup_date"
                         type="date"
+                        min={today}
                         value={jobData.pickup_date}
                         onChange={(e) =>
                           handleInputChange("pickup_date", e.target.value)
@@ -433,6 +435,7 @@ export default function PostJob() {
                       <Input
                         id="delivery_date"
                         type="date"
+                        min={today}
                         value={jobData.delivery_date}
                         onChange={(e) =>
                           handleInputChange("delivery_date", e.target.value)
@@ -504,6 +507,7 @@ export default function PostJob() {
             )}
 
             <Card className="bg-gradient-to-r from-slate-50 to-blue-50">
+              {/* These is job flow  */}
               <CardContent className="p-6">
                 <h3 className="font-semibold mb-4">How it works</h3>
                 <ul className="space-y-2 text-sm text-slate-600">
@@ -515,13 +519,68 @@ export default function PostJob() {
                 </ul>
               </CardContent>
             </Card>
+
+             {/* These are for example guide what is for what thing  */}
+            <Card className="bg-white/90 backdrop-blur-sm">
+              <CardContent className="p-6">
+                <h3 className="font-semibold mb-4">Package Size Guide</h3>
+                <div className="space-y-3">
+                  {[
+                    {
+                      icon: "📄",
+                      size: "Small",
+                      examples: "Documents, files, envelopes, papers",
+                      note: "Fits in a bag or backpack; no specific vehicle required.",
+                      badge: "bg-blue-50 text-blue-700",
+                    },
+                    {
+                      icon: "📦",
+                      size: "Medium",
+                      examples:
+                        "Computer set, sports equipment, small appliances",
+                      note: "Fits in a carton box; standard car or van.",
+                      badge: "bg-amber-50 text-amber-700",
+                    },
+                    {
+                      icon: "🚚",
+                      size: "Large",
+                      examples: "Piano, bulk medical supplies, large furniture",
+                      note: "Requires a truck or large van; courier must confirm vehicle type when applying.",
+                      badge: "bg-red-50 text-red-700",
+                    },
+                  ].map((item) => (
+                    <div
+                      key={item.size}
+                      className="flex gap-3 p-3 rounded-lg bg-slate-50"
+                    >
+                      <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center flex-shrink-0 text-sm">
+                        {item.icon}
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-slate-800">
+                          {item.size}
+                        </p>
+                        <p className="text-xs text-slate-500 mb-1.5">
+                          {item.examples}
+                        </p>
+                        <span
+                          className={`inline-block text-xs font-medium px-2.5 py-1 rounded-md ${item.badge}`}
+                        >
+                          {item.note}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
 
         <PaymentModal
           isOpen={showPaymentModal}
           onClose={() => setShowPaymentModal(false)}
-         jobAmount={paymentData?.amount || 0}
+          jobAmount={paymentData?.amount || 0}
           jobId={paymentData?.job_id}
           clientSecret={paymentData?.client_secret}
           publishableKey={paymentData?.publishable_key}

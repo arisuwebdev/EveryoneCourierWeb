@@ -13,54 +13,55 @@ import {
   Shield,
 } from "lucide-react";
 import { useAuth } from "../../lib/AuthContext";
-
+import { StripeConnectOnboardingLinkService } from "../../api/ApiServices/payout/StripeConnectedOnboardingLink";
 
 export default function StripeConnectOnboarding({ user }) {
   const { token } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
-  const [isDashboardLoading, setIsDashboardLoading] = useState(false);
   const [error, setError] = useState("");
 
+const handleOnboard = async () => {
+  setIsLoading(true);
+  setError("");
 
-  const handleOnboard = async () => {
-    setIsLoading(true);
-    setError("");
-    const returnUrl = window.location.href;
-    const res = await stripeConnectOnboard({ return_url: returnUrl });
-    if (res.data?.url) {
-      window.location.href = res.data.url;
-    } else {
-      setError(
-        res.data?.error || "Could not start onboarding. Please try again.",
-      );
-      setIsLoading(false);
+  try {
+    const res = await StripeConnectOnboardingLinkService(token);
+
+    console.log("Stripe onboarding response:", res);
+
+    if (res?.status === 1 && res?.payload?.onboarding_url) {
+      window.location.href = res.payload.onboarding_url;
+      return;
     }
-  };
 
-  const handleOpenDashboard = async () => {
-    setIsDashboardLoading(true);
-    setError("");
-    const res = await stripeConnectOnboard({
-      return_url: window.location.href,
-      mode: "dashboard",
-    });
-    if (res.data?.url) {
-      window.open(res.data.url, "_blank");
-    } else {
-      setError(res.data?.error || "Could not open dashboard.");
-    }
-    setIsDashboardLoading(false);
-  };
+    setError(
+      res?.msg || "Could not start Stripe onboarding. Please try again."
+    );
+  } catch (error) {
+    console.error("Stripe onboarding error:", error);
 
-const isConnected = !!user?.stripe_account_id;
+    setError(
+      error?.response?.data?.msg ||
+        error?.response?.data?.message ||
+        "Could not start Stripe onboarding. Please try again."
+    );
+  } finally {
+    setIsLoading(false);
+  }
+};
 
-const isFullyActive =
-  user?.stripe_onboarding_complete === true &&
-  user?.stripe_payouts_enabled === true &&
-  user?.stripe_details_submitted === true &&
-  user?.is_payout_ready === true;
 
-const hasRequirements = isConnected && !isFullyActive;
+
+  // const isConnected = !!user?.stripe_account_id;
+  const isConnected = user?.is_payout_ready === true;
+
+  const isFullyActive =
+    user?.stripe_onboarding_complete === true &&
+    user?.stripe_payouts_enabled === true &&
+    user?.stripe_details_submitted === true &&
+    user?.is_payout_ready === true;
+
+  const hasRequirements = isConnected && !isFullyActive;
 
   // const getStatusBadge = () => {
   //   if (!isConnected) return <Badge variant="secondary">Not Connected</Badge>;
@@ -70,13 +71,17 @@ const hasRequirements = isConnected && !isFullyActive;
   //   return <Badge className="bg-blue-100 text-blue-800">Pending Review</Badge>;
   // };
 
-  const getStatusBadge = () => {
-    if (isConnected) {
-      return <Badge className="bg-green-100 text-green-800">Connected</Badge>;
-    }
+const getStatusBadge = () => {
+  if (user?.is_payout_ready === true) {
+    return (
+      <Badge className="bg-green-100 text-green-800">
+        Connected
+      </Badge>
+    );
+  }
 
-    return <Badge variant="secondary">Not Connected</Badge>;
-  };
+  return <Badge variant="secondary">Not Connected</Badge>;
+};
 
   return (
     <Card className="shadow-xl border-0 bg-white/90 backdrop-blur-sm">
@@ -158,7 +163,7 @@ const hasRequirements = isConnected && !isFullyActive;
             </p>
           </>
         )}
-{/* 
+        {/* 
        {isConnected && (
           <>
             {statusLoading ? (
@@ -259,186 +264,152 @@ const hasRequirements = isConnected && !isFullyActive;
           </>
         )}  */}
 
-{isConnected && (
-  <>
-    <div className="space-y-3">
+        {isConnected && (
+          <>
+            <div className="space-y-3">
+              {/* Stripe Account ID */}
+              <div className="flex items-center justify-between text-sm py-1 border-b border-slate-100">
+                <span className="text-slate-600">Stripe Account</span>
 
-      {/* Stripe Account ID */}
-      <div className="flex items-center justify-between text-sm py-1 border-b border-slate-100">
-        <span className="text-slate-600">
-          Stripe Account
-        </span>
+                <span className="text-xs text-slate-500 font-mono">
+                  {user?.stripe_account_id}
+                </span>
+              </div>
 
-        <span className="text-xs text-slate-500 font-mono">
-          {user?.stripe_account_id}
-        </span>
-      </div>
+              {/* Details Submitted */}
+              <div className="flex items-center justify-between text-sm py-1 border-b border-slate-100">
+                <span className="text-slate-600">Details Submitted</span>
 
-      {/* Details Submitted */}
-      <div className="flex items-center justify-between text-sm py-1 border-b border-slate-100">
-        <span className="text-slate-600">
-          Details Submitted
-        </span>
+                {user?.stripe_details_submitted ? (
+                  <span className="flex items-center gap-1 text-green-600">
+                    <CheckCircle className="w-4 h-4" />
+                    Yes
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1 text-slate-400">
+                    <Clock className="w-4 h-4" />
+                    Pending
+                  </span>
+                )}
+              </div>
 
-        {user?.stripe_details_submitted ? (
-          <span className="flex items-center gap-1 text-green-600">
-            <CheckCircle className="w-4 h-4" />
-            Yes
-          </span>
-        ) : (
-          <span className="flex items-center gap-1 text-slate-400">
-            <Clock className="w-4 h-4" />
-            Pending
-          </span>
+              {/* Payouts Enabled */}
+              <div className="flex items-center justify-between text-sm py-1 border-b border-slate-100">
+                <span className="text-slate-600">Payouts Enabled</span>
+
+                {user?.stripe_payouts_enabled ? (
+                  <span className="flex items-center gap-1 text-green-600">
+                    <CheckCircle className="w-4 h-4" />
+                    Yes
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1 text-slate-400">
+                    <Clock className="w-4 h-4" />
+                    Pending
+                  </span>
+                )}
+              </div>
+
+              {/* Onboarding Complete */}
+              <div className="flex items-center justify-between text-sm py-1 border-b border-slate-100">
+                <span className="text-slate-600">Onboarding</span>
+
+                {user?.stripe_onboarding_complete ? (
+                  <span className="flex items-center gap-1 text-green-600">
+                    <CheckCircle className="w-4 h-4" />
+                    Complete
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1 text-slate-400">
+                    <Clock className="w-4 h-4" />
+                    Pending
+                  </span>
+                )}
+              </div>
+
+              {/* Payout Ready */}
+              <div className="flex items-center justify-between text-sm py-1">
+                <span className="text-slate-600">Payout Ready</span>
+
+                {user?.is_payout_ready ? (
+                  <span className="flex items-center gap-1 text-green-600">
+                    <CheckCircle className="w-4 h-4" />
+                    Ready
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1 text-yellow-600">
+                    <Clock className="w-4 h-4" />
+                    Pending
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Fully Active */}
+            {isFullyActive && (
+              <Alert className="border-green-200 bg-green-50">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+
+                <AlertDescription className="text-green-900">
+                  Your payout account is fully active. You'll automatically
+                  receive 90% of each completed job.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Action Required */}
+            {hasRequirements && (
+              <Alert className="border-yellow-200 bg-yellow-50">
+                <AlertTriangle className="h-4 w-4 text-yellow-600" />
+
+                <AlertDescription className="text-yellow-800">
+                  <p className="font-medium mb-1">
+                    Action required to activate payouts.
+                  </p>
+
+                  <p className="text-xs">
+                    Please complete your Stripe account setup.
+                  </p>
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Error */}
+            {error && (
+              <Alert className="border-red-200 bg-red-50">
+                <AlertDescription className="text-red-700">
+                  {error}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Buttons */}
+            <div className="flex gap-2 pt-2">
+              {/* Complete Setup */}
+              {!isFullyActive && (
+                <Button
+                  onClick={handleOnboard}
+                  disabled={isLoading}
+                  className="flex-1 bg-gradient-to-r from-purple-500 to-indigo-600"
+                >
+                  {isLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                      Loading...
+                    </>
+                  ) : (
+                    <>
+                      <ExternalLink className="w-4 h-4 mr-2" />
+                      Complete Setup
+                    </>
+                  )}
+                </Button>
+              )}
+             
+             
+            </div>
+          </>
         )}
-      </div>
-
-      {/* Payouts Enabled */}
-      <div className="flex items-center justify-between text-sm py-1 border-b border-slate-100">
-        <span className="text-slate-600">
-          Payouts Enabled
-        </span>
-
-        {user?.stripe_payouts_enabled ? (
-          <span className="flex items-center gap-1 text-green-600">
-            <CheckCircle className="w-4 h-4" />
-            Yes
-          </span>
-        ) : (
-          <span className="flex items-center gap-1 text-slate-400">
-            <Clock className="w-4 h-4" />
-            Pending
-          </span>
-        )}
-      </div>
-
-      {/* Onboarding Complete */}
-      <div className="flex items-center justify-between text-sm py-1 border-b border-slate-100">
-        <span className="text-slate-600">
-          Onboarding
-        </span>
-
-        {user?.stripe_onboarding_complete ? (
-          <span className="flex items-center gap-1 text-green-600">
-            <CheckCircle className="w-4 h-4" />
-            Complete
-          </span>
-        ) : (
-          <span className="flex items-center gap-1 text-slate-400">
-            <Clock className="w-4 h-4" />
-            Pending
-          </span>
-        )}
-      </div>
-
-      {/* Payout Ready */}
-      <div className="flex items-center justify-between text-sm py-1">
-        <span className="text-slate-600">
-          Payout Ready
-        </span>
-
-        {user?.is_payout_ready ? (
-          <span className="flex items-center gap-1 text-green-600">
-            <CheckCircle className="w-4 h-4" />
-            Ready
-          </span>
-        ) : (
-          <span className="flex items-center gap-1 text-yellow-600">
-            <Clock className="w-4 h-4" />
-            Pending
-          </span>
-        )}
-      </div>
-
-    </div>
-
-    {/* Fully Active */}
-    {isFullyActive && (
-      <Alert className="border-green-200 bg-green-50">
-        <CheckCircle className="h-4 w-4 text-green-600" />
-
-        <AlertDescription className="text-green-900">
-          Your payout account is fully active. You'll automatically
-          receive 90% of each completed job.
-        </AlertDescription>
-      </Alert>
-    )}
-
-    {/* Action Required */}
-    {hasRequirements && (
-      <Alert className="border-yellow-200 bg-yellow-50">
-        <AlertTriangle className="h-4 w-4 text-yellow-600" />
-
-        <AlertDescription className="text-yellow-800">
-          <p className="font-medium mb-1">
-            Action required to activate payouts.
-          </p>
-
-          <p className="text-xs">
-            Please complete your Stripe account setup.
-          </p>
-        </AlertDescription>
-      </Alert>
-    )}
-
-    {/* Error */}
-    {error && (
-      <Alert className="border-red-200 bg-red-50">
-        <AlertDescription className="text-red-700">
-          {error}
-        </AlertDescription>
-      </Alert>
-    )}
-
-    {/* Buttons */}
-    <div className="flex gap-2 pt-2">
-
-      {/* Complete Setup */}
-      {!isFullyActive && (
-        <Button
-          onClick={handleOnboard}
-          disabled={isLoading}
-          className="flex-1 bg-gradient-to-r from-purple-500 to-indigo-600"
-        >
-          {isLoading ? (
-            <>
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-              Loading...
-            </>
-          ) : (
-            <>
-              <ExternalLink className="w-4 h-4 mr-2" />
-              Complete Setup
-            </>
-          )}
-        </Button>
-      )}
-
-      {/* Stripe Dashboard */}
-      {isFullyActive && (
-        <Button
-          variant="outline"
-          onClick={handleOpenDashboard}
-          disabled={isDashboardLoading}
-          className="flex-1"
-        >
-          {isDashboardLoading ? (
-            <>
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-slate-400 mr-2" />
-              Opening...
-            </>
-          ) : (
-            <>
-              <ExternalLink className="w-4 h-4 mr-2" />
-              Stripe Dashboard
-            </>
-          )}
-        </Button>
-      )}
-
-    </div>
-  </>
-)}
       </CardContent>
     </Card>
   );
