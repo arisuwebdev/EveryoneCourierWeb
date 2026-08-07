@@ -1,156 +1,3 @@
-// import { Link, useLocation, useNavigate } from "react-router-dom";
-// import {
-//   Package,
-//   User,
-//   Plus,
-//   Search,
-//   Home,
-//   Briefcase,
-//   BarChart2,
-//   LogOut,
-// } from "lucide-react";
-// import { useAuth } from "../src/lib/AuthContext";
-// const navigationItems = [
-//   { title: "Home", url: "/home", icon: Home },
-//   { title: "My Jobs", url: "/my-jobs", icon: Briefcase },
-//   { title: "Post Job", url: "/post-job", icon: Plus },
-//   { title: "Find Jobs", url: "/find-jobs", icon: Search },
-//   { title: "Profile", url: "/profile", icon: User },
-//   { title: "Analytics", url: "/analytics", icon: BarChart2 },
-// ];
-// export default function Layout({ children }) {
-//   const location = useLocation();
-//   const navigate = useNavigate();
-//   const { logout, isAuthenticated } = useAuth();
-//   // const handleLogout = async () => {
-//   //   try {
-//   //     await logout();
-//   //     window.location.href = "/login";
-//   //   } catch (error) {}
-//   // };
-
-//   const handleLogout = async () => {
-//     await logout();
-//     navigate("/login", { replace: true });
-//   };
-
-//   return (
-//     <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 to-blue-50">
-//       {/* Top Header */}
-//       <header className="bg-white/90 backdrop-blur-sm border-b border-slate-200/60 px-4 py-3 sticky top-0 z-40">
-// <div className="flex items-center justify-between w-full px-2">
-//           <Link to="/home" className="flex items-center gap-2">
-//             <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-lg flex items-center justify-center shadow">
-//               <Package className="w-4 h-4 text-white" />
-//             </div>
-//             <span className="font-bold text-slate-900 text-base">
-//               Everyone's a Courier
-//             </span>
-//           </Link>
-//           <div className="flex items-center">
-//             {isAuthenticated && (
-//               <button
-//                 onClick={handleLogout}
-//                 className="flex items-center gap-2 px-3 py-2 rounded-lg text-red-600 hover:bg-red-50"
-//               >
-//                 <LogOut className="w-5 h-5" />
-//                 <span>Logout</span>
-//               </button>
-//             )}
-//           </div>
-//         </div>
-//       </header>
-
-//       {/* Page Content */}
-//       <main
-//         className={`flex-1 overflow-auto ${isAuthenticated ? "pb-20" : ""}`}
-//       >
-//         {children}
-//       </main>
-
-//       {/* Bottom Navigation Bar (mobile-first, logged in) */}
-//       {isAuthenticated && (
-//         <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-slate-200 shadow-lg">
-//           <div className="flex items-center justify-around px-1 py-1 max-w-2xl mx-auto">
-//             {navigationItems.map((item) => {
-//               const isActive = location.pathname === item.url;
-//               const isPost = item.title === "Post Job";
-//               return (
-//                 <Link
-//                   key={item.title}
-//                   to={item.url}
-//                   className={`flex flex-col items-center justify-center flex-1 py-1.5 px-1 rounded-xl transition-all duration-200 ${
-//                     isPost
-//                       ? "relative -top-4 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-2xl shadow-lg w-14 h-14 flex-none mx-2"
-//                       : isActive
-//                         ? "text-blue-600"
-//                         : "text-slate-400"
-//                   }`}
-//                 >
-//                   <item.icon
-//                     className={`${isPost ? "w-6 h-6" : "w-5 h-5"} mb-0.5`}
-//                   />
-//                   {!isPost && (
-//                     <span
-//                       className={`text-[10px] font-medium leading-tight ${isActive ? "text-blue-600" : "text-slate-400"}`}
-//                     >
-//                       {item.title}
-//                     </span>
-//                   )}
-//                 </Link>
-//               );
-//             })}
-//           </div>
-//         </nav>
-//       )}
-
-//       {/* Footer (logged out) */}
-//       {!isAuthenticated && (
-//         <footer className="bg-white border-t border-slate-200/60 px-4 py-6">
-//           <div className="max-w-2xl mx-auto w-full">
-//             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-//               <Link to="/home" className="flex items-center gap-2">
-//                 <div className="w-7 h-7 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-lg flex items-center justify-center shadow">
-//                   <Package className="w-3.5 h-3.5 text-white" />
-//                 </div>
-//                 <span className="font-semibold text-slate-800 text-sm">
-//                   Everyone's a Courier
-//                 </span>
-//               </Link>
-
-//               <div className="flex items-center gap-5 text-sm text-slate-500">
-//                 <Link
-//                   to="/contact"
-//                   className="hover:text-blue-600 transition-colors"
-//                 >
-//                   Contact
-//                 </Link>
-//                 <Link
-//                   to="/terms"
-//                   className="hover:text-blue-600 transition-colors"
-//                 >
-//                   Terms
-//                 </Link>
-//                 <Link
-//                   to="/privacy"
-//                   className="hover:text-blue-600 transition-colors"
-//                 >
-//                   Privacy
-//                 </Link>
-//               </div>
-//             </div>
-
-//             <div className="mt-4 pt-4 border-t border-slate-100 text-center text-xs text-slate-400">
-//               © {new Date().getFullYear()} Everyone's a Courier. All rights
-//               reserved.
-//             </div>
-//           </div>
-//         </footer>
-//       )}
-//     </div>
-//   );
-// }
-
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import {
@@ -167,6 +14,7 @@ import {
   Phone,
   MapPin,
   ChevronDown,
+  X,
 } from "lucide-react";
 import { useAuth } from "../src/lib/AuthContext";
 import { getPrivacyPolicyUrl } from "./api/ApiServices/getPrivacyPolicyUrlApiService";
@@ -216,13 +64,11 @@ export default function Layout({ children }) {
       try {
         const response = await getNotificationCount(token);
         if (response?.status === 1) {
-         
-            const count = response?.payload?.count || 0;
+          const count = response?.payload?.count || 0;
 
           setNotificationCount(count);
         }
       } catch (error) {
-  
         setNotificationCount(0);
       }
     };
@@ -231,7 +77,6 @@ export default function Layout({ children }) {
   }, [isAuthenticated, token]);
 
   const handleNotificationClick = async () => {
-
     if (isNotificationOpen) {
       setIsNotificationOpen(false);
       return;
@@ -240,7 +85,6 @@ export default function Layout({ children }) {
     setIsNotificationOpen(true);
 
     if (!token) {
- 
       return;
     }
 
@@ -249,8 +93,7 @@ export default function Layout({ children }) {
       const response = await getNotificationList(token);
 
       if (response?.status === 1) {
-        const list =
-          response?.payload?.notificationList?.data || [];
+        const list = response?.payload?.notificationList?.data || [];
 
         setNotifications(list);
       } else {
@@ -263,7 +106,6 @@ export default function Layout({ children }) {
     }
   };
 
-
   const handlePrivacyClick = async () => {
     try {
       const response = await getPrivacyPolicyUrl();
@@ -271,7 +113,7 @@ export default function Layout({ children }) {
       if (response?.status === 1 && response?.payload?.privacyPolicyUrl) {
         window.open(response.payload.privacyPolicyUrl, "_blank");
       }
-    } catch (error) { }
+    } catch (error) {}
   };
 
   const handleTermsClick = async () => {
@@ -281,7 +123,7 @@ export default function Layout({ children }) {
       if (response?.status === 1 && response?.payload?.termsOfServiceUrl) {
         window.open(response.payload.termsOfServiceUrl, "_blank");
       }
-    } catch (error) { }
+    } catch (error) {}
   };
 
   const handleLogout = async () => {
@@ -335,10 +177,11 @@ export default function Layout({ children }) {
                     <Link
                       key={item.title}
                       to={item.url}
-                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isActive
+                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                        isActive
                           ? "text-blue-600 bg-blue-50"
                           : "text-slate-600 hover:text-blue-600 hover:bg-slate-50"
-                        }`}
+                      }`}
                     >
                       {item.title}
                     </Link>
@@ -463,8 +306,9 @@ export default function Layout({ children }) {
                       {user?.name || "Account"}
                     </span>
                     <ChevronDown
-                      className={`w-4 h-4 text-slate-400 transition-transform ${isAccountMenuOpen ? "rotate-180" : ""
-                        }`}
+                      className={`w-4 h-4 text-slate-400 transition-transform ${
+                        isAccountMenuOpen ? "rotate-180" : ""
+                      }`}
                     />
                   </button>
 
@@ -494,10 +338,113 @@ export default function Layout({ children }) {
             )}
           </div>
 
-          {/* Account dropdown (Desktop) */}
-          {/* <div className="hidden md:block relative pl-2 border-l border-slate-200">
-            ...
-          </div> */}
+          {/* Mobile Notifications */}
+{isAuthenticated && (
+  <div className="md:hidden relative">
+    <button
+      type="button"
+      onClick={handleNotificationClick}
+      className="relative p-2 rounded-full text-slate-500 hover:bg-slate-100 transition"
+      aria-label="Notifications"
+    >
+      <Bell className="w-5 h-5" />
+
+      {notificationCount > 0 && (
+        <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold">
+          {notificationCount > 99 ? "99+" : notificationCount}
+        </span>
+      )}
+    </button>
+
+    {isNotificationOpen && (
+      <>
+        {/* Backdrop */}
+        <div
+          className="fixed inset-0 z-40 bg-black/10"
+          onClick={() => setIsNotificationOpen(false)}
+        />
+
+        {/* Notification panel */}
+        <div
+          className="fixed left-4 right-4 top-16 max-w-[calc(100vw-2rem)]
+                     bg-white rounded-2xl shadow-2xl border border-slate-200
+                     z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200"
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-slate-50/60">
+            <h3 className="text-sm font-semibold text-slate-800">
+              Notifications
+              {notificationCount > 0 && (
+                <span className="ml-2 text-xs font-medium text-blue-600">
+                  {notificationCount} new
+                </span>
+              )}
+            </h3>
+
+            <button
+              type="button"
+              onClick={() => setIsNotificationOpen(false)}
+              className="p-1 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-200/60 transition"
+              aria-label="Close notifications"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Body */}
+          <div className="max-h-[60vh] overflow-y-auto">
+            {isNotificationLoading ? (
+              <div className="px-4 py-10 text-center text-sm text-slate-500">
+                Loading notifications...
+              </div>
+            ) : notifications.length === 0 ? (
+              <div className="px-4 py-10 text-center">
+                <Bell className="w-8 h-8 mx-auto mb-2 text-slate-300" />
+                <p className="text-sm font-medium text-slate-600">
+                  No notifications
+                </p>
+                <p className="text-xs text-slate-400 mt-1">
+                  You don't have any notifications yet.
+                </p>
+              </div>
+            ) : (
+              notifications.map((notification, index) => {
+                const isUnread = !notification.is_read; // adjust field name to match your API
+                return (
+                  <div
+                    key={notification.id ?? `${notification.title}-${index}`}
+                    className={`flex gap-3 px-4 py-3 border-b border-slate-100 last:border-b-0 transition ${
+                      isUnread ? "bg-blue-50/50" : "bg-white"
+                    } active:bg-slate-100`}
+                  >
+                    <span
+                      className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${
+                        isUnread ? "bg-blue-500" : "bg-transparent"
+                      }`}
+                    />
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-slate-800 truncate">
+                        {notification.title ||
+                          notification.notification_title ||
+                          "Notification"}
+                      </p>
+                      <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">
+                        {notification.message ||
+                          notification.description ||
+                          notification.notification_message ||
+                          ""}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      </>
+    )}
+  </div>
+)}
 
           {/* Mobile Account */}
           <div className="md:hidden relative">
@@ -567,12 +514,13 @@ export default function Layout({ children }) {
                 <Link
                   key={item.title}
                   to={item.url}
-                  className={`flex flex-col items-center justify-center flex-1 py-1.5 px-1 rounded-xl transition-all duration-200 ${isPost
+                  className={`flex flex-col items-center justify-center flex-1 py-1.5 px-1 rounded-xl transition-all duration-200 ${
+                    isPost
                       ? "relative -top-4 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-2xl shadow-lg w-14 h-14 flex-none mx-2"
                       : isActive
                         ? "text-blue-600"
                         : "text-slate-400"
-                    }`}
+                  }`}
                 >
                   <item.icon
                     className={`${isPost ? "w-6 h-6" : "w-5 h-5"} mb-0.5`}
@@ -580,8 +528,9 @@ export default function Layout({ children }) {
 
                   {!isPost && (
                     <span
-                      className={`text-[10px] font-medium leading-tight ${isActive ? "text-blue-600" : "text-slate-400"
-                        }`}
+                      className={`text-[10px] font-medium leading-tight ${
+                        isActive ? "text-blue-600" : "text-slate-400"
+                      }`}
                     >
                       {item.title}
                     </span>

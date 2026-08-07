@@ -1,33 +1,81 @@
 import React, { useState } from "react";
-// import { base44 } from "@/api/base44Client";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Star } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { toast } from "react-toastify";
+import { customerSaveReview } from "../../api/ApiServices/jobstatusupdate/customerSaveJobReviewService";
+import { useAuth } from "../../lib/AuthContext";
 
-export default function ReviewModal({ isOpen, onClose, job, courier, currentUser, onReviewSubmitted }) {
+export default function ReviewModal({
+  isOpen,
+  onClose,
+  job,
+  courier,
+  currentUser,
+  onReviewSubmitted,
+}) {
+  const { token } = useAuth();
+
   const [rating, setRating] = useState(0);
   const [hovered, setHovered] = useState(0);
   const [comment, setComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-const handleSubmit = async () => {
-  if (rating === 0) return;
+  const handleSubmit = async () => {
+    if (rating === 0) {
+      toast.error("Please select a rating.");
+      return;
+    }
 
-  setIsSubmitting(true);
+    try {
+      setIsSubmitting(true);
 
-  // Simulate a request
-  await new Promise(resolve => setTimeout(resolve, 1000));
+      const payload = {
+        job_id: job.id,
+        rating: String(rating),
+        review: comment.trim(),
+      };
 
-  setIsSubmitting(false);
-  onReviewSubmitted();
-  onClose();
-};
+      const response = await customerSaveReview(payload, token);
+
+      if (response.status !== 1) {
+        toast.error(response.msg || "Failed to submit review.");
+        return;
+      }
+
+      toast.success(response.msg || "Review submitted successfully.");
+
+      setRating(0);
+      setHovered(0);
+      setComment("");
+
+      if (onReviewSubmitted) {
+        await onReviewSubmitted();
+      }
+
+      onClose();
+    } catch (error) {
+      console.error("Customer review error:", error);
+
+      toast.error(
+        error.response?.data?.msg ||
+          "Failed to submit review."
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>Rate your Courier</DialogTitle>
         </DialogHeader>
@@ -37,21 +85,34 @@ const handleSubmit = async () => {
             <div className="flex items-center gap-4">
               <Avatar className="w-14 h-14">
                 <AvatarImage src={courier.avatar_url} />
-                <AvatarFallback>{courier.full_name?.charAt(0) || "C"}</AvatarFallback>
+
+                <AvatarFallback>
+                  {courier.full_name?.charAt(0) || "C"}
+                </AvatarFallback>
               </Avatar>
+
               <div>
-                <p className="font-semibold text-slate-900">{courier.full_name}</p>
-                <p className="text-sm text-slate-500">{job.title}</p>
+                <p className="font-semibold text-slate-900">
+                  {courier.full_name}
+                </p>
+
+                <p className="text-sm text-slate-500">
+                  {job.title}
+                </p>
               </div>
             </div>
           )}
 
           <div>
-            <p className="text-sm font-medium text-slate-700 mb-2">How would you rate this delivery?</p>
+            <p className="text-sm font-medium text-slate-700 mb-2">
+              How would you rate this delivery?
+            </p>
+
             <div className="flex gap-2">
               {[1, 2, 3, 4, 5].map((star) => (
                 <button
                   key={star}
+                  type="button"
                   onClick={() => setRating(star)}
                   onMouseEnter={() => setHovered(star)}
                   onMouseLeave={() => setHovered(0)}
@@ -67,15 +128,23 @@ const handleSubmit = async () => {
                 </button>
               ))}
             </div>
+
             {rating > 0 && (
               <p className="text-sm text-slate-500 mt-1">
-                {["", "Poor", "Fair", "Good", "Very Good", "Excellent"][rating]}
+                {
+                  ["", "Poor", "Fair", "Good", "Very Good", "Excellent"][
+                    rating
+                  ]
+                }
               </p>
             )}
           </div>
 
           <div>
-            <p className="text-sm font-medium text-slate-700 mb-2">Leave a comment (optional)</p>
+            <p className="text-sm font-medium text-slate-700 mb-2">
+              Leave a comment (optional)
+            </p>
+
             <Textarea
               value={comment}
               onChange={(e) => setComment(e.target.value)}
@@ -85,9 +154,15 @@ const handleSubmit = async () => {
           </div>
 
           <div className="flex gap-3">
-            <Button variant="outline" className="flex-1" onClick={onClose}>
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={onClose}
+              disabled={isSubmitting}
+            >
               Skip
             </Button>
+
             <Button
               className="flex-1 bg-gradient-to-r from-blue-500 to-indigo-600"
               disabled={rating === 0 || isSubmitting}

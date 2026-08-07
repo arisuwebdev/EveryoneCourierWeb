@@ -24,6 +24,7 @@ import CourierTracker from "../tracking/CourierTracker";
 import CustomerTrackingMap from "../tracking/CustomerTrackingMap";
 import { updateJobStatus } from "../../api/ApiServices/jobstatusupdate/updateJobStatusService";
 import { customerSaveReview } from "../../api/ApiServices/jobstatusupdate/customerSaveJobReviewService";
+import { saveCourierReview } from "../../api/ApiServices/jobstatusupdate/saveCourierReviewService";
 
 // Statuses as returned by the API (uppercase enum values)
 const STATUS = {
@@ -48,11 +49,10 @@ function StarRating({ rating, setRating }) {
           className="transition-transform hover:scale-110"
         >
           <Star
-            className={`w-8 h-8 ${
-              star <= (hovered || rating)
+            className={`w-8 h-8 ${star <= (hovered || rating)
                 ? "text-yellow-400 fill-yellow-400"
                 : "text-slate-300"
-            }`}
+              }`}
           />
         </button>
       ))}
@@ -65,32 +65,49 @@ function DeliveredSection({
   token,
   isCustomer,
   courierName,
-  hasReviewed,
+  customerName,
+
+  // Customer review information
+  customerHasReviewed,
+  customerRating,
+  customerReview,
+
+  // Courier review information
+  courierHasReviewed,
+  courierRating,
+  courierReview,
+
   onReviewed,
-  rating,
-  review,
-  reviewJustSubmitted,
-  setReviewJustSubmitted,
 }) {
-  // const [rating, setRating] = useState(0);
   const [selectedRating, setSelectedRating] = useState(0);
   const [comment, setComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  // const [reviewJustSubmitted, setReviewJustSubmitted] = useState(false);
+  const [reviewJustSubmitted, setReviewJustSubmitted] = useState(false);
 
   const handleSubmit = async () => {
-    if (rating === 0) return;
+    if (selectedRating === 0) {
+      toast.error("Please select a rating.");
+      return;
+    }
 
     setIsSubmitting(true);
 
     try {
       const payload = {
         job_id: jobId,
-        rating: selectedRating,
-        review: comment || "",
+        rating: String(selectedRating),
+        review: comment.trim(),
       };
 
-      const res = await customerSaveReview(payload, token);
+      let res;
+
+      if (isCustomer) {
+        // CUSTOMER -> COURIER
+        res = await customerSaveReview(payload, token);
+      } else {
+        // COURIER -> CUSTOMER
+        res = await saveCourierReview(payload, token);
+      }
 
       if (res.status !== 1) {
         toast.error(res.msg || "Failed to submit review.");
@@ -98,122 +115,222 @@ function DeliveredSection({
       }
 
       toast.success(res.msg || "Review submitted successfully.");
-      setReviewJustSubmitted(true);
 
-      await onReviewed();
+      if (!isCustomer) {
+        setReviewJustSubmitted(true);
+      }
+
+      setSelectedRating(0);
+      setComment("");
+
+      // Refresh job details
+      if (isCustomer) {
+        await onReviewed();
+      }
     } catch (err) {
+      console.error("Review submit error:", err);
+
       toast.error(err.response?.data?.msg || "Failed to submit review.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  if (!isCustomer) {
+  /*
+   * ============================
+   * CUSTOMER VIEW
+   * ============================
+   */
+  if (isCustomer) {
+    // Customer already reviewed courier
+    if (customerHasReviewed) {
+      return (
+        <div className="text-center p-4 bg-green-50 rounded-xl border border-green-200">
+          <CheckCircle2 className="w-8 h-8 text-green-600 mx-auto mb-2" />
+
+          <p className="font-semibold text-green-700">Review Submitted</p>
+
+          <p className="text-sm text-green-600 mt-1">
+            You have already reviewed the courier.
+          </p>
+
+          {customerRating && (
+            <p className="mt-3 font-medium">
+              ⭐ {Number(customerRating).toFixed(1)}/5
+            </p>
+          )}
+
+          {customerReview && (
+            <p className="text-slate-600 italic mt-2">"{customerReview}"</p>
+          )}
+        </div>
+      );
+    }
+
+    // Customer review form
     return (
-      <div className="text-center p-4 bg-green-50 rounded-xl border border-green-200">
-        <CheckCircle2 className="w-8 h-8 text-green-600 mx-auto mb-2" />
+      <div className="p-5 bg-gradient-to-br from-amber-50 to-yellow-50 rounded-xl border border-amber-200 space-y-4">
+        <div className="flex items-center gap-2">
+          <Star className="w-5 h-5 text-amber-500" />
 
-        {hasReviewed ? (
-          <>
-            <p className="font-semibold text-green-700">
-              {reviewJustSubmitted
-                ? "Customer has reviewed your delivery!"
-                : "Delivery Completed"}
-            </p>
+          <p className="font-semibold text-slate-800">
+            Rate your delivery experience
+          </p>
+        </div>
 
-            <p className="text-sm text-green-600 mt-1">
-              {reviewJustSubmitted
-                ? "Thank you for completing this delivery."
-                : "The customer has already reviewed this delivery."}
-            </p>
-
-            <div className="mt-3">
-              <p className="font-medium">⭐ {Number(rating).toFixed(1)}/5</p>
-
-              {review && (
-                <p className="text-slate-600 italic mt-2">"{review}"</p>
-              )}
-            </div>
-          </>
-        ) : (
-          <>
-            <p className="font-semibold text-green-700">Delivery Complete!</p>
-
-            <p className="text-sm text-green-600 mt-1">
-              Waiting for the customer to leave a review.
-            </p>
-          </>
+        {courierName && (
+          <p className="text-sm text-slate-600">
+            How did <strong>{courierName}</strong> do?
+          </p>
         )}
+
+        <StarRating rating={selectedRating} setRating={setSelectedRating} />
+
+        {selectedRating > 0 && (
+          <p className="text-xs text-slate-500">
+            {
+              ["", "Poor", "Fair", "Good", "Very Good", "Excellent"][
+              selectedRating
+              ]
+            }
+          </p>
+        )}
+
+        <Textarea
+          value={comment}
+          onChange={(e) => setComment(e.target.value)}
+          placeholder="Leave a comment about your experience (optional)..."
+          className="h-20 bg-white"
+        />
+
+        <Button
+          onClick={handleSubmit}
+          disabled={selectedRating === 0 || isSubmitting}
+          className="w-full bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-white"
+        >
+          {isSubmitting ? "Submitting..." : "Submit Review"}
+        </Button>
       </div>
     );
   }
 
-  if (isCustomer && reviewJustSubmitted) {
-    return (
-      <div className="text-center p-4 bg-green-50 rounded-xl border border-green-200">
-        <CheckCircle2 className="w-8 h-8 text-green-600 mx-auto mb-2" />
-        <p className="font-semibold text-green-700">Thanks for your review!</p>
-        <p className="text-sm text-green-600 mt-1">
-          Your feedback helps build trust in the network.
-        </p>
-      </div>
-    );
-  }
-
-  if (isCustomer && hasReviewed) {
-    return (
-      <div className="text-center p-4 bg-green-50 rounded-xl border border-green-200">
-        <CheckCircle2 className="w-8 h-8 text-green-600 mx-auto mb-2" />
-        <p className="font-semibold text-green-700">Delivery Completed</p>
-        <p className="text-sm text-green-600 mt-1">
-          You have already submitted your review.
-        </p>
-
-        {/* <p className="mt-3 font-medium">
-        ⭐ {Number(rating).toFixed(1)}/5
-      </p>
-
-      {review && (
-        <p className="text-slate-600 italic mt-2">
-          "{review}"
-        </p>
-      )} */}
-      </div>
-    );
-  }
+  /*
+   * ============================
+   * COURIER VIEW
+   * ============================
+   */
 
   return (
-    <div className="p-5 bg-gradient-to-br from-amber-50 to-yellow-50 rounded-xl border border-amber-200 space-y-4">
-      <div className="flex items-center gap-2">
-        <Star className="w-5 h-5 text-amber-500" />
-        <p className="font-semibold text-slate-800">
-          Rate your delivery experience
-        </p>
-      </div>
-      {courierName && (
-        <p className="text-sm text-slate-600">
-          How did <strong>{courierName}</strong> do?
-        </p>
+    <div className="space-y-4">
+      {/* Customer's review shown to courier */}
+      {customerHasReviewed ? (
+        <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-6 h-6 text-blue-600" />
+
+            <p className="font-semibold text-blue-700">Customer Review</p>
+          </div>
+
+          {customerRating && (
+            <p className="mt-3 font-medium">
+              ⭐ {Number(customerRating).toFixed(1)}/5
+            </p>
+          )}
+
+          {customerReview && (
+            <p className="text-slate-600 italic mt-2">"{customerReview}"</p>
+          )}
+        </div>
+      ) : (
+        <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
+          <p className="font-semibold text-gray-700">
+            Waiting for Customer Review
+          </p>
+
+          <p className="text-sm text-gray-500 mt-1">
+            The customer has not submitted a review yet.
+          </p>
+        </div>
       )}
-      <StarRating rating={selectedRating} setRating={setSelectedRating} />
-      {rating > 0 && (
-        <p className="text-xs text-slate-500">
-          {["", "Poor", "Fair", "Good", "Very Good", "Excellent"][rating]}
-        </p>
+
+      {/* Courier has already reviewed customer */}
+      {reviewJustSubmitted ? (
+        <div className="text-center p-5 bg-green-50 rounded-xl border border-green-200">
+          <CheckCircle2 className="w-10 h-10 text-green-600 mx-auto mb-3" />
+
+          <p className="font-semibold text-green-700 text-lg">
+            Thanks for your review!
+          </p>
+
+          <p className="text-sm text-green-600 mt-1">
+            Your feedback helps build trust in the network.
+          </p>
+        </div>
+      ) : courierHasReviewed ? (
+        <div className="p-4 bg-green-50 rounded-xl border border-green-200">
+          <CheckCircle2 className="w-6 h-6 text-green-600 mx-auto mb-2" />
+
+          <p className="font-semibold text-green-700 text-center">
+            You Reviewed the Customer
+          </p>
+
+          {courierRating && (
+            <p className="mt-3 font-medium text-center">
+              ⭐ {Number(courierRating).toFixed(1)}/5
+            </p>
+          )}
+
+          {courierReview && (
+            <p className="text-slate-600 italic mt-2 text-center">
+              "{courierReview}"
+            </p>
+          )}
+        </div>
+      ) : (
+        /*
+         * Courier review form
+         */
+        <div className="p-5 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-200 space-y-4">
+          <div className="flex items-center gap-2">
+            <Star className="w-5 h-5 text-blue-500" />
+
+            <p className="font-semibold text-slate-800">Review Customer</p>
+          </div>
+
+          {customerName && (
+            <p className="text-sm text-slate-600">
+              How was your experience with <strong>{customerName}</strong>?
+            </p>
+          )}
+
+          <StarRating rating={selectedRating} setRating={setSelectedRating} />
+
+          {selectedRating > 0 && (
+            <p className="text-xs text-slate-500">
+              {
+                ["", "Poor", "Fair", "Good", "Very Good", "Excellent"][
+                selectedRating
+                ]
+              }
+            </p>
+          )}
+
+          <Textarea
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            placeholder="Leave a comment about the customer (optional)..."
+            className="h-20 bg-white"
+          />
+
+          <Button
+            onClick={handleSubmit}
+            disabled={selectedRating === 0 || isSubmitting}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            {isSubmitting ? "Submitting..." : "Submit Review"}
+          </Button>
+        </div>
       )}
-      <Textarea
-        value={comment}
-        onChange={(e) => setComment(e.target.value)}
-        placeholder="Leave a comment about your experience (optional)..."
-        className="h-20 bg-white"
-      />
-      <Button
-        onClick={handleSubmit}
-        disabled={rating === 0 || isSubmitting}
-        className="w-full bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-white"
-      >
-        {isSubmitting ? "Submitting..." : "Submit Review"}
-      </Button>
     </div>
   );
 }
@@ -236,7 +353,9 @@ export default function AssignedJobView() {
     try {
       setLoading(true);
       const res = await getJobDetails(id, type, token);
+    
       if (res.status === 1) {
+
         setJob(res.payload.job);
       } else {
         toast.error(res.msg);
@@ -276,7 +395,10 @@ export default function AssignedJobView() {
 
   const isCourier = String(currentUser?.user_id) === String(job.courier_id);
 
-  const hasReviewed = Boolean(job?.customer_reviewed_at);
+  const customerHasReviewed =
+    Boolean(job?.customer_reviewed_at) ||
+    Boolean(job?.customer_given_rating) ||
+    Boolean(job?.customer_given_review);
   const price = parseFloat(job.price) || 0;
 
   const PostupdateJobStatus = async (newStatus) => {
@@ -338,17 +460,17 @@ export default function AssignedJobView() {
 
                 {(job.status === STATUS.ASSIGNED ||
                   job.status === STATUS.PICKED_UP) && (
-                  <div>
-                    {isCourier ? (
-                      <CourierTracker job={job} />
-                    ) : (
-                      <CustomerTrackingMap
-                        job={job}
-                        courierName={job.courier_name}
-                      />
-                    )}
-                  </div>
-                )}
+                    <div>
+                      {isCourier ? (
+                        <CourierTracker job={job} />
+                      ) : (
+                        <CustomerTrackingMap
+                          job={job}
+                          courierName={job.courier_name}
+                        />
+                      )}
+                    </div>
+                  )}
 
                 <div className="space-y-4">
                   <div className="flex items-start gap-3">
@@ -440,12 +562,17 @@ export default function AssignedJobView() {
                     token={token}
                     isCustomer={isCustomer}
                     courierName={job.courier_name}
-                    hasReviewed={hasReviewed}
-                    rating={job.customer_given_rating}
-                    review={job.customer_given_review}
+                    customerName={job.customer_name}
+
+                    customerHasReviewed={customerHasReviewed}
+                    customerRating={job.customer_given_rating}
+                    customerReview={job.customer_given_review}
+
+                    courierHasReviewed={Boolean(job?.courier_reviewed_at)}
+                    courierRating={job?.courier_given_rating}
+                    courierReview={job?.courier_given_review}
+
                     onReviewed={fetchJobDetails}
-                    reviewJustSubmitted={reviewJustSubmitted}
-                    setReviewJustSubmitted={setReviewJustSubmitted}
                   />
                 )}
               </CardContent>

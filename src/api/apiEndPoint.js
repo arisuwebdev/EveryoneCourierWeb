@@ -50,6 +50,9 @@ export const updateJobStatusApi =  baseUrl + "/updateJobStatus";
 
 export const customerSaveJobReview =  baseUrl + "/saveJobReview";
 
+export const SaveCourierReview =  baseUrl + "/saveCourierReview";
+
+
 
 // dashboard
 

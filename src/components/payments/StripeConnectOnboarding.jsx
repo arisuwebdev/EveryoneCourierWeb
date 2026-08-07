@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,43 +14,118 @@ import {
 } from "lucide-react";
 import { useAuth } from "../../lib/AuthContext";
 import { StripeConnectOnboardingLinkService } from "../../api/ApiServices/payout/StripeConnectedOnboardingLink";
+import { getStripeConnectStatusService } from "../../api/ApiServices/payout/getStripeConnectStatusService";
+import { getProfile } from "../../api/ApiServices/getProfileApiService";
 
 export default function StripeConnectOnboarding({ user }) {
-  const { token } = useAuth();
+  const { token, updateUser } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
-const handleOnboard = async () => {
-  setIsLoading(true);
-  setError("");
+  // useEffect(() => {
+  //   const checkStripeStatus = async () => {
+  //     if (!token) {
+  //       return;
+  //     }
 
-  try {
-    const res = await StripeConnectOnboardingLinkService(token);
+  //     // If already ready, no need to call status API
+  //     if (user?.is_payout_ready === true) {
+  //       return;
+  //     }
 
-    console.log("Stripe onboarding response:", res);
+  //     try {
+  //       const res = await getStripeConnectStatusService(token);
 
-    if (res?.status === 1 && res?.payload?.onboarding_url) {
-      window.location.href = res.payload.onboarding_url;
-      return;
+  //       console.log("Stripe status response:", res);
+
+  //       if (res?.status === 1 && res?.payload) {
+  //         const stripeStatus = res.payload;
+
+  //         const updatedUser = {
+  //           ...user,
+
+  //           stripe_account_id: stripeStatus.account_id,
+
+  //           stripe_onboarding_complete: stripeStatus.stripe_onboarding_complete,
+
+  //           stripe_payouts_enabled: stripeStatus.stripe_payouts_enabled,
+
+  //           stripe_details_submitted: stripeStatus.stripe_details_submitted,
+
+  //           is_payout_ready: stripeStatus.is_payout_ready,
+  //         };
+
+  //         console.log("Updated user:", updatedUser);
+
+  //         updateUser(updatedUser);
+  //       }
+  //     } catch (error) {
+  //       console.error("Stripe status check failed:", error);
+  //     }
+  //   };
+
+  //   checkStripeStatus();
+  // }, [token, user?.is_payout_ready]);
+
+
+useEffect(() => {
+  const checkStripeStatus = async () => {
+    if (!token) return;
+
+    try {
+      // 1. Check latest Stripe status
+      const stripeRes = await getStripeConnectStatusService(token);
+
+      if (stripeRes?.status === 1) {
+        // 2. Now get updated profile from backend
+        const profileRes = await getProfile(token);
+
+
+
+        if (profileRes?.status === 1 && profileRes?.payload?.user) {
+          const updatedUser = profileRes.payload.user;
+
+        
+
+          // 3. Update AuthContext + localStorage
+          updateUser(updatedUser);
+        }
+      }
+    } catch (error) {
+     
     }
+  };
 
-    setError(
-      res?.msg || "Could not start Stripe onboarding. Please try again."
-    );
-  } catch (error) {
-    console.error("Stripe onboarding error:", error);
+  checkStripeStatus();
+}, [token, updateUser]);
 
-    setError(
-      error?.response?.data?.msg ||
-        error?.response?.data?.message ||
-        "Could not start Stripe onboarding. Please try again."
-    );
-  } finally {
-    setIsLoading(false);
-  }
-};
+  const handleOnboard = async () => {
+    setIsLoading(true);
+    setError("");
 
+    try {
+      const res = await StripeConnectOnboardingLinkService(token);
 
+      if (res?.status === 1 && res?.payload?.onboarding_url) {
+        window.location.href = res.payload.onboarding_url;
+        return;
+      }
+
+      setError(
+        res?.msg || "Could not start Stripe onboarding. Please try again.",
+      );
+    } catch (error) {
+     
+
+      setError(
+        error?.response?.data?.msg ||
+          error?.response?.data?.message ||
+          "Could not start Stripe onboarding. Please try again.",
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // const isConnected = !!user?.stripe_account_id;
   const isConnected = user?.is_payout_ready === true;
@@ -74,13 +149,44 @@ const handleOnboard = async () => {
 const getStatusBadge = () => {
   if (user?.is_payout_ready === true) {
     return (
-      <Badge className="bg-green-100 text-green-800">
+      <Badge
+        className="
+          bg-emerald-50
+          text-emerald-700
+          border border-emerald-200
+          px-3 py-1
+          rounded-full
+          font-medium
+          shadow-sm
+          hover:bg-emerald-100
+          hover:text-emerald-800
+          transition-colors
+        "
+      >
+        <CheckCircle className="w-3.5 h-3.5 mr-1.5" />
         Connected
       </Badge>
     );
   }
 
-  return <Badge variant="secondary">Not Connected</Badge>;
+  return (
+    <Badge
+      variant="secondary"
+      className="
+        bg-slate-100
+        text-slate-600
+        border border-slate-200
+        px-3 py-1
+        rounded-full
+        font-medium
+        hover:bg-slate-200
+        transition-colors
+      "
+    >
+      <Clock className="w-3.5 h-3.5 mr-1.5" />
+      Not Connected
+    </Badge>
+  );
 };
 
   return (
@@ -268,16 +374,16 @@ const getStatusBadge = () => {
           <>
             <div className="space-y-3">
               {/* Stripe Account ID */}
-              <div className="flex items-center justify-between text-sm py-1 border-b border-slate-100">
+              {/* <div className="flex items-center justify-between text-sm py-1 border-b border-slate-100">
                 <span className="text-slate-600">Stripe Account</span>
 
                 <span className="text-xs text-slate-500 font-mono">
                   {user?.stripe_account_id}
                 </span>
-              </div>
+              </div> */}
 
               {/* Details Submitted */}
-              <div className="flex items-center justify-between text-sm py-1 border-b border-slate-100">
+              {/* <div className="flex items-center justify-between text-sm py-1 border-b border-slate-100">
                 <span className="text-slate-600">Details Submitted</span>
 
                 {user?.stripe_details_submitted ? (
@@ -291,10 +397,10 @@ const getStatusBadge = () => {
                     Pending
                   </span>
                 )}
-              </div>
+              </div> */}
 
               {/* Payouts Enabled */}
-              <div className="flex items-center justify-between text-sm py-1 border-b border-slate-100">
+              {/* <div className="flex items-center justify-between text-sm py-1 border-b border-slate-100">
                 <span className="text-slate-600">Payouts Enabled</span>
 
                 {user?.stripe_payouts_enabled ? (
@@ -308,10 +414,10 @@ const getStatusBadge = () => {
                     Pending
                   </span>
                 )}
-              </div>
+              </div> */}
 
               {/* Onboarding Complete */}
-              <div className="flex items-center justify-between text-sm py-1 border-b border-slate-100">
+              {/* <div className="flex items-center justify-between text-sm py-1 border-b border-slate-100">
                 <span className="text-slate-600">Onboarding</span>
 
                 {user?.stripe_onboarding_complete ? (
@@ -325,10 +431,10 @@ const getStatusBadge = () => {
                     Pending
                   </span>
                 )}
-              </div>
+              </div> */}
 
               {/* Payout Ready */}
-              <div className="flex items-center justify-between text-sm py-1">
+              {/* <div className="flex items-center justify-between text-sm py-1">
                 <span className="text-slate-600">Payout Ready</span>
 
                 {user?.is_payout_ready ? (
@@ -342,7 +448,7 @@ const getStatusBadge = () => {
                     Pending
                   </span>
                 )}
-              </div>
+              </div> */}
             </div>
 
             {/* Fully Active */}
@@ -405,8 +511,6 @@ const getStatusBadge = () => {
                   )}
                 </Button>
               )}
-             
-             
             </div>
           </>
         )}

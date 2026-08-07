@@ -36,6 +36,7 @@ import StripeConnectOnboarding from "../components/payments/StripeConnectOnboard
 import { toast } from "react-toastify";
 import { auth, RecaptchaVerifier, signInWithPhoneNumber } from "../firebase";
 
+
 export default function Profile() {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -50,7 +51,7 @@ export default function Profile() {
     user_type: "CUSTOMER",
     vehicle_type: "",
   });
-  const { token, updateUser } = useAuth();
+const { token, user: authUser, updateUser } = useAuth();
   const [phoneVerified, setPhoneVerified] = useState(false);
   const [otpModalOpen, setOtpModalOpen] = useState(false);
   const [otp, setOtp] = useState("");
@@ -134,7 +135,7 @@ const handleAvatarUpload = async (e) => {
 
     toast.success("Profile picture updated");
   } catch (err) {
-    console.log("Upload Profile Pic Error:", err);
+   
 
     const errorMessage =
       err?.response?.data?.msg ||
@@ -194,16 +195,16 @@ const handleAvatarUpload = async (e) => {
       const recaptchaVerifier = new RecaptchaVerifier(auth, container, {
         size: "invisible",
         callback: () => {
-          console.log("reCAPTCHA solved");
+        
         },
         "expired-callback": () => {
-          console.log("reCAPTCHA expired");
+        
         },
       });
 
       window.recaptchaVerifier = recaptchaVerifier;
 
-      console.log("Sending OTP to:", phoneNumber);
+    
 
       // Don't call render() manually
       const confirmation = await signInWithPhoneNumber(
@@ -247,7 +248,7 @@ const handleAvatarUpload = async (e) => {
 
       const result = await confirmationResult.confirm(otp);
 
-      console.log("Firebase verified user:", result.user);
+  
 
       setPhoneVerified(true);
       setOtpModalOpen(false);
@@ -443,12 +444,12 @@ const handleAvatarUpload = async (e) => {
                         onChange={(e) =>
                           handleInputChange("phone", e.target.value)
                         }
-                        placeholder="+91 8597092231"
+                        placeholder="+61 412 345 678"
                         disabled={phoneVerified}
                         className="flex-1"
                       />
 
-                      {phoneVerified ? (
+                      {/* {phoneVerified ? (
                         <div className="flex items-center px-4 bg-green-50 text-green-700 border border-green-200 rounded-md">
                           ✓ Verified
                         </div>
@@ -460,7 +461,7 @@ const handleAvatarUpload = async (e) => {
                         >
                           {isSendingOtp ? "Sending..." : "Verify"}
                         </Button>
-                      )}
+                      )} */}
                     </div>
 
                     <div className="space-y-2">
@@ -524,14 +525,14 @@ const handleAvatarUpload = async (e) => {
                           <SelectValue placeholder="Select your vehicle" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="bicycle">🚲 Bicycle</SelectItem>
+                          <SelectItem value="BICYCLE">🚲 Bicycle</SelectItem>
                           <SelectItem value="MOTORCYCLE">
                             🏍️ Motorcycle
                           </SelectItem>
                           <SelectItem value="CAR">🚗 Car</SelectItem>
                           <SelectItem value="VAN">🚐 Van</SelectItem>
                           <SelectItem value="UTE">🛻 Ute</SelectItem>
-                          <SelectItem value="BICYCLE">🚲 Bicycle</SelectItem>
+                          {/* <SelectItem value="BICYCLE">🚲 Bicycle</SelectItem> */}
                         </SelectContent>
                       </Select>
                       <p className="text-xs text-slate-500">
@@ -732,7 +733,7 @@ const handleAvatarUpload = async (e) => {
             {/* STRIPE CONNECT BELOW ACCOUNT STATS */}
             {(profileData.user_type === "COURIER" ||
               profileData.user_type === "BOTH") && (
-              <StripeConnectOnboarding user={user} />
+            <StripeConnectOnboarding user={authUser} />
             )}
           </div>
         </div>

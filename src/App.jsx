@@ -110,6 +110,9 @@ import { Toaster } from "./components/ui/toaster";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClientInstance } from "./lib/query-client";
 
+// for use session logout
+import "./lib/axiosInterceptor";
+
 import {
   BrowserRouter as Router,
   Routes,
@@ -290,8 +293,8 @@ export default function App() {
   return (
     <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>
-        {/* <Router basename="/current-project/react-project/EveryoneCourior"> */}
-        <Router>
+         {/* <Router basename="/current-project/react-project/EveryoneCourior">  */}
+       <Router>
           {/* here scrolltotop use for need to show top any navigate after  */}
           <ScrollToTop />
           <AuthenticatedApp />

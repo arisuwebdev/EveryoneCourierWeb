@@ -10,14 +10,14 @@ export const requestNotificationPermission = async () => {
     const permission = await Notification.requestPermission();
 
     if (permission !== "granted") {
-      console.log("Notification permission denied");
+
       return null;
     }
 
     const messaging = await getFirebaseMessaging();
 
     if (!messaging) {
-      console.log("Firebase Messaging is not supported.");
+  
       return null;
     }
 
@@ -26,7 +26,7 @@ export const requestNotificationPermission = async () => {
     });
 
     if (!fcmToken) {
-      console.log("No FCM token available.");
+
       return null;
     }
 
@@ -35,11 +35,8 @@ export const requestNotificationPermission = async () => {
       fcm_token: fcmToken,
     };
 
-    console.log("Device Data:", deviceData);
-
     return deviceData;
   } catch (error) {
-    console.error("Notification Error:", error);
     return null;
   }
 };

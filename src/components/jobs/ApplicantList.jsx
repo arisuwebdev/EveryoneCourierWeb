@@ -13,7 +13,8 @@ import { getAssignJob } from "../../api/ApiServices/jobrelated/getAssignJobServi
 
 export default function ApplicantList() {
   const [isLoading, setIsLoading] = useState(true);
-  const [isAssigning, setIsAssigning] = useState(false);
+  // const [isAssigning, setIsAssigning] = useState(false);
+  const [assigningApplicantId, setAssigningApplicantId] = useState(null);
   const [customer, setCustomer] = useState(null);
   const { id } = useParams();
   const navigate = useNavigate();
@@ -47,34 +48,54 @@ export default function ApplicantList() {
     }
   };
 
-const handleAssignCourier = async (application) => {
-  try {
-    setIsAssigning(true);
+  // const handleAssignCourier = async (application) => {
+  //   try {
+  //     setIsAssigning(true);
 
-    const res = await getAssignJob(job.id, application.id, token);
+  //     const res = await getAssignJob(job.id, application.id, token);
 
-    if (res.status === 1) {
-      toast.success(res.msg || "Courier assigned successfully!");
+  //     if (res.status === 1) {
+  //       toast.success(res.msg || "Courier assigned successfully!");
 
-      navigate("/my-jobs");
-    } else {
-      toast.error(res.msg || "Failed to assign courier.");
+  //       navigate("/my-jobs");
+  //     } else {
+  //       toast.error(res.msg || "Failed to assign courier.");
+  //     }
+  //   } catch (error) {
+
+  //     toast.error(error.response?.data?.msg || "Failed to assign courier.");
+  //   } finally {
+  //     setIsAssigning(false);
+  //   }
+  // };
+
+  const handleAssignCourier = async (application) => {
+    try {
+      setAssigningApplicantId(application.id);
+
+      const res = await getAssignJob(job.id, application.id, token);
+
+      if (res.status === 1) {
+        toast.success(res.msg || "Courier assigned successfully!");
+
+        navigate("/my-jobs");
+      } else {
+        toast.error(res.msg || "Failed to assign courier.");
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.msg || "Failed to assign courier.");
+    } finally {
+      setAssigningApplicantId(null);
     }
-  } catch (error) {
+  };
 
-    toast.error(error.response?.data?.msg || "Failed to assign courier.");
-  } finally {
-    setIsAssigning(false);
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-10 w-10 border-4 border-slate-200 border-t-blue-600 rounded-full"></div>
+      </div>
+    );
   }
-};
-
-if (isLoading) {
-  return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="animate-spin rounded-full h-10 w-10 border-4 border-slate-200 border-t-blue-600 rounded-full"></div>
-    </div>
-  );
-}
 
   return (
     <div className="min-h-screen p-4 md:p-8">
@@ -140,12 +161,26 @@ if (isLoading) {
                               Verified
                             </Badge>
                           )}
-                          <Button
+                          {/* <Button
                             onClick={() => handleAssignCourier(app)}
                             disabled={isAssigning}
                             className="bg-green-600 hover:bg-green-700"
                           >
                             {isAssigning ? "Assigning..." : "Assign Courier"}
+                          </Button> */}
+
+                          <Button
+                            onClick={() => handleAssignCourier(app)}
+                            disabled={assigningApplicantId === app.id}
+                            className={
+                              assigningApplicantId === app.id
+                                ? "bg-green-400 cursor-not-allowed"
+                                : "bg-green-600 hover:bg-green-700"
+                            }
+                          >
+                            {assigningApplicantId === app.id
+                              ? "Assigning..."
+                              : "Assign Courier"}
                           </Button>
                         </div>
                       </div>
