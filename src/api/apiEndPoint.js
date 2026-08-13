@@ -80,6 +80,13 @@ export const getStripeConnectStatus =  baseUrl + "/stripeConnectStatus";
 export const StripeConnectOnboardingLink =  baseUrl + "/stripeConnectOnboardingLink";
 
 
+// tracking
+
+export const saveJobTrackLocationApi =  baseUrl + "/saveJobTrackLocation";
+
+export const getJobTrackLocationApi =  baseUrl + "/getJobTrackLocation";
+
+
 
 
 
