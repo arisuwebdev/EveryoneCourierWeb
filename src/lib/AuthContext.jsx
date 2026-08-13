@@ -177,7 +177,7 @@ export const AuthProvider = ({ children }) => {
           notificationData.fcm_token,
         );
 
-        console.log("Device token updated successfully");
+      
       }
     } catch (error) {
       console.error("Failed to update device notification token:", error);
@@ -187,6 +187,35 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem("user", JSON.stringify(updatedUser));
     setUser(updatedUser);
   };
+
+  const updateStripeStatus = (stripeStatus) => {
+  setUser((prevUser) => {
+    if (!prevUser) return prevUser;
+
+    const updatedUser = {
+      ...prevUser,
+
+      stripe_account_id:
+        stripeStatus.stripe_account_id ?? prevUser.stripe_account_id,
+
+      stripe_onboarding_complete:
+        stripeStatus.stripe_onboarding_complete,
+
+      stripe_payouts_enabled:
+        stripeStatus.stripe_payouts_enabled,
+
+      stripe_details_submitted:
+        stripeStatus.stripe_details_submitted,
+
+      is_payout_ready:
+        stripeStatus.is_payout_ready,
+    };
+
+    localStorage.setItem("user", JSON.stringify(updatedUser));
+
+    return updatedUser;
+  });
+};
 
   const logout = async () => {
     try {
@@ -212,6 +241,7 @@ export const AuthProvider = ({ children }) => {
         login,
         logout,
         updateUser,
+        updateStripeStatus,
         isAuthenticated: !!token,
       }}
     >

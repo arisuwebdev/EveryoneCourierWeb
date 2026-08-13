@@ -47,6 +47,6 @@ export const listenForMessages = async () => {
   if (!messaging) return;
 
   onMessage(messaging, (payload) => {
-    console.log("Foreground Notification:", payload);
+    
   });
 };

@@ -221,7 +221,7 @@ export default function Login() {
             try {
               const user = jwtDecode(credentialResponse.credential);
 
-              console.log("Google User:", user);
+     
 
               const response = await googleLogin({
                 name: user.name,

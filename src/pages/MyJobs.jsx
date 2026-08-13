@@ -96,7 +96,7 @@ export default function MyJobs() {
   }, [activeTab, currentPage, lastPage, loading, loadingMore]);
 
   useEffect(() => {
-    console.log("MyJobs user:", user);
+  
   }, [user]);
 
   const renderJobList = (jobs, type) => {

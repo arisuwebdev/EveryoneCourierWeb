@@ -124,14 +124,28 @@ export default function ApplicantList() {
                   <Card key={app.id} className="p-4">
                     <div className="grid md:grid-cols-3 gap-4">
                       <div className="flex items-center gap-4">
-                        <Avatar className="w-16 h-16">
+                        <Avatar
+                          className="w-16 h-16 cursor-pointer"
+                          onClick={() =>
+                            navigate(`/user-profile/${app.courier?.id}`)
+                          }
+                        >
                           <AvatarImage src={app.courier?.avatar_url} />
+
                           <AvatarFallback>
                             {app.courier?.name?.charAt(0) || "U"}
                           </AvatarFallback>
                         </Avatar>
+
                         <div>
-                          <p className="font-bold">{app.courier?.name}</p>
+                          <p
+                            className="font-bold text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
+                            onClick={() =>
+                              navigate(`/user-profile/${app.courier?.id}`)
+                            }
+                          >
+                            {app.courier?.name}
+                          </p>
                           <div className="flex items-center gap-1 text-sm text-slate-500">
                             <Star className="w-4 h-4 text-yellow-500 fill-current" />
                             <span>
@@ -148,7 +162,13 @@ export default function ApplicantList() {
 
                       <div className="md:col-span-2 flex flex-col justify-between">
                         <p className="text-slate-700 italic bg-slate-50 p-3 rounded-md">
-                          "{app.message}"
+                          {app.message ? (
+                            `"${app.message}"`
+                          ) : (
+                            <span className="text-slate-400 not-italic">
+                              No message provided
+                            </span>
+                          )}
                         </p>
 
                         <div className="flex items-center justify-end gap-2 mt-2">

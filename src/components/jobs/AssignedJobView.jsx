@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -11,6 +12,12 @@ import {
   DollarSign,
   Star,
   CheckCircle2,
+  Weight,
+  Ruler,
+  Scale,
+  Truck,
+  AlertCircle,
+  Calendar,
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
@@ -49,10 +56,11 @@ function StarRating({ rating, setRating }) {
           className="transition-transform hover:scale-110"
         >
           <Star
-            className={`w-8 h-8 ${star <= (hovered || rating)
+            className={`w-8 h-8 ${
+              star <= (hovered || rating)
                 ? "text-yellow-400 fill-yellow-400"
                 : "text-slate-300"
-              }`}
+            }`}
           />
         </button>
       ))}
@@ -190,7 +198,7 @@ function DeliveredSection({
           <p className="text-xs text-slate-500">
             {
               ["", "Poor", "Fair", "Good", "Very Good", "Excellent"][
-              selectedRating
+                selectedRating
               ]
             }
           </p>
@@ -309,7 +317,7 @@ function DeliveredSection({
             <p className="text-xs text-slate-500">
               {
                 ["", "Poor", "Fair", "Good", "Very Good", "Excellent"][
-                selectedRating
+                  selectedRating
                 ]
               }
             </p>
@@ -353,9 +361,8 @@ export default function AssignedJobView() {
     try {
       setLoading(true);
       const res = await getJobDetails(id, type, token);
-    
-      if (res.status === 1) {
 
+      if (res.status === 1) {
         setJob(res.payload.job);
       } else {
         toast.error(res.msg);
@@ -460,17 +467,17 @@ export default function AssignedJobView() {
 
                 {(job.status === STATUS.ASSIGNED ||
                   job.status === STATUS.PICKED_UP) && (
-                    <div>
-                      {isCourier ? (
-                        <CourierTracker job={job} />
-                      ) : (
-                        <CustomerTrackingMap
-                          job={job}
-                          courierName={job.courier_name}
-                        />
-                      )}
-                    </div>
-                  )}
+                  <div>
+                    {isCourier ? (
+                      <CourierTracker job={job} />
+                    ) : (
+                      <CustomerTrackingMap
+                        job={job}
+                        courierName={job.courier_name}
+                      />
+                    )}
+                  </div>
+                )}
 
                 <div className="space-y-4">
                   <div className="flex items-start gap-3">
@@ -491,6 +498,46 @@ export default function AssignedJobView() {
                       <p className="text-slate-900">{job.delivery_address}</p>
                     </div>
                   </div>
+
+                  {/* Pickup & Receiver Contact */}
+                  {isCourier && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Pickup Contact */}
+                      {job.pickup_contact_phone && (
+                        <div className="flex items-start gap-3">
+                          <Phone className="w-5 h-5 text-blue-500 mt-0.5" />
+
+                          <div>
+                            <p className="text-sm font-medium text-slate-600">
+                              Pickup Contact
+                            </p>
+
+                            <p className="text-slate-900">
+                              {job.pickup_contact_phone}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Receiver Contact */}
+                      {job.receiver_contact_phone && (
+                        <div className="flex items-start gap-3">
+                          <Phone className="w-5 h-5 text-green-500 mt-0.5" />
+
+                          <div>
+                            <p className="text-sm font-medium text-slate-600">
+                              Receiver Contact
+                            </p>
+
+                            <p className="text-slate-900">
+                              {job.receiver_contact_phone}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   <div className="flex items-start gap-3">
                     <Package className="w-5 h-5 text-purple-500 mt-0.5" />
                     <div>
@@ -502,16 +549,123 @@ export default function AssignedJobView() {
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-start gap-3">
-                    <DollarSign className="w-5 h-5 text-amber-500 mt-0.5" />
-                    <div>
-                      <p className="text-sm font-medium text-slate-600">
-                        Payment
-                      </p>
-                      <p className="font-bold text-slate-900">
-                        ${price.toFixed(2)}
-                      </p>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Weight */}
+                    <div className="flex items-start gap-3">
+                      <Scale className="w-5 h-5 text-orange-500 mt-0.5" />
+
+                      <div>
+                        <p className="text-sm font-medium text-slate-600">
+                          Weight
+                        </p>
+
+                        <p className="text-slate-900">
+                          {job.weight || "Not provided"}
+                        </p>
+                      </div>
                     </div>
+
+                    {/* Dimensions */}
+                    <div className="flex items-start gap-3">
+                      <Ruler className="w-5 h-5 text-indigo-500 mt-0.5" />
+
+                      <div>
+                        <p className="text-sm font-medium text-slate-600">
+                          Dimensions
+                        </p>
+
+                        <p className="text-slate-900">
+                          {job.dimensions || "Not provided"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <Package className="w-5 h-5 text-purple-500 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium text-slate-600">
+                          Package Size
+                        </p>
+                        <p className="text-slate-900 font-medium">
+                          {job.package_size || "Not provided"}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <Truck className="w-5 h-5 text-blue-500 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium text-slate-600">
+                          Vehicle Required
+                        </p>
+                        <p className="text-slate-900 font-medium">
+                          {job.vehicle_required || "Not provided"}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <AlertCircle className="w-5 h-5 text-red-500 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium text-slate-600">
+                          Urgent
+                        </p>
+                        <p className="text-slate-900 font-medium">
+                          {job.urgent ? "Yes" : "No"}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <Calendar className="w-5 h-5 text-blue-500 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium text-slate-600">
+                          Pickup Date
+                        </p>
+                        <p className="text-slate-900">
+                          {job.pickup_date
+                            ? format(new Date(job.pickup_date), "MMM d, yyyy")
+                            : "Not provided"}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <Calendar className="w-5 h-5 text-green-500 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium text-slate-600">
+                          Delivery Date
+                        </p>
+                        <p className="text-slate-900">
+                          {job.delivery_date
+                            ? format(new Date(job.delivery_date), "MMM d, yyyy")
+                            : "Not provided"}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <DollarSign className="w-5 h-5 text-amber-500 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium text-slate-600">
+                          Payment
+                        </p>
+                        <p className="font-bold text-slate-900">
+                          ${price.toFixed(2)}
+                        </p>
+                      </div>
+                    </div>
+                    {job.special_instructions && (
+                      <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
+                        <div className="flex items-start gap-3">
+                          <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5" />
+                          <div>
+                            <p className="text-sm font-semibold text-yellow-800">
+                              Special Instructions
+                            </p>
+                            <p className="text-sm text-slate-700 mt-1">
+                              {job.special_instructions}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -563,15 +717,12 @@ export default function AssignedJobView() {
                     isCustomer={isCustomer}
                     courierName={job.courier_name}
                     customerName={job.customer_name}
-
                     customerHasReviewed={customerHasReviewed}
                     customerRating={job.customer_given_rating}
                     customerReview={job.customer_given_review}
-
                     courierHasReviewed={Boolean(job?.courier_reviewed_at)}
                     courierRating={job?.courier_given_rating}
                     courierReview={job?.courier_given_review}
-
                     onReviewed={fetchJobDetails}
                   />
                 )}
@@ -597,12 +748,29 @@ export default function AssignedJobView() {
                   </AvatarFallback>
                 </Avatar>
 
-                <p className="font-bold">
+                {/* <p className="font-bold">
+                  {isCustomer ? job.courier_name : job.customer_name}
+                </p> */}
+
+                <p
+                  className="font-bold text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
+                  onClick={() =>
+                    navigate(
+                      `/user-profile/${
+                        isCustomer ? job.courier_id : job.customer_id
+                      }`,
+                    )
+                  }
+                >
                   {isCustomer ? job.courier_name : job.customer_name}
                 </p>
 
                 <p className="text-sm text-slate-500">
                   {isCustomer ? job.courier_email : job.customer_email}
+                </p>
+
+                <p className="text-sm text-slate-500 mt-1">
+                  {isCustomer ? job.courier_phone : job.customer_phone}
                 </p>
 
                 <div className="flex justify-center gap-2 mt-4">

@@ -27,8 +27,8 @@ export default function JobCard({ job, onApply }) {
   const [message, setMessage] = useState("");
 
   const price = Number(job.price || 0);
-  const courierPayout = price * 0.9;
-
+  const courierPayout = Number(job.courier_payout_display || 0);
+  const currency = job.currency || "AUD";
   const packageSize = job.package_size?.toLowerCase() || "";
   const vehicleRequired = job.vehicle_required?.toLowerCase() || "";
 
@@ -113,8 +113,13 @@ export default function JobCard({ job, onApply }) {
             </CardTitle>
 
             <div className="flex flex-wrap items-center gap-2">
+              {job.status && (
+                <Badge className="bg-green-100 text-green-800 hover:bg-green-200">
+                  {job.status}
+                </Badge>
+              )}
               {job.urgent && (
-                <Badge className="bg-red-100 text-red-800 border-red-200">
+                <Badge className="bg-red-100 text-red-800 border-red-200 hover:bg-red-200">
                   <Zap className="w-3 h-3 mr-1" />
                   Urgent
                 </Badge>
@@ -134,14 +139,26 @@ export default function JobCard({ job, onApply }) {
             </div>
           </div>
 
-          <div className="text-right">
-            <div className="flex items-center gap-1 text-2xl font-bold text-green-600">
-              <DollarSign className="w-5 h-5" />
-              {courierPayout.toFixed(2)}
+          <div className="flex flex-col items-end gap-1.5">
+            <div className="flex flex-col items-end gap-0.5 rounded-xl bg-gradient-to-br from-green-50 to-emerald-50 border border-green-100 px-3 py-2">
+              <div className="flex items-baseline gap-1">
+                <span className="text-sm font-semibold text-green-600">
+                  {currency}
+                </span>
+                <span className="text-2xl font-extrabold text-green-700 tracking-tight">
+                  {courierPayout.toFixed(2)}
+                </span>
+              </div>
+              <p className="text-[11px] font-medium text-green-700/70 uppercase tracking-wide">
+                You'll earn
+              </p>
             </div>
-            <p className="text-xs text-slate-500">You'll earn</p>
+
             <p className="text-xs text-slate-400">
-              ${price.toFixed(2)} job payment
+              Job payment:{" "}
+              <span className="text-slate-500 font-medium">
+                {currency} {price.toFixed(2)}
+              </span>
             </p>
           </div>
         </div>
@@ -175,6 +192,24 @@ export default function JobCard({ job, onApply }) {
           </div>
         </div>
 
+        {(job.weight || job.dimensions) && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {job.weight && (
+              <div className="rounded-lg bg-slate-50 p-3">
+                <p className="text-sm font-medium text-slate-600">Weight</p>
+                <p className="text-slate-900">{job.weight}</p>
+              </div>
+            )}
+
+            {job.dimensions && (
+              <div className="rounded-lg bg-slate-50 p-3">
+                <p className="text-sm font-medium text-slate-600">Dimensions</p>
+                <p className="text-slate-900">{job.dimensions}</p>
+              </div>
+            )}
+          </div>
+        )}
+
         {(job.pickup_date || job.delivery_date) && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {job.pickup_date && (
@@ -206,10 +241,10 @@ export default function JobCard({ job, onApply }) {
           </div>
         )}
 
-        {job.created_date && (
+        {job.created_at && (
           <div className="flex items-center gap-2 text-xs text-gray-500">
             <Clock className="w-4 h-4" />
-            {format(new Date(job.created_date), "MMM d, yyyy hh:mm a")}
+            Posted: {format(new Date(job.created_at), "MMM d, yyyy hh:mm a")}
           </div>
         )}
 

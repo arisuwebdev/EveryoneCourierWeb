@@ -70,12 +70,14 @@ export const getNotificationListApi =  baseUrl + "/getNotificationList";
 
 export const getUploadProfile =  baseUrl + "/uploadProfilePic";
 
+export const getUserProfile =  baseUrl + "/getUserProfile";
+
+
 // payout 
 
 export const getStripeConnectStatus =  baseUrl + "/stripeConnectStatus";
 
 export const StripeConnectOnboardingLink =  baseUrl + "/stripeConnectOnboardingLink";
-
 
 
 

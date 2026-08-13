@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   Package,
   User,
@@ -46,6 +46,7 @@ export default function Layout({ children }) {
   const { logout, isAuthenticated, user, token } = useAuth();
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
   const [isMobileAccountMenuOpen, setIsMobileAccountMenuOpen] = useState(false);
+  const accountMenuRef = useRef(null);
 
   // for notification
 
@@ -53,6 +54,25 @@ export default function Layout({ children }) {
   const [notifications, setNotifications] = useState([]);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isNotificationLoading, setIsNotificationLoading] = useState(false);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        accountMenuRef.current &&
+        !accountMenuRef.current.contains(event.target)
+      ) {
+        setIsAccountMenuOpen(false);
+      }
+    };
+
+    if (isAccountMenuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isAccountMenuOpen]);
 
   useEffect(() => {
     if (!isAuthenticated || !token) {
@@ -293,7 +313,10 @@ export default function Layout({ children }) {
                 {/* for notification  */}
 
                 {/* Account dropdown */}
-                <div className="hidden md:block relative pl-2 border-l border-slate-200">
+                <div
+                  ref={accountMenuRef}
+                  className="hidden md:block relative pl-2 border-l border-slate-200"
+                >
                   <button
                     type="button"
                     onClick={() => setIsAccountMenuOpen((prev) => !prev)}
@@ -339,112 +362,115 @@ export default function Layout({ children }) {
           </div>
 
           {/* Mobile Notifications */}
-{isAuthenticated && (
-  <div className="md:hidden relative">
-    <button
-      type="button"
-      onClick={handleNotificationClick}
-      className="relative p-2 rounded-full text-slate-500 hover:bg-slate-100 transition"
-      aria-label="Notifications"
-    >
-      <Bell className="w-5 h-5" />
+          {isAuthenticated && (
+            <div className="md:hidden relative">
+              <button
+                type="button"
+                onClick={handleNotificationClick}
+                className="relative p-2 rounded-full text-slate-500 hover:bg-slate-100 transition"
+                aria-label="Notifications"
+              >
+                <Bell className="w-5 h-5" />
 
-      {notificationCount > 0 && (
-        <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold">
-          {notificationCount > 99 ? "99+" : notificationCount}
-        </span>
-      )}
-    </button>
+                {notificationCount > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold">
+                    {notificationCount > 99 ? "99+" : notificationCount}
+                  </span>
+                )}
+              </button>
 
-    {isNotificationOpen && (
-      <>
-        {/* Backdrop */}
-        <div
-          className="fixed inset-0 z-40 bg-black/10"
-          onClick={() => setIsNotificationOpen(false)}
-        />
+              {isNotificationOpen && (
+                <>
+                  {/* Backdrop */}
+                  <div
+                    className="fixed inset-0 z-40 bg-black/10"
+                    onClick={() => setIsNotificationOpen(false)}
+                  />
 
-        {/* Notification panel */}
-        <div
-          className="fixed left-4 right-4 top-16 max-w-[calc(100vw-2rem)]
+                  {/* Notification panel */}
+                  <div
+                    className="fixed left-4 right-4 top-16 max-w-[calc(100vw-2rem)]
                      bg-white rounded-2xl shadow-2xl border border-slate-200
                      z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200"
-        >
-          {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-slate-50/60">
-            <h3 className="text-sm font-semibold text-slate-800">
-              Notifications
-              {notificationCount > 0 && (
-                <span className="ml-2 text-xs font-medium text-blue-600">
-                  {notificationCount} new
-                </span>
-              )}
-            </h3>
-
-            <button
-              type="button"
-              onClick={() => setIsNotificationOpen(false)}
-              className="p-1 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-200/60 transition"
-              aria-label="Close notifications"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-
-          {/* Body */}
-          <div className="max-h-[60vh] overflow-y-auto">
-            {isNotificationLoading ? (
-              <div className="px-4 py-10 text-center text-sm text-slate-500">
-                Loading notifications...
-              </div>
-            ) : notifications.length === 0 ? (
-              <div className="px-4 py-10 text-center">
-                <Bell className="w-8 h-8 mx-auto mb-2 text-slate-300" />
-                <p className="text-sm font-medium text-slate-600">
-                  No notifications
-                </p>
-                <p className="text-xs text-slate-400 mt-1">
-                  You don't have any notifications yet.
-                </p>
-              </div>
-            ) : (
-              notifications.map((notification, index) => {
-                const isUnread = !notification.is_read; // adjust field name to match your API
-                return (
-                  <div
-                    key={notification.id ?? `${notification.title}-${index}`}
-                    className={`flex gap-3 px-4 py-3 border-b border-slate-100 last:border-b-0 transition ${
-                      isUnread ? "bg-blue-50/50" : "bg-white"
-                    } active:bg-slate-100`}
                   >
-                    <span
-                      className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${
-                        isUnread ? "bg-blue-500" : "bg-transparent"
-                      }`}
-                    />
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-slate-800 truncate">
-                        {notification.title ||
-                          notification.notification_title ||
-                          "Notification"}
-                      </p>
-                      <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">
-                        {notification.message ||
-                          notification.description ||
-                          notification.notification_message ||
-                          ""}
-                      </p>
+                    {/* Header */}
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-slate-50/60">
+                      <h3 className="text-sm font-semibold text-slate-800">
+                        Notifications
+                        {notificationCount > 0 && (
+                          <span className="ml-2 text-xs font-medium text-blue-600">
+                            {notificationCount} new
+                          </span>
+                        )}
+                      </h3>
+
+                      <button
+                        type="button"
+                        onClick={() => setIsNotificationOpen(false)}
+                        className="p-1 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-200/60 transition"
+                        aria-label="Close notifications"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    {/* Body */}
+                    <div className="max-h-[60vh] overflow-y-auto">
+                      {isNotificationLoading ? (
+                        <div className="px-4 py-10 text-center text-sm text-slate-500">
+                          Loading notifications...
+                        </div>
+                      ) : notifications.length === 0 ? (
+                        <div className="px-4 py-10 text-center">
+                          <Bell className="w-8 h-8 mx-auto mb-2 text-slate-300" />
+                          <p className="text-sm font-medium text-slate-600">
+                            No notifications
+                          </p>
+                          <p className="text-xs text-slate-400 mt-1">
+                            You don't have any notifications yet.
+                          </p>
+                        </div>
+                      ) : (
+                        notifications.map((notification, index) => {
+                          const isUnread = !notification.is_read; // adjust field name to match your API
+                          return (
+                            <div
+                              key={
+                                notification.id ??
+                                `${notification.title}-${index}`
+                              }
+                              className={`flex gap-3 px-4 py-3 border-b border-slate-100 last:border-b-0 transition ${
+                                isUnread ? "bg-blue-50/50" : "bg-white"
+                              } active:bg-slate-100`}
+                            >
+                              <span
+                                className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${
+                                  isUnread ? "bg-blue-500" : "bg-transparent"
+                                }`}
+                              />
+                              <div className="min-w-0">
+                                <p className="text-sm font-medium text-slate-800 truncate">
+                                  {notification.title ||
+                                    notification.notification_title ||
+                                    "Notification"}
+                                </p>
+                                <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">
+                                  {notification.message ||
+                                    notification.description ||
+                                    notification.notification_message ||
+                                    ""}
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
                     </div>
                   </div>
-                );
-              })
-            )}
-          </div>
-        </div>
-      </>
-    )}
-  </div>
-)}
+                </>
+              )}
+            </div>
+          )}
 
           {/* Mobile Account */}
           <div className="md:hidden relative">
