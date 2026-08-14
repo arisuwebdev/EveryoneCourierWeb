@@ -80,12 +80,8 @@ useEffect(() => {
         // 2. Now get updated profile from backend
         const profileRes = await getProfile(token);
 
-
-
         if (profileRes?.status === 1 && profileRes?.payload?.user) {
           const updatedUser = profileRes.payload.user;
-
-        
 
           // 3. Update AuthContext + localStorage
           updateUser(updatedUser);

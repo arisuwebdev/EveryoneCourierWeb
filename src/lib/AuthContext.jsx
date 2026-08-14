@@ -143,7 +143,7 @@
 // export const useAuth = () => useContext(AuthContext);
 
 
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useState , useCallback} from "react";
 import { logoutUser } from "../api/ApiServices/logoutService";
 import { updateDeviceNotificationToken } from "../api/ApiServices/notification/deviceTokenNotificationService";
 import { requestNotificationPermission } from "../firebaseNotification";
@@ -183,10 +183,15 @@ export const AuthProvider = ({ children }) => {
       console.error("Failed to update device notification token:", error);
     }
   };
-  const updateUser = (updatedUser) => {
-    localStorage.setItem("user", JSON.stringify(updatedUser));
-    setUser(updatedUser);
-  };
+  // const updateUser = (updatedUser) => {
+  //   localStorage.setItem("user", JSON.stringify(updatedUser));
+  //   setUser(updatedUser);
+  // };
+
+  const updateUser = useCallback((updatedUser) => {
+  localStorage.setItem("user", JSON.stringify(updatedUser));
+  setUser(updatedUser);
+}, []);
 
   const updateStripeStatus = (stripeStatus) => {
   setUser((prevUser) => {

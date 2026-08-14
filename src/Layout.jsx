@@ -28,7 +28,7 @@ const navigationItems = [
   { title: "My Jobs", url: "/my-jobs", icon: Briefcase },
   { title: "Find Jobs", url: "/find-jobs", icon: Search },
   { title: "Profile", url: "/profile", icon: User },
-  { title: "Analytics", url: "/analytics", icon: BarChart2 },
+  // { title: "Analytics", url: "/analytics", icon: BarChart2 },
 ];
 
 // Same items, with Post Job re-inserted in the middle, for the mobile bottom nav
@@ -309,8 +309,6 @@ export default function Layout({ children }) {
                     </>
                   )}
                 </div>
-
-                {/* for notification  */}
 
                 {/* Account dropdown */}
                 <div

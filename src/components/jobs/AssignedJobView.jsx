@@ -32,6 +32,7 @@ import CustomerTrackingMap from "../tracking/CustomerTrackingMap";
 import { updateJobStatus } from "../../api/ApiServices/jobstatusupdate/updateJobStatusService";
 import { customerSaveReview } from "../../api/ApiServices/jobstatusupdate/customerSaveJobReviewService";
 import { saveCourierReview } from "../../api/ApiServices/jobstatusupdate/saveCourierReviewService";
+import ChatBox from "./ChatBox";
 
 // Statuses as returned by the API (uppercase enum values)
 const STATUS = {
@@ -91,6 +92,7 @@ function DeliveredSection({
   const [comment, setComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [reviewJustSubmitted, setReviewJustSubmitted] = useState(false);
+  // const [reviewJustSubmitted, setReviewJustSubmitted] = useState(false);
 
   const handleSubmit = async () => {
     if (selectedRating === 0) {
@@ -124,17 +126,14 @@ function DeliveredSection({
 
       toast.success(res.msg || "Review submitted successfully.");
 
+      // Refresh job details
       if (!isCustomer) {
         setReviewJustSubmitted(true);
-      }
-
-      setSelectedRating(0);
-      setComment("");
-
-      // Refresh job details
-      if (isCustomer) {
+      } else {
         await onReviewed();
       }
+      setSelectedRating(0);
+      setComment("");
     } catch (err) {
       console.error("Review submit error:", err);
 
@@ -262,25 +261,21 @@ function DeliveredSection({
       )}
 
       {/* Courier has already reviewed customer */}
-      {reviewJustSubmitted ? (
-        <div className="text-center p-5 bg-green-50 rounded-xl border border-green-200">
-          <CheckCircle2 className="w-10 h-10 text-green-600 mx-auto mb-3" />
-
-          <p className="font-semibold text-green-700 text-lg">
-            Thanks for your review!
-          </p>
-
-          <p className="text-sm text-green-600 mt-1">
-            Your feedback helps build trust in the network.
-          </p>
-        </div>
-      ) : courierHasReviewed ? (
+      {reviewJustSubmitted || courierHasReviewed ? (
         <div className="p-4 bg-green-50 rounded-xl border border-green-200">
           <CheckCircle2 className="w-6 h-6 text-green-600 mx-auto mb-2" />
 
+          {/* <p className="font-semibold text-green-700 text-center">
+           Your review has been submitted successfully and helps maintain a trusted delivery network.
+          </p> */}
+
           <p className="font-semibold text-green-700 text-center">
-            You Reviewed the Customer
-          </p>
+  Review Submitted Successfully
+</p>
+
+<p className="text-sm text-green-600 text-center mt-1">
+  Thank you for your feedback. It helps build a trusted delivery community.
+</p>
 
           {courierRating && (
             <p className="mt-3 font-medium text-center">
@@ -295,9 +290,6 @@ function DeliveredSection({
           )}
         </div>
       ) : (
-        /*
-         * Courier review form
-         */
         <div className="p-5 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-200 space-y-4">
           <div className="flex items-center gap-2">
             <Star className="w-5 h-5 text-blue-500" />
@@ -363,6 +355,14 @@ export default function AssignedJobView() {
       const res = await getJobDetails(id, type, token);
 
       if (res.status === 1) {
+        console.log("===== REVIEW DATA =====");
+        console.log("Customer rating:", res.payload.job.customer_given_rating);
+        console.log("Customer review:", res.payload.job.customer_given_review);
+        console.log("Courier rating:", res.payload.job.courier_given_rating);
+        console.log("Courier review:", res.payload.job.courier_given_review);
+        console.log("FULL JOB:", res.payload.job);
+        console.log("=======================");
+
         setJob(res.payload.job);
       } else {
         toast.error(res.msg);
@@ -406,6 +406,14 @@ export default function AssignedJobView() {
     Boolean(job?.customer_reviewed_at) ||
     Boolean(job?.customer_given_rating) ||
     Boolean(job?.customer_given_review);
+
+  const courierHasReviewed = Boolean(job?.courier_reviewed_at);
+
+  // const courierHasReviewed =
+  //   Boolean(job?.courier_reviewed_at) ||
+  //   Boolean(job?.courier_given_rating) ||
+  //   Boolean(job?.courier_given_review);
+
   const price = parseFloat(job.price) || 0;
 
   const PostupdateJobStatus = async (newStatus) => {
@@ -720,7 +728,8 @@ export default function AssignedJobView() {
                     customerHasReviewed={customerHasReviewed}
                     customerRating={job.customer_given_rating}
                     customerReview={job.customer_given_review}
-                    courierHasReviewed={Boolean(job?.courier_reviewed_at)}
+                    // courierHasReviewed={Boolean(job?.courier_reviewed_at)}
+                    courierHasReviewed={courierHasReviewed}
                     courierRating={job?.courier_given_rating}
                     courierReview={job?.courier_given_review}
                     onReviewed={fetchJobDetails}
@@ -784,6 +793,16 @@ export default function AssignedJobView() {
                 </div>
               </CardContent>
             </Card>
+
+            <ChatBox
+              jobId={job.id}
+              customerId={job.customer_id}
+              courierId={job.courier_id}
+              otherUserName={isCustomer ? job.courier_name : job.customer_name}
+              otherUserProfilePic={
+                isCustomer ? job.courier_profile_pic : job.customer_profile_pic
+              }
+            />
           </div>
         </div>
       </div>

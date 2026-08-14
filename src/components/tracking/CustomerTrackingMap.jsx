@@ -229,7 +229,7 @@ export default function CustomerTrackingMap({ job, courierName }) {
         setMapError(null);
       })
       .catch((error) => {
-        console.error("Google Maps error:", error);
+        // console.error("Google Maps error:", error);
         setMapError(error?.message || "Failed to load Google Maps.");
       });
 
@@ -251,7 +251,7 @@ export default function CustomerTrackingMap({ job, courierName }) {
     try {
       const response = await getJobTrackLocation(job.id, token);
 
-      console.log("Courier tracking response:", response);
+      // console.log("Courier tracking response:", response);
 
       if (response?.status !== 1) {
         setTrackingError(response?.msg || "Unable to get courier location.");
@@ -292,7 +292,7 @@ export default function CustomerTrackingMap({ job, courierName }) {
       );
 
       if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-        console.warn("Invalid courier location:", locationData);
+        // console.warn("Invalid courier location:", locationData);
 
         setTrackingError("Invalid courier location received from server.");
 
@@ -333,7 +333,7 @@ export default function CustomerTrackingMap({ job, courierName }) {
         mapInstanceRef.current.panTo(newPosition);
       }
     } catch (error) {
-      console.error("Failed to get courier location:", error);
+      // console.error("Failed to get courier location:", error);
 
       setTrackingError(
         error?.response?.data?.msg || "Failed to get courier location.",
@@ -364,7 +364,7 @@ export default function CustomerTrackingMap({ job, courierName }) {
      */
     pollingIntervalRef.current = setInterval(() => {
       fetchCourierLocation();
-    }, 5000);
+    }, 60000);
 
     /*
      * Cleanup
