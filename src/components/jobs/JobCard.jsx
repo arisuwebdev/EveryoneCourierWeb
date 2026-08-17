@@ -15,6 +15,8 @@ import {
   Zap,
   AlertCircle,
   Truck,
+  Scale,
+  Ruler
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -192,19 +194,53 @@ export default function JobCard({ job, onApply }) {
           </div>
         </div>
 
+        {/* Package Weight & Dimensions */}
         {(job.weight || job.dimensions) && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Weight */}
             {job.weight && (
-              <div className="rounded-lg bg-slate-50 p-3">
-                <p className="text-sm font-medium text-slate-600">Weight</p>
-                <p className="text-slate-900">{job.weight}</p>
+              <div className="group rounded-xl border border-slate-200 bg-gradient-to-br from-slate-50 to-white p-4 shadow-sm hover:shadow-md transition-all">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-100">
+                    <Scale className="h-5 w-5 text-blue-600" />
+                  </div>
+
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Weight
+                    </p>
+
+                    <p className="mt-1 text-lg font-bold text-slate-900">
+                      {job.weight}{" "}
+                      <span className="text-sm font-medium text-slate-500">
+                        kg
+                      </span>
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
 
+            {/* Dimensions */}
             {job.dimensions && (
-              <div className="rounded-lg bg-slate-50 p-3">
-                <p className="text-sm font-medium text-slate-600">Dimensions</p>
-                <p className="text-slate-900">{job.dimensions}</p>
+              <div className="group rounded-xl border border-slate-200 bg-gradient-to-br from-purple-50 to-white p-4 shadow-sm hover:shadow-md transition-all">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-purple-100">
+                    <Ruler className="h-5 w-5 text-purple-600" />
+                  </div>
+
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Dimensions
+                    </p>
+
+                    <p className="mt-1 text-lg font-bold text-slate-900">
+                      {job.dimensions}
+                    </p>
+
+                    <p className="text-xs text-slate-500">L × W × H cm</p>
+                  </div>
+                </div>
               </div>
             )}
           </div>

@@ -364,7 +364,7 @@ export default function CustomerTrackingMap({ job, courierName }) {
      */
     pollingIntervalRef.current = setInterval(() => {
       fetchCourierLocation();
-    }, 60000);
+    }, 120000);
 
     /*
      * Cleanup

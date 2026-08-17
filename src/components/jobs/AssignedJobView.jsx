@@ -33,6 +33,7 @@ import { updateJobStatus } from "../../api/ApiServices/jobstatusupdate/updateJob
 import { customerSaveReview } from "../../api/ApiServices/jobstatusupdate/customerSaveJobReviewService";
 import { saveCourierReview } from "../../api/ApiServices/jobstatusupdate/saveCourierReviewService";
 import ChatBox from "./ChatBox";
+import { confirmJobCompleteService } from "../../api/ApiServices/jobrelated/confirmJobCompleteService";
 
 // Statuses as returned by the API (uppercase enum values)
 const STATUS = {
@@ -270,12 +271,13 @@ function DeliveredSection({
           </p> */}
 
           <p className="font-semibold text-green-700 text-center">
-  Review Submitted Successfully
-</p>
+            Review Submitted Successfully
+          </p>
 
-<p className="text-sm text-green-600 text-center mt-1">
-  Thank you for your feedback. It helps build a trusted delivery community.
-</p>
+          <p className="text-sm text-green-600 text-center mt-1">
+            Thank you for your feedback. It helps build a trusted delivery
+            community.
+          </p>
 
           {courierRating && (
             <p className="mt-3 font-medium text-center">
@@ -373,6 +375,31 @@ export default function AssignedJobView() {
       setLoading(false);
     }
   }, [id, type, token]);
+
+  const handleConfirmDelivery = async () => {
+    if (!isCustomer) return;
+
+    try {
+      setIsUpdating(true);
+
+      const res = await confirmJobCompleteService(job.id, token);
+
+      if (res.status === 1) {
+        toast.success(res.msg || "Delivery confirmed successfully.");
+
+        // Refresh job details so is_delivery_confirmed becomes true
+        await fetchJobDetails();
+      } else {
+        toast.error(res.msg || "Failed to confirm delivery.");
+      }
+    } catch (err) {
+      console.error("Confirm delivery error:", err);
+
+      toast.error(err.response?.data?.msg || "Failed to confirm delivery.");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
   useEffect(() => {
     fetchJobDetails();
@@ -719,21 +746,67 @@ export default function AssignedJobView() {
                   )}
 
                 {job.status === STATUS.DELIVERED && (
-                  <DeliveredSection
-                    jobId={job.id}
-                    token={token}
-                    isCustomer={isCustomer}
-                    courierName={job.courier_name}
-                    customerName={job.customer_name}
-                    customerHasReviewed={customerHasReviewed}
-                    customerRating={job.customer_given_rating}
-                    customerReview={job.customer_given_review}
-                    // courierHasReviewed={Boolean(job?.courier_reviewed_at)}
-                    courierHasReviewed={courierHasReviewed}
-                    courierRating={job?.courier_given_rating}
-                    courierReview={job?.courier_given_review}
-                    onReviewed={fetchJobDetails}
-                  />
+                  <>
+                    {isCustomer && !job.is_delivery_confirmed && (
+                      <div className="p-5 bg-green-50 border border-green-200 rounded-xl mb-6">
+                        <div className="flex items-center gap-3 mb-3">
+                          <AlertCircle className="w-6 h-6 text-green-600" />
+
+                          <div>
+                            <h3 className="font-semibold text-green-800">
+                              Delivery Confirmation Required
+                            </h3>
+
+                            <p className="text-sm text-green-700">
+                              The courier has marked this job as delivered.
+                              Please confirm that you received your package.
+                            </p>
+                          </div>
+                        </div>
+
+                        <Button
+                          onClick={handleConfirmDelivery}
+                          disabled={isUpdating}
+                          className="w-full bg-green-600 hover:bg-green-700 text-white"
+                        >
+                          {isUpdating ? "Confirming..." : "Confirm Delivery"}
+                        </Button>
+                      </div>
+                    )}
+
+                    {isCustomer && job.is_delivery_confirmed && (
+                      <div className="p-4 bg-green-50 border border-green-200 rounded-xl mb-6 text-center">
+                        <p className="font-semibold text-green-700">
+                          ✓ Delivery Confirmed
+                        </p>
+
+                        {job.confirmed_at && (
+                          <p className="text-sm text-green-600 mt-1">
+                            Confirmed on{" "}
+                            {format(
+                              new Date(job.confirmed_at),
+                              "dd MMM yyyy, hh:mm a",
+                            )}
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    <DeliveredSection
+                      jobId={job.id}
+                      token={token}
+                      isCustomer={isCustomer}
+                      courierName={job.courier_name}
+                      customerName={job.customer_name}
+                      customerHasReviewed={customerHasReviewed}
+                      customerRating={job.customer_given_rating}
+                      customerReview={job.customer_given_review}
+                      courierHasReviewed={courierHasReviewed}
+                      courierRating={job?.courier_given_rating}
+                      courierReview={job?.courier_given_review}
+                      onReviewed={fetchJobDetails}
+                    />
+                  </>
                 )}
               </CardContent>
             </Card>
@@ -794,15 +867,19 @@ export default function AssignedJobView() {
               </CardContent>
             </Card>
 
-            <ChatBox
-              jobId={job.id}
-              customerId={job.customer_id}
-              courierId={job.courier_id}
-              otherUserName={isCustomer ? job.courier_name : job.customer_name}
-              otherUserProfilePic={
-                isCustomer ? job.courier_profile_pic : job.customer_profile_pic
-              }
-            />
+            {job.status !== STATUS.DELIVERED && 
+               job.status !== STATUS.CANCELLED && (
+              <ChatBox
+                jobId={job.id}
+                currentUserId={currentUser?.user_id}
+                receiverId={isCustomer ? job.courier_id : job.customer_id}
+                otherUserName={
+                  isCustomer
+                    ? job?.courier_name || "Courier"
+                    : job?.customer_name || "Customer"
+                }
+              />
+            )}
           </div>
         </div>
       </div>

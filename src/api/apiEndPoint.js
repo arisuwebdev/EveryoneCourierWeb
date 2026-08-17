@@ -52,6 +52,7 @@ export const customerSaveJobReview =  baseUrl + "/saveJobReview";
 
 export const SaveCourierReview =  baseUrl + "/saveCourierReview";
 
+export const confirmJobCompleteApi =  baseUrl + "/confirmJobCompleteAndTriggerCourierPayout";
 
 
 // dashboard
@@ -85,6 +86,15 @@ export const StripeConnectOnboardingLink =  baseUrl + "/stripeConnectOnboardingL
 export const saveJobTrackLocationApi =  baseUrl + "/saveJobTrackLocation";
 
 export const getJobTrackLocationApi =  baseUrl + "/getJobTrackLocation";
+
+
+// chat message 
+
+export const getMessagesApi =  baseUrl + "/getMessages";
+
+export const sendMessageApi =  baseUrl + "/sendMessage";
+
+export const ablyAuthApi = baseUrl + "/ablyAuth";
 
 
 

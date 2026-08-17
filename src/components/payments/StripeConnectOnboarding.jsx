@@ -67,33 +67,30 @@ export default function StripeConnectOnboarding({ user }) {
   //   checkStripeStatus();
   // }, [token, user?.is_payout_ready]);
 
+  useEffect(() => {
+    const checkStripeStatus = async () => {
+      if (!token) return;
 
-useEffect(() => {
-  const checkStripeStatus = async () => {
-    if (!token) return;
+      try {
+        // 1. Check latest Stripe status
+        const stripeRes = await getStripeConnectStatusService(token);
 
-    try {
-      // 1. Check latest Stripe status
-      const stripeRes = await getStripeConnectStatusService(token);
+        if (stripeRes?.status === 1) {
+          // 2. Now get updated profile from backend
+          const profileRes = await getProfile(token);
 
-      if (stripeRes?.status === 1) {
-        // 2. Now get updated profile from backend
-        const profileRes = await getProfile(token);
+          if (profileRes?.status === 1 && profileRes?.payload?.user) {
+            const updatedUser = profileRes.payload.user;
 
-        if (profileRes?.status === 1 && profileRes?.payload?.user) {
-          const updatedUser = profileRes.payload.user;
-
-          // 3. Update AuthContext + localStorage
-          updateUser(updatedUser);
+            // 3. Update AuthContext + localStorage
+            updateUser(updatedUser);
+          }
         }
-      }
-    } catch (error) {
-     
-    }
-  };
+      } catch (error) {}
+    };
 
-  checkStripeStatus();
-}, [token, updateUser]);
+    checkStripeStatus();
+  }, [token, updateUser]);
 
   const handleOnboard = async () => {
     setIsLoading(true);
@@ -111,8 +108,6 @@ useEffect(() => {
         res?.msg || "Could not start Stripe onboarding. Please try again.",
       );
     } catch (error) {
-     
-
       setError(
         error?.response?.data?.msg ||
           error?.response?.data?.message ||
@@ -142,11 +137,11 @@ useEffect(() => {
   //   return <Badge className="bg-blue-100 text-blue-800">Pending Review</Badge>;
   // };
 
-const getStatusBadge = () => {
-  if (user?.is_payout_ready === true) {
-    return (
-      <Badge
-        className="
+  const getStatusBadge = () => {
+    if (user?.is_payout_ready === true) {
+      return (
+        <Badge
+          className="
           bg-emerald-50
           text-emerald-700
           border border-emerald-200
@@ -158,17 +153,17 @@ const getStatusBadge = () => {
           hover:text-emerald-800
           transition-colors
         "
-      >
-        <CheckCircle className="w-3.5 h-3.5 mr-1.5" />
-        Connected
-      </Badge>
-    );
-  }
+        >
+          <CheckCircle className="w-3.5 h-3.5 mr-1.5" />
+          Connected
+        </Badge>
+      );
+    }
 
-  return (
-    <Badge
-      variant="secondary"
-      className="
+    return (
+      <Badge
+        variant="secondary"
+        className="
         bg-slate-100
         text-slate-600
         border border-slate-200
@@ -178,12 +173,12 @@ const getStatusBadge = () => {
         hover:bg-slate-200
         transition-colors
       "
-    >
-      <Clock className="w-3.5 h-3.5 mr-1.5" />
-      Not Connected
-    </Badge>
-  );
-};
+      >
+        <Clock className="w-3.5 h-3.5 mr-1.5" />
+        Not Connected
+      </Badge>
+    );
+  };
 
   return (
     <Card className="shadow-xl border-0 bg-white/90 backdrop-blur-sm">
