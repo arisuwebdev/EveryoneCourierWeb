@@ -34,10 +34,12 @@ import { customerSaveReview } from "../../api/ApiServices/jobstatusupdate/custom
 import { saveCourierReview } from "../../api/ApiServices/jobstatusupdate/saveCourierReviewService";
 import ChatBox from "./ChatBox";
 import { confirmJobCompleteService } from "../../api/ApiServices/jobrelated/confirmJobCompleteService";
+import { removeJobService } from "../../api/ApiServices/jobrelated/removeJobService";
 
 // Statuses as returned by the API (uppercase enum values)
 const STATUS = {
   OPEN: "OPEN",
+  PENDING_PAYMENT: "PENDING_PAYMENT",
   ASSIGNED: "ASSIGNED",
   PICKED_UP: "PICKED_UP",
   DELIVERED: "DELIVERED",
@@ -136,8 +138,6 @@ function DeliveredSection({
       setSelectedRating(0);
       setComment("");
     } catch (err) {
-      console.error("Review submit error:", err);
-
       toast.error(err.response?.data?.msg || "Failed to submit review.");
     } finally {
       setIsSubmitting(false);
@@ -357,14 +357,6 @@ export default function AssignedJobView() {
       const res = await getJobDetails(id, type, token);
 
       if (res.status === 1) {
-        console.log("===== REVIEW DATA =====");
-        console.log("Customer rating:", res.payload.job.customer_given_rating);
-        console.log("Customer review:", res.payload.job.customer_given_review);
-        console.log("Courier rating:", res.payload.job.courier_given_rating);
-        console.log("Courier review:", res.payload.job.courier_given_review);
-        console.log("FULL JOB:", res.payload.job);
-        console.log("=======================");
-
         setJob(res.payload.job);
       } else {
         toast.error(res.msg);
@@ -393,9 +385,29 @@ export default function AssignedJobView() {
         toast.error(res.msg || "Failed to confirm delivery.");
       }
     } catch (err) {
-      console.error("Confirm delivery error:", err);
-
       toast.error(err.response?.data?.msg || "Failed to confirm delivery.");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  // this is remove job api call
+  const handleRemoveJob = async () => {
+    if (!job?.id) return;
+
+    try {
+      setIsUpdating(true);
+
+      const res = await removeJobService(job.id, token);
+
+      if (res.status === 1) {
+        toast.success(res.msg || "Job removed successfully.");
+        navigate(-1);
+      } else {
+        toast.error(res.msg || "Failed to remove job.");
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.msg || "Failed to remove job.");
     } finally {
       setIsUpdating(false);
     }
@@ -444,41 +456,25 @@ export default function AssignedJobView() {
   const price = parseFloat(job.price) || 0;
 
   const PostupdateJobStatus = async (newStatus) => {
-    setIsUpdating(true);
-
     try {
+      setIsUpdating(true);
+
       const payload = {
-        job_id: job.id, // or job.job_id depending on your API response
+        job_id: job.id,
         status: newStatus,
       };
 
       const res = await updateJobStatus(payload, token);
 
-      if (res.status !== 1) {
+      if (res.status === 1) {
+        toast.success(res.msg || "Job status updated successfully.");
+        // Refresh the current page data
+        await fetchJobDetails();
+      } else {
         toast.error(res.msg || "Failed to update job status.");
-        return;
       }
-
-      if (newStatus === STATUS.DELIVERED && job.customer && job.courier) {
-        await notifyJobCompleted(
-          job,
-          job.customer.full_name,
-          job.courier.full_name,
-        );
-      }
-
-      setJob((prev) => ({
-        ...prev,
-        status: newStatus,
-      }));
-
-      toast.success(res.msg || "Job status updated successfully.");
-
-      if (newStatus !== STATUS.DELIVERED) {
-        navigate(-1);
-      }
-    } catch (error) {
-      toast.error(error.response?.data?.msg || "Failed to update job status.");
+    } catch (err) {
+      toast.error(err.response?.data?.msg || "Failed to update job status.");
     } finally {
       setIsUpdating(false);
     }
@@ -499,6 +495,48 @@ export default function AssignedJobView() {
               </CardHeader>
               <CardContent className="space-y-6">
                 <JobStatusStepper currentStatus={job.status} />
+
+                {/* Here status is PENDING_PAYMENT then pay and remove button show */}
+
+                {job.status === STATUS.PENDING_PAYMENT && (
+                  <div className="mt-6 p-5 bg-amber-50 border border-amber-200 rounded-xl">
+                    <div className="flex items-center gap-2 mb-4">
+                      <AlertCircle className="w-5 h-5 text-amber-600" />
+
+                      <div>
+                        <p className="font-semibold text-amber-800">
+                          Payment Required
+                        </p>
+
+                        <p className="text-sm text-amber-700">
+                          Please complete the payment to activate this job.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-3">
+                      <Button
+                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                        onClick={() => {
+                          // Open your existing Stripe payment modal here
+                          // setShowPaymentModal(true);
+                        }}
+                        disabled={isUpdating}
+                      >
+                        Pay ${job.price}
+                      </Button>
+
+                      <Button
+                        variant="outline"
+                        className="flex-1 border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700"
+                        onClick={handleRemoveJob}
+                        disabled={isUpdating}
+                      >
+                        {isUpdating ? "Removing..." : "Remove Job"}
+                      </Button>
+                    </div>
+                  </div>
+                )}
 
                 {(job.status === STATUS.ASSIGNED ||
                   job.status === STATUS.PICKED_UP) && (
@@ -592,7 +630,7 @@ export default function AssignedJobView() {
 
                       <div>
                         <p className="text-sm font-medium text-slate-600">
-                          Weight
+                          Weight (kg)
                         </p>
 
                         <p className="text-slate-900">
@@ -607,7 +645,7 @@ export default function AssignedJobView() {
 
                       <div>
                         <p className="text-sm font-medium text-slate-600">
-                          Dimensions
+                          Dimensions (L x W x H cm)
                         </p>
 
                         <p className="text-slate-900">
@@ -704,46 +742,48 @@ export default function AssignedJobView() {
                   </div>
                 </div>
 
-                {job.status !== STATUS.DELIVERED &&
-                  job.status !== STATUS.CANCELLED && (
-                    <div className="pt-6 border-t">
-                      <h3 className="font-semibold mb-4">Actions</h3>
-                      <div className="flex gap-4">
-                        {isCourier && job.status === STATUS.ASSIGNED && (
-                          <Button
-                            onClick={() =>
-                              PostupdateJobStatus(STATUS.PICKED_UP)
-                            }
-                            disabled={isUpdating}
-                          >
-                            Mark as Picked Up
-                          </Button>
-                        )}
-                        {isCourier && job.status === STATUS.PICKED_UP && (
-                          <Button
-                            onClick={() =>
-                              PostupdateJobStatus(STATUS.DELIVERED)
-                            }
-                            disabled={isUpdating}
-                            className="bg-green-600 hover:bg-green-700"
-                          >
-                            Mark as Delivered
-                          </Button>
-                        )}
-                        {isCustomer && job.status === STATUS.ASSIGNED && (
-                          <Button
-                            variant="destructive"
-                            onClick={() =>
-                              PostupdateJobStatus(STATUS.CANCELLED)
-                            }
-                            disabled={isUpdating}
-                          >
-                            Cancel Job
-                          </Button>
-                        )}
-                      </div>
+                {((isCourier &&
+                  (job.status === STATUS.ASSIGNED ||
+                    job.status === STATUS.PICKED_UP)) ||
+                  (isCustomer && job.status === STATUS.ASSIGNED)) && (
+                  <div className="pt-6 border-t">
+                    <h3 className="font-semibold mb-4">Actions</h3>
+
+                    <div className="flex gap-4">
+                      {/* Courier: Assigned → Picked Up */}
+                      {isCourier && job.status === STATUS.ASSIGNED && (
+                        <Button
+                          onClick={() => PostupdateJobStatus(STATUS.PICKED_UP)}
+                          disabled={isUpdating}
+                        >
+                          Mark as Picked Up
+                        </Button>
+                      )}
+
+                      {/* Courier: Picked Up → Delivered */}
+                      {isCourier && job.status === STATUS.PICKED_UP && (
+                        <Button
+                          onClick={() => PostupdateJobStatus(STATUS.DELIVERED)}
+                          disabled={isUpdating}
+                          className="bg-green-600 hover:bg-green-700"
+                        >
+                          Mark as Delivered
+                        </Button>
+                      )}
+
+                      {/* Customer: Can cancel ONLY before pickup */}
+                      {isCustomer && job.status === STATUS.ASSIGNED && (
+                        <Button
+                          variant="destructive"
+                          onClick={() => PostupdateJobStatus(STATUS.CANCELLED)}
+                          disabled={isUpdating}
+                        >
+                          Cancel Job
+                        </Button>
+                      )}
                     </div>
-                  )}
+                  </div>
+                )}
 
                 {job.status === STATUS.DELIVERED && (
                   <>
@@ -813,6 +853,7 @@ export default function AssignedJobView() {
           </div>
 
           <div className="space-y-6">
+            {job.status !== STATUS.PENDING_PAYMENT && (
             <Card>
               <CardHeader>
                 <CardTitle>
@@ -866,20 +907,23 @@ export default function AssignedJobView() {
                 </div>
               </CardContent>
             </Card>
-
-            {job.status !== STATUS.DELIVERED && 
-               job.status !== STATUS.CANCELLED && (
-              <ChatBox
-                jobId={job.id}
-                currentUserId={currentUser?.user_id}
-                receiverId={isCustomer ? job.courier_id : job.customer_id}
-                otherUserName={
-                  isCustomer
-                    ? job?.courier_name || "Courier"
-                    : job?.customer_name || "Customer"
-                }
-              />
             )}
+
+          {/* This is ChatBox */}
+            {job.status !== STATUS.PENDING_PAYMENT &&
+              job.status !== STATUS.DELIVERED &&
+              job.status !== STATUS.CANCELLED && (
+                <ChatBox
+                  jobId={job.id}
+                  currentUserId={currentUser?.user_id}
+                  receiverId={isCustomer ? job.courier_id : job.customer_id}
+                  otherUserName={
+                    isCustomer
+                      ? job?.courier_name || "Courier"
+                      : job?.customer_name || "Customer"
+                  }
+                />
+              )}
           </div>
         </div>
       </div>

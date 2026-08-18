@@ -13,8 +13,6 @@ axios.interceptors.response.use(
     ) {
       isHandlingSessionExpiry = true;
 
-      console.log("Session expired or token is invalid");
-
       localStorage.removeItem("token");
       localStorage.removeItem("user");
       localStorage.removeItem("isLoggedIn");

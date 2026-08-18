@@ -1,6 +1,5 @@
 import { baseUrl } from "./constant";
 
-
 // Auth
 
 export const SendOtpApi = baseUrl+ "/auth/register-send-otp";
@@ -52,7 +51,9 @@ export const customerSaveJobReview =  baseUrl + "/saveJobReview";
 
 export const SaveCourierReview =  baseUrl + "/saveCourierReview";
 
-export const confirmJobCompleteApi =  baseUrl + "/confirmJobCompleteAndTriggerCourierPayout";
+export const confirmJobCompleteApi =  baseUrl + "/confirmJobComplete";
+
+export const removeJobApi =  baseUrl + "/removeJob";
 
 
 // dashboard
