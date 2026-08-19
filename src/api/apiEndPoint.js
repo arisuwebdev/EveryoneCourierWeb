@@ -97,6 +97,9 @@ export const sendMessageApi =  baseUrl + "/sendMessage";
 
 export const ablyAuthApi = baseUrl + "/ablyAuth";
 
+export const getJobChatPresenceApi = baseUrl + "/ablyAuth";
+
+
 
 
 

@@ -1,5 +1,3 @@
-
-
 import { useEffect, useRef, useState } from "react";
 import Ably from "ably";
 import { getMessagesService } from "../../api/ApiServices/chat/getMessageService";
@@ -7,6 +5,7 @@ import { sendMessageService } from "../../api/ApiServices/chat/sendMessageServic
 import { ablyAuthService } from "../../api/ApiServices/chat/ablyAuthService";
 import { MessageCircle, Send, Loader2, ChevronUp } from "lucide-react";
 import { useAuth } from "../../lib/AuthContext";
+import { getJobChatPresenceService } from "../../api/ApiServices/chat/getJobChatPresenceService";
 
 export default function ChatBox({
   jobId,
@@ -26,6 +25,7 @@ export default function ChatBox({
   const [currentPage, setCurrentPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
   const [loadingOlder, setLoadingOlder] = useState(false);
+  const [isReceiverOnline, setIsReceiverOnline] = useState(false);
 
   const channelRef = useRef(null);
   const clientRef = useRef(null);
@@ -34,6 +34,8 @@ export default function ChatBox({
   const messagesEndRef = useRef(null);
 
   const isLoadingOlderRef = useRef(false);
+
+  const presenceSubscribedRef = useRef(false);
 
   // Used to prevent automatic bottom scrolling
   // when older messages are loaded.
@@ -219,9 +221,70 @@ export default function ChatBox({
         // 4. Job-specific channel
         // --------------------------------
         const channel = client.channels.get(`job-chat-${jobId}`);
-
         channelRef.current = channel;
 
+        // ===============================
+        // ABLY PRESENCE
+        // ===============================
+
+        // 1. Listen when another user enters
+        await channel.presence.subscribe("enter", (member) => {
+          if (!isMounted) return;
+
+          // console.log("🟢 PRESENCE ENTER:", member);
+          // console.log("Entered clientId:", member.clientId);
+          // console.log("Receiver ID:", receiverId);
+
+          if (String(member.clientId) === String(receiverId)) {
+            // console.log("✅ RECEIVER IS ONLINE");
+            setIsReceiverOnline(true);
+          }
+        });
+
+        // 2. Listen when another user leaves
+        await channel.presence.subscribe("leave", (member) => {
+          if (!isMounted) return;
+
+          // console.log("🔴 PRESENCE LEAVE:", member);
+          // console.log("Left clientId:", member.clientId);
+          // console.log("Receiver ID:", receiverId);
+
+          if (String(member.clientId) === String(receiverId)) {
+            // console.log("❌ RECEIVER IS OFFLINE");
+            setIsReceiverOnline(false);
+          }
+        });
+
+        // 3. Get initial presence
+        // This checks whether receiver was already online
+        // before the current user entered.
+
+        // 3. Get current users already present in Ably
+        try {
+          const members = await channel.presence.get();
+
+          // console.log("👥 CURRENT ABLY PRESENCE:", members);
+          // console.log("👤 Current User ID:", currentUserId);
+          // console.log("👤 Receiver ID:", receiverId);
+
+          const receiverIsOnline = members.some(
+            (member) => String(member.clientId) === String(receiverId),
+          );
+
+          // console.log("📡 Receiver online:", receiverIsOnline);
+
+          setIsReceiverOnline(receiverIsOnline);
+        } catch (error) {
+          // console.error("❌ Failed to get Ably presence:", error);
+        }
+        // 4. Tell Ably that current user entered the chat
+        try {
+          // console.log("➡️ Entering presence as:", currentUserId);
+          await channel.presence.enter();
+          // console.log("✅ Successfully entered presence");
+        } catch (error) {
+          // console.error("Failed to enter chat presence:", error);
+        }
         // --------------------------------
         // 5. Listen for new messages
         // --------------------------------
@@ -261,7 +324,14 @@ export default function ChatBox({
       isMounted = false;
 
       if (channelRef.current) {
+        // Leave presence when ChatBox is closed/unmounted
+        channelRef.current.presence.leave().catch((error) => {
+          // console.error("Failed to leave chat presence:", error);
+        });
+
+        channelRef.current.presence.unsubscribe();
         channelRef.current.unsubscribe();
+
         channelRef.current = null;
       }
 
@@ -333,9 +403,18 @@ export default function ChatBox({
         <div className="flex-1">
           <h3 className="font-semibold text-slate-900">{otherUserName}</h3>
 
-          <p className="text-xs text-green-600 flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-green-500" />
-            Chat
+          <p
+            className={`text-xs flex items-center gap-1 ${
+              isReceiverOnline ? "text-green-600" : "text-slate-400"
+            }`}
+          >
+            <span
+              className={`w-2 h-2 rounded-full ${
+                isReceiverOnline ? "bg-green-500" : "bg-slate-400"
+              }`}
+            />
+
+            {isReceiverOnline ? "Online" : "Offline"}
           </p>
         </div>
 
@@ -506,10 +585,6 @@ export default function ChatBox({
             )}
           </button>
         </div>
-
-        {/* <p className="text-[11px] text-slate-400 mt-2 px-1">
-          Press Enter to send
-        </p> */}
       </div>
     </div>
   );

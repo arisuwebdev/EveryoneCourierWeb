@@ -180,7 +180,7 @@ export const AuthProvider = ({ children }) => {
       
       }
     } catch (error) {
-      console.error("Failed to update device notification token:", error);
+      
     }
   };
   // const updateUser = (updatedUser) => {

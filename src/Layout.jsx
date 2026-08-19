@@ -602,7 +602,6 @@ export default function Layout({ children }) {
               <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wider mb-5">
                 Quick Links
               </h3>
-
               <div className="flex flex-col gap-3">
                 <Link
                   to="/home"
@@ -610,14 +609,12 @@ export default function Layout({ children }) {
                 >
                   Home
                 </Link>
-
                 <button
                   onClick={handleTermsClick}
                   className="text-left text-slate-600 hover:text-blue-600 transition-colors"
                 >
                   Terms & Conditions
                 </button>
-
                 <button
                   onClick={handlePrivacyClick}
                   className="text-left text-slate-600 hover:text-blue-600 transition-colors"
@@ -641,10 +638,10 @@ export default function Layout({ children }) {
                   </span>
                 </div>
 
-                <div className="flex items-center gap-3">
+                {/* <div className="flex items-center gap-3">
                   <Phone className="w-5 h-5 text-blue-600" />
                   <span className="text-slate-600 text-sm">0401 636 261</span>
-                </div>
+                </div> */}
 
                 <div className="flex items-center gap-3">
                   <MapPin className="w-5 h-5 text-blue-600" />
