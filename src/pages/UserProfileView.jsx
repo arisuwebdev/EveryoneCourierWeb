@@ -1,7 +1,16 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { ArrowLeft, Mail, Phone, MapPin, CheckCircle2, Star, Truck } from "lucide-react";
+import {
+  ArrowLeft,
+  Mail,
+  Phone,
+  MapPin,
+  CheckCircle2,
+  Star,
+  Truck,
+  PhoneCall,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -53,7 +62,11 @@ export default function UserProfileView() {
       <div className="min-h-screen p-4 md:p-8">
         <div className="max-w-2xl mx-auto text-center">
           <p className="text-gray-600">User not found.</p>
-          <Button variant="outline" onClick={() => navigate(-1)} className="mt-4">
+          <Button
+            variant="outline"
+            onClick={() => navigate(-1)}
+            className="mt-4"
+          >
             <ArrowLeft className="w-4 h-4 mr-2" /> Go Back
           </Button>
         </div>
@@ -61,9 +74,8 @@ export default function UserProfileView() {
     );
   }
 
-const isCourier =
-  profile.user_type === "COURIER" ||
-  profile.user_type === "BOTH";  
+  const isCourier =
+    profile.user_type === "COURIER" || profile.user_type === "BOTH";
 
   return (
     <div className="min-h-screen p-4 md:p-8">
@@ -81,10 +93,12 @@ const isCourier =
             <CardTitle className="flex items-center justify-center gap-2">
               {profile.name}
               {profile.id_verified === 1 && (
-                <CheckCircle2 className="w-5 h-5 text-blue-600" title="ID Verified" />
+                <CheckCircle2
+                  className="w-5 h-5 text-blue-600"
+                  title="ID Verified"
+                />
               )}
             </CardTitle>
-          
           </CardHeader>
 
           <CardContent className="space-y-6">
@@ -113,13 +127,16 @@ const isCourier =
             {/* Bio */}
             {profile.bio && (
               <div>
-                <p className="text-sm font-semibold text-slate-700 mb-1">About</p>
+                <p className="text-sm font-semibold text-slate-700 mb-1">
+                  About
+                </p>
                 <p className="text-sm text-slate-600">{profile.bio}</p>
               </div>
             )}
 
             {/* Contact info */}
             <div className="space-y-3">
+              {/* email */}
               <div className="flex items-center gap-3 text-sm text-slate-600">
                 <Mail className="w-4 h-4 text-slate-400" />
                 <span>{profile.email}</span>
@@ -127,6 +144,7 @@ const isCourier =
                   <CheckCircle2 className="w-4 h-4 text-green-500" />
                 )}
               </div>
+              {/* phone  */}
               <div className="flex items-center gap-3 text-sm text-slate-600">
                 <Phone className="w-4 h-4 text-slate-400" />
                 <span>{profile.phone || "Not provided"}</span>
@@ -134,6 +152,17 @@ const isCourier =
                   <CheckCircle2 className="w-4 h-4 text-green-500" />
                 )}
               </div>
+
+              {/* Emergency Contact */}
+              <div className="flex items-center gap-3 text-sm text-slate-600">
+                <PhoneCall className="w-4 h-4 text-red-500" />
+                <span>
+                  {profile.emergency_contact_no
+                    ? `${profile.emergency_contact_no} (Emergency Contact)`
+                    : "Not provided"}
+                </span>
+              </div>
+
               {profile.address && (
                 <div className="flex items-center gap-3 text-sm text-slate-600">
                   <MapPin className="w-4 h-4 text-slate-400" />

@@ -1,4 +1,3 @@
-
 import React, { useMemo, useState } from "react";
 import { loadStripe } from "@stripe/stripe-js";
 import {
@@ -33,7 +32,6 @@ function CheckoutForm({ jobId, jobAmount, onPaymentComplete, onClose }) {
     e.preventDefault();
 
     if (!stripe || !elements) return;
-
     setIsProcessing(true);
     setErrorMsg("");
 
@@ -71,7 +69,6 @@ function CheckoutForm({ jobId, jobAmount, onPaymentComplete, onClose }) {
       } catch (err) {
         const message =
           err?.response?.data?.msg || "Payment confirmation failed.";
-
         setErrorMsg(message);
         toast.error(message);
       } finally {
@@ -79,7 +76,6 @@ function CheckoutForm({ jobId, jobAmount, onPaymentComplete, onClose }) {
       }
     } else {
       const message = "Payment was not successful.";
-
       setErrorMsg(message);
       toast.error(message);
       setIsProcessing(false);
@@ -144,7 +140,14 @@ export default function PaymentModal({
   }, [publishableKey]);
 
   return (
-<Dialog open={isOpen} onOpenChange={(open) => { if (!open) { onClose(); } }}>      
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) {
+          onClose();
+        }
+      }}
+    >
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">

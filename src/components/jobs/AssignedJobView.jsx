@@ -35,6 +35,8 @@ import { saveCourierReview } from "../../api/ApiServices/jobstatusupdate/saveCou
 import ChatBox from "./ChatBox";
 import { confirmJobCompleteService } from "../../api/ApiServices/jobrelated/confirmJobCompleteService";
 import { removeJobService } from "../../api/ApiServices/jobrelated/removeJobService";
+import PaymentModal from "../payments/PaymentModal";
+import ComplaintModal from "./ComplaintModal";
 
 // Statuses as returned by the API (uppercase enum values)
 const STATUS = {
@@ -95,7 +97,11 @@ function DeliveredSection({
   const [comment, setComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [reviewJustSubmitted, setReviewJustSubmitted] = useState(false);
-  // const [reviewJustSubmitted, setReviewJustSubmitted] = useState(false);
+  // const [reviewJustSubmitted, setReviewJustSubmitted] = useState(false)
+
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentData, setPaymentData] = useState(null);
+  const [isCreatingPayment, setIsCreatingPayment] = useState(false);
 
   const handleSubmit = async () => {
     if (selectedRating === 0) {
@@ -348,7 +354,8 @@ export default function AssignedJobView() {
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
-
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showComplaintModal, setShowComplaintModal] = useState(false);
   const [reviewJustSubmitted, setReviewJustSubmitted] = useState(false);
 
   const fetchJobDetails = useCallback(async () => {
@@ -357,7 +364,11 @@ export default function AssignedJobView() {
       const res = await getJobDetails(id, type, token);
 
       if (res.status === 1) {
-        setJob(res.payload.job);
+        setJob({
+          ...res.payload.job,
+          client_secret: res.payload.client_secret,
+          publishable_key: res.payload.publishable_key,
+        });
       } else {
         toast.error(res.msg);
       }
@@ -494,8 +505,9 @@ export default function AssignedJobView() {
                 <CardTitle>Job Details: {job.title}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                <JobStatusStepper currentStatus={job.status} />
-
+                {job.status !== STATUS.PENDING_PAYMENT && (
+                  <JobStatusStepper currentStatus={job.status} />
+                )}
                 {/* Here status is PENDING_PAYMENT then pay and remove button show */}
 
                 {job.status === STATUS.PENDING_PAYMENT && (
@@ -517,15 +529,11 @@ export default function AssignedJobView() {
                     <div className="flex gap-3">
                       <Button
                         className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
-                        onClick={() => {
-                          // Open your existing Stripe payment modal here
-                          // setShowPaymentModal(true);
-                        }}
+                        onClick={() => setShowPaymentModal(true)}
                         disabled={isUpdating}
                       >
-                        Pay ${job.price}
+                        Pay ${Number(job.price).toFixed(2)}
                       </Button>
-
                       <Button
                         variant="outline"
                         className="flex-1 border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700"
@@ -725,7 +733,7 @@ export default function AssignedJobView() {
                       </div>
                     </div>
                     {job.special_instructions && (
-                      <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
+                      <div className="md:col-span-2 rounded-lg border border-yellow-200 bg-yellow-50 p-4">
                         <div className="flex items-start gap-3">
                           <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5" />
                           <div>
@@ -804,13 +812,25 @@ export default function AssignedJobView() {
                           </div>
                         </div>
 
-                        <Button
-                          onClick={handleConfirmDelivery}
-                          disabled={isUpdating}
-                          className="w-full bg-green-600 hover:bg-green-700 text-white"
-                        >
-                          {isUpdating ? "Confirming..." : "Confirm Delivery"}
-                        </Button>
+                        <div className="flex flex-col md:flex-row gap-3">
+                          <Button
+                            onClick={handleConfirmDelivery}
+                            disabled={isUpdating}
+                            className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                          >
+                            {isUpdating ? "Confirming..." : "Confirm Delivery"}
+                          </Button>
+
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setShowComplaintModal(true)}
+                            className="flex-1 border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700"
+                          >
+                            <AlertCircle className="w-4 h-4 mr-2" />
+                            Raise a Complaint
+                          </Button>
+                        </div>
                       </div>
                     )}
 
@@ -854,62 +874,62 @@ export default function AssignedJobView() {
 
           <div className="space-y-6">
             {job.status !== STATUS.PENDING_PAYMENT && (
-            <Card>
-              <CardHeader>
-                <CardTitle>
-                  {isCustomer ? "Your Courier" : "Your Customer"}
-                </CardTitle>
-              </CardHeader>
+              <Card>
+                <CardHeader>
+                  <CardTitle>
+                    {isCustomer ? "Your Courier" : "Your Customer"}
+                  </CardTitle>
+                </CardHeader>
 
-              <CardContent className="text-center">
-                <Avatar className="w-20 h-20 mx-auto mb-4">
-                  <AvatarFallback>
-                    {(isCustomer
-                      ? job.courier_name
-                      : job.customer_name
-                    )?.charAt(0) || "U"}
-                  </AvatarFallback>
-                </Avatar>
+                <CardContent className="text-center">
+                  <Avatar className="w-20 h-20 mx-auto mb-4">
+                    <AvatarFallback>
+                      {(isCustomer
+                        ? job.courier_name
+                        : job.customer_name
+                      )?.charAt(0) || "U"}
+                    </AvatarFallback>
+                  </Avatar>
 
-                {/* <p className="font-bold">
+                  {/* <p className="font-bold">
                   {isCustomer ? job.courier_name : job.customer_name}
                 </p> */}
 
-                <p
-                  className="font-bold text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
-                  onClick={() =>
-                    navigate(
-                      `/user-profile/${
-                        isCustomer ? job.courier_id : job.customer_id
-                      }`,
-                    )
-                  }
-                >
-                  {isCustomer ? job.courier_name : job.customer_name}
-                </p>
+                  <p
+                    className="font-bold text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
+                    onClick={() =>
+                      navigate(
+                        `/user-profile/${
+                          isCustomer ? job.courier_id : job.customer_id
+                        }`,
+                      )
+                    }
+                  >
+                    {isCustomer ? job.courier_name : job.customer_name}
+                  </p>
 
-                <p className="text-sm text-slate-500">
-                  {isCustomer ? job.courier_email : job.customer_email}
-                </p>
+                  <p className="text-sm text-slate-500">
+                    {isCustomer ? job.courier_email : job.customer_email}
+                  </p>
 
-                <p className="text-sm text-slate-500 mt-1">
-                  {isCustomer ? job.courier_phone : job.customer_phone}
-                </p>
+                  <p className="text-sm text-slate-500 mt-1">
+                    {isCustomer ? job.courier_phone : job.customer_phone}
+                  </p>
 
-                <div className="flex justify-center gap-2 mt-4">
-                  <Button variant="outline" size="icon">
-                    <Mail className="w-4 h-4" />
-                  </Button>
+                  <div className="flex justify-center gap-2 mt-4">
+                    <Button variant="outline" size="icon">
+                      <Mail className="w-4 h-4" />
+                    </Button>
 
-                  <Button variant="outline" size="icon">
-                    <Phone className="w-4 h-4" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                    <Button variant="outline" size="icon">
+                      <Phone className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             )}
 
-          {/* This is ChatBox */}
+            {/* This is ChatBox */}
             {job.status !== STATUS.PENDING_PAYMENT &&
               job.status !== STATUS.DELIVERED &&
               job.status !== STATUS.CANCELLED && (
@@ -927,6 +947,33 @@ export default function AssignedJobView() {
           </div>
         </div>
       </div>
+      {/* this is for Payment Modal */}
+      <PaymentModal
+        isOpen={showPaymentModal}
+        onClose={() => setShowPaymentModal(false)}
+        jobId={job.id}
+        jobAmount={Number(job.price)}
+        clientSecret={job.client_secret}
+        publishableKey={job.publishable_key}
+        onPaymentComplete={async () => {
+          setShowPaymentModal(false);
+          await fetchJobDetails();
+        }}
+      />
+
+        {/* this is for complaint modal  */}
+      <ComplaintModal
+        open={showComplaintModal}
+        onClose={() => setShowComplaintModal(false)}
+        jobId={job?.id}
+        onSubmit={(complaintData) => {
+          console.log("Complaint submitted:", complaintData);
+
+          // Complaint API will go here later
+
+          setShowComplaintModal(false);
+        }}
+      />
     </div>
   );
 }

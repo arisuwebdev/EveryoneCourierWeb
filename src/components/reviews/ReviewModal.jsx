@@ -62,7 +62,6 @@ export default function ReviewModal({
 
       onClose();
     } catch (error) {
-      console.error("Customer review error:", error);
 
       toast.error(
         error.response?.data?.msg ||

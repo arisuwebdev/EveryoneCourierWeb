@@ -36,7 +36,6 @@ import StripeConnectOnboarding from "../components/payments/StripeConnectOnboard
 import { toast } from "react-toastify";
 import { auth, RecaptchaVerifier, signInWithPhoneNumber } from "../firebase";
 
-
 export default function Profile() {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -46,12 +45,13 @@ export default function Profile() {
     name: "",
     email: "",
     phone: "",
+    emergency_contact_no: "",
     address: "",
     bio: "",
     user_type: "CUSTOMER",
     vehicle_type: "",
   });
-const { token, user: authUser, updateUser } = useAuth();
+  const { token, user: authUser, updateUser } = useAuth();
   const [phoneVerified, setPhoneVerified] = useState(false);
   const [otpModalOpen, setOtpModalOpen] = useState(false);
   const [otp, setOtp] = useState("");
@@ -76,6 +76,7 @@ const { token, user: authUser, updateUser } = useAuth();
         name: res.payload.user.name || "",
         email: res.payload.user.email || "",
         phone: res.payload.user.phone || "",
+        emergency_contact_no: res.payload.user.emergency_contact_no || "",
         address: res.payload.user.address || "",
         bio: res.payload.user.bio || "",
         user_type: (res.payload.user.user_type || "CUSTOMER").toUpperCase(),
@@ -87,71 +88,66 @@ const { token, user: authUser, updateUser } = useAuth();
     }
   };
 
+  const handleAvatarUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-const handleAvatarUpload = async (e) => {
-  const file = e.target.files?.[0];
-  if (!file) return;
+    const isImage = file.type.startsWith("image/");
+    const isUnderLimit = file.size <= 5 * 1024 * 1024;
 
-  const isImage = file.type.startsWith("image/");
-  const isUnderLimit = file.size <= 5 * 1024 * 1024;
+    if (!isImage) {
+      toast.error("Please upload an image file");
+      return;
+    }
 
-  if (!isImage) {
-    toast.error("Please upload an image file");
-    return;
-  }
+    if (!isUnderLimit) {
+      toast.error("Image must be smaller than 5MB");
+      return;
+    }
 
-  if (!isUnderLimit) {
-    toast.error("Image must be smaller than 5MB");
-    return;
-  }
+    const localUrl = URL.createObjectURL(file);
+    setAvatarPreview(localUrl);
 
-  const localUrl = URL.createObjectURL(file);
-  setAvatarPreview(localUrl);
+    try {
+      setIsUploadingAvatar(true);
 
-  try {
-    setIsUploadingAvatar(true);
+      const base64Image = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
 
-    const base64Image = await new Promise((resolve, reject) => {
-      const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
 
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
 
-      reader.readAsDataURL(file);
-    });
+      const res = await uploadProfilePic(token, base64Image);
+      const updatedUrl = res?.profile_pic || base64Image;
 
-    const res = await uploadProfilePic(token, base64Image);
-    const updatedUrl = res?.profile_pic || base64Image;
+      setUser((prev) => ({
+        ...prev,
+        profile_pic: updatedUrl,
+      }));
 
-    setUser((prev) => ({
-      ...prev,
-      profile_pic: updatedUrl,
-    }));
+      updateUser?.({
+        ...user,
+        profile_pic: updatedUrl,
+      });
 
-  updateUser?.({
-  ...user,
-  profile_pic: updatedUrl,
-});
+      toast.success("Profile picture updated");
+    } catch (err) {
+      const errorMessage =
+        err?.response?.data?.msg ||
+        err?.response?.data?.payload?.verrors ||
+        "Failed to upload profile picture";
 
-    toast.success("Profile picture updated");
-  } catch (err) {
-   
+      toast.error(errorMessage);
 
-    const errorMessage =
-      err?.response?.data?.msg ||
-      err?.response?.data?.payload?.verrors ||
-      "Failed to upload profile picture";
-
-    toast.error(errorMessage);
-
-    setAvatarPreview(null);
-  } finally {
-    setIsUploadingAvatar(false);
-    e.target.value = "";
-  }
-};
-
-
+      setAvatarPreview(null);
+    } finally {
+      setIsUploadingAvatar(false);
+      e.target.value = "";
+    }
+  };
 
   const handleInputChange = (field, value) => {
     setProfileData((prev) => ({
@@ -194,17 +190,11 @@ const handleAvatarUpload = async (e) => {
       // Create new verifier
       const recaptchaVerifier = new RecaptchaVerifier(auth, container, {
         size: "invisible",
-        callback: () => {
-        
-        },
-        "expired-callback": () => {
-        
-        },
+        callback: () => {},
+        "expired-callback": () => {},
       });
 
       window.recaptchaVerifier = recaptchaVerifier;
-
-    
 
       // Don't call render() manually
       const confirmation = await signInWithPhoneNumber(
@@ -219,8 +209,6 @@ const handleAvatarUpload = async (e) => {
 
       toast.success("OTP sent successfully!");
     } catch (error) {
-      console.error("OTP Error:", error);
-
       if (window.recaptchaVerifier) {
         window.recaptchaVerifier.clear();
         window.recaptchaVerifier = null;
@@ -248,8 +236,6 @@ const handleAvatarUpload = async (e) => {
 
       const result = await confirmationResult.confirm(otp);
 
-  
-
       setPhoneVerified(true);
       setOtpModalOpen(false);
       setOtp("");
@@ -261,8 +247,6 @@ const handleAvatarUpload = async (e) => {
       // Here you should call your backend API
       // to save phone_verified / phone_verified_at.
     } catch (error) {
-      console.error("OTP verification error:", error);
-
       if (error.code === "auth/invalid-verification-code") {
         toast.error("Invalid OTP.");
       } else if (error.code === "auth/code-expired") {
@@ -281,11 +265,9 @@ const handleAvatarUpload = async (e) => {
 
     try {
       const res = await updateProfile(profileData, token);
-
       if (res?.payload?.user) {
         updateUser(res.payload.user);
         setUser(res.payload.user);
-
         setProfileData({
           name: res.payload.user.name || "",
           email: res.payload.user.email || "",
@@ -301,7 +283,6 @@ const handleAvatarUpload = async (e) => {
           ...profileData,
         }));
       }
-
       toast.success(res?.msg || "Profile updated successfully!");
     } catch (error) {
       toast.error(error?.response?.data?.msg || "Failed to update profile.");
@@ -313,21 +294,15 @@ const handleAvatarUpload = async (e) => {
   const handleIdUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
     setIsUploadingId(true);
-
     try {
       const reader = new FileReader();
-
       reader.onloadend = async () => {
         try {
           const base64Image = reader.result;
-
           const res = await uploadIdCard(base64Image, token);
-
           if (res.status === 1) {
             toast.success(res.msg || "ID uploaded successfully!");
-
             await loadUser();
           } else {
             toast.error(res.msg || "Upload failed.");
@@ -462,6 +437,25 @@ const handleAvatarUpload = async (e) => {
                           {isSendingOtp ? "Sending..." : "Verify"}
                         </Button>
                       )} */}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="emergency_contact_no">
+                        Emergency Contact Number (optional)
+                      </Label>
+
+                      <Input
+                        id="emergency_contact_no"
+                        type="tel"
+                        value={profileData.emergency_contact_no}
+                        onChange={(e) =>
+                          handleInputChange(
+                            "emergency_contact_no",
+                            e.target.value,
+                          )
+                        }
+                        placeholder="+61 412 345 678"
+                      />
                     </div>
 
                     <div className="space-y-2">
@@ -733,7 +727,7 @@ const handleAvatarUpload = async (e) => {
             {/* STRIPE CONNECT BELOW ACCOUNT STATS */}
             {(profileData.user_type === "COURIER" ||
               profileData.user_type === "BOTH") && (
-            <StripeConnectOnboarding user={authUser} />
+              <StripeConnectOnboarding user={authUser} />
             )}
           </div>
         </div>
