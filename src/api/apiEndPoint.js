@@ -99,6 +99,13 @@ export const ablyAuthApi = baseUrl + "/ablyAuth";
 
 export const getJobChatPresenceApi = baseUrl + "/ablyAuth";
 
+//complaint
+
+export const saveComplaintApi = baseUrl + "/saveComplaint";
+
+export const getComplaintApi = baseUrl + "/getComplaint";
+
+
 
 
 

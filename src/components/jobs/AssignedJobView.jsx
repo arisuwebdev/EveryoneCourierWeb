@@ -37,6 +37,8 @@ import { confirmJobCompleteService } from "../../api/ApiServices/jobrelated/conf
 import { removeJobService } from "../../api/ApiServices/jobrelated/removeJobService";
 import PaymentModal from "../payments/PaymentModal";
 import ComplaintModal from "./ComplaintModal";
+import { saveComplaintService } from "../../api/ApiServices/complaint/saveComplaintService";
+import { getComplaintService } from "../../api/ApiServices/complaint/getComplaintService";
 
 // Statuses as returned by the API (uppercase enum values)
 const STATUS = {
@@ -357,6 +359,8 @@ export default function AssignedJobView() {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showComplaintModal, setShowComplaintModal] = useState(false);
   const [reviewJustSubmitted, setReviewJustSubmitted] = useState(false);
+  const [complaint, setComplaint] = useState(null);
+  const [loadingComplaint, setLoadingComplaint] = useState(false);
 
   const fetchJobDetails = useCallback(async () => {
     try {
@@ -424,9 +428,55 @@ export default function AssignedJobView() {
     }
   };
 
+  const fetchComplaint = useCallback(async () => {
+    if (!id || !token) return;
+
+    try {
+      setLoadingComplaint(true);
+
+      const response = await getComplaintService(id, token);
+
+      if (response?.status === 1) {
+        setComplaint(response?.payload?.complaint || null);
+      } else {
+        setComplaint(null);
+      }
+    } catch (error) {
+      console.error(
+        "Failed to fetch complaint:",
+        error.response?.data || error,
+      );
+
+      setComplaint(null);
+    } finally {
+      setLoadingComplaint(false);
+    }
+  }, [id, token]);
+
   useEffect(() => {
     fetchJobDetails();
-  }, [fetchJobDetails]);
+    fetchComplaint();
+  }, [fetchJobDetails, fetchComplaint]);
+
+  const handleComplaintSubmit = async (complaintData) => {
+    try {
+      const response = await saveComplaintService(
+        complaintData.job_id,
+        complaintData.complaint_type,
+        complaintData.subject,
+        complaintData.description,
+        token,
+      );
+      if (response?.status === 1) {
+        toast.success(response.msg || "Complaint submitted successfully.");
+        setShowComplaintModal(false);
+      } else {
+        toast.error(response?.msg || "Failed to submit complaint.");
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.msg || "Failed to submit complaint.");
+    }
+  };
 
   if (loading) {
     return (
@@ -795,7 +845,112 @@ export default function AssignedJobView() {
 
                 {job.status === STATUS.DELIVERED && (
                   <>
-                    {isCustomer && !job.is_delivery_confirmed && (
+                    {/* Customer has already confirmed delivery */}
+                    {isCustomer && job.is_delivery_confirmed && (
+                      <div className="p-4 bg-green-50 border border-green-200 rounded-xl mb-6 text-center">
+                        <p className="font-semibold text-green-700">
+                          ✓ Delivery Confirmed
+                        </p>
+
+                        {job.confirmed_at && (
+                          <p className="text-sm text-green-600 mt-1">
+                            Confirmed on{" "}
+                            {format(
+                              new Date(job.confirmed_at),
+                              "dd MMM yyyy, hh:mm a",
+                            )}
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Customer has raised a complaint */}
+                    {isCustomer && !job.is_delivery_confirmed && complaint && (
+                      <div className="p-5 bg-red-50 border border-red-200 rounded-xl mb-6">
+                        <div className="flex items-start gap-3">
+                          <AlertCircle className="w-6 h-6 text-red-600 shrink-0 mt-0.5" />
+
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-red-800">
+                              Complaint Submitted
+                            </h3>
+
+                            <p className="text-sm text-red-700 mt-1">
+                              Your complaint has been submitted and is currently
+                              being reviewed.
+                            </p>
+
+                            <div className="mt-4 space-y-3">
+                              <div>
+                                <p className="text-xs font-medium text-slate-500">
+                                  Complaint Type
+                                </p>
+                                <p className="text-sm font-semibold text-slate-800">
+                                  {complaint.subject}
+                                </p>
+                              </div>
+
+                              <div>
+                                <p className="text-xs font-medium text-slate-500">
+                                  Description
+                                </p>
+                                <p className="text-sm text-slate-700">
+                                  {complaint.description}
+                                </p>
+                              </div>
+
+                              <div>
+                                <p className="text-xs font-medium text-slate-500">
+                                  Status
+                                </p>
+
+                                <span
+                                  className={`inline-flex mt-1 px-2.5 py-1 rounded-full text-xs font-semibold ${
+                                    complaint.status === "PENDING"
+                                      ? "bg-yellow-100 text-yellow-700"
+                                      : complaint.status === "RESOLVED"
+                                        ? "bg-green-100 text-green-700"
+                                        : "bg-slate-100 text-slate-700"
+                                  }`}
+                                >
+                                  {complaint.status}
+                                </span>
+                              </div>
+
+                              {complaint.created_at && (
+                                <div>
+                                  <p className="text-xs font-medium text-slate-500">
+                                    Submitted On
+                                  </p>
+
+                                  <p className="text-sm text-slate-700">
+                                    {format(
+                                      new Date(complaint.created_at),
+                                      "dd MMM yyyy, hh:mm a",
+                                    )}
+                                  </p>
+                                </div>
+                              )}
+
+                              {complaint.admin_note && (
+                                <div>
+                                  <p className="text-xs font-medium text-slate-500">
+                                    Admin Note
+                                  </p>
+
+                                  <p className="text-sm text-slate-700">
+                                    {complaint.admin_note}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* No complaint and delivery not confirmed */}
+                    {isCustomer && !job.is_delivery_confirmed && !complaint && (
                       <div className="p-5 bg-green-50 border border-green-200 rounded-xl mb-6">
                         <div className="flex items-center gap-3 mb-3">
                           <AlertCircle className="w-6 h-6 text-green-600" />
@@ -834,38 +989,41 @@ export default function AssignedJobView() {
                       </div>
                     )}
 
+                    {/* Customer: show review section only AFTER delivery confirmation */}
                     {isCustomer && job.is_delivery_confirmed && (
-                      <div className="p-4 bg-green-50 border border-green-200 rounded-xl mb-6 text-center">
-                        <p className="font-semibold text-green-700">
-                          ✓ Delivery Confirmed
-                        </p>
-
-                        {job.confirmed_at && (
-                          <p className="text-sm text-green-600 mt-1">
-                            Confirmed on{" "}
-                            {format(
-                              new Date(job.confirmed_at),
-                              "dd MMM yyyy, hh:mm a",
-                            )}
-                          </p>
-                        )}
-                      </div>
+                      <DeliveredSection
+                        jobId={job.id}
+                        token={token}
+                        isCustomer={true}
+                        courierName={job.courier_name}
+                        customerName={job.customer_name}
+                        customerHasReviewed={customerHasReviewed}
+                        customerRating={job.customer_given_rating}
+                        customerReview={job.customer_given_review}
+                        courierHasReviewed={courierHasReviewed}
+                        courierRating={job?.courier_given_rating}
+                        courierReview={job?.courier_given_review}
+                        onReviewed={fetchJobDetails}
+                      />
                     )}
 
-                    <DeliveredSection
-                      jobId={job.id}
-                      token={token}
-                      isCustomer={isCustomer}
-                      courierName={job.courier_name}
-                      customerName={job.customer_name}
-                      customerHasReviewed={customerHasReviewed}
-                      customerRating={job.customer_given_rating}
-                      customerReview={job.customer_given_review}
-                      courierHasReviewed={courierHasReviewed}
-                      courierRating={job?.courier_given_rating}
-                      courierReview={job?.courier_given_review}
-                      onReviewed={fetchJobDetails}
-                    />
+                    {/* Courier: always show DeliveredSection after job is DELIVERED */}
+                    {isCourier && (
+                      <DeliveredSection
+                        jobId={job.id}
+                        token={token}
+                        isCustomer={false}
+                        courierName={job.courier_name}
+                        customerName={job.customer_name}
+                        customerHasReviewed={customerHasReviewed}
+                        customerRating={job.customer_given_rating}
+                        customerReview={job.customer_given_review}
+                        courierHasReviewed={courierHasReviewed}
+                        courierRating={job?.courier_given_rating}
+                        courierReview={job?.courier_given_review}
+                        onReviewed={fetchJobDetails}
+                      />
+                    )}
                   </>
                 )}
               </CardContent>
@@ -961,18 +1119,12 @@ export default function AssignedJobView() {
         }}
       />
 
-        {/* this is for complaint modal  */}
+      {/* this is for complaint modal  */}
       <ComplaintModal
         open={showComplaintModal}
         onClose={() => setShowComplaintModal(false)}
         jobId={job?.id}
-        onSubmit={(complaintData) => {
-          console.log("Complaint submitted:", complaintData);
-
-          // Complaint API will go here later
-
-          setShowComplaintModal(false);
-        }}
+        onSubmit={handleComplaintSubmit}
       />
     </div>
   );

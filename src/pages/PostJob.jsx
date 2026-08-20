@@ -301,21 +301,61 @@ export default function PostJob() {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="dimensions">
-                        Dimensions (L x W x H cm)
-                      </Label>
-                      <div className="relative">
-                        <Ruler className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
+                      <Label>Dimensions (L × W × H cm)</Label>
+
+                      <div className="grid grid-cols-3 gap-3">
                         <Input
-                          id="dimensions"
-                          value={jobData.dimensions}
-                          onChange={(e) =>
-                            handleInputChange("dimensions", e.target.value)
-                          }
-                          placeholder="e.g., 30 x 20 x 15"
-                          className="pl-10"
+                          type="number"
+                          min="0"
+                          step="0.1"
+                          placeholder="Length"
+                          value={jobData.dimensions.split(" x ")[0] || ""}
+                          onChange={(e) => {
+                            const [, width, height] =
+                              jobData.dimensions.split(" x ");
+                            handleInputChange(
+                              "dimensions",
+                              `${e.target.value} x ${width || ""} x ${height || ""}`,
+                            );
+                          }}
+                        />
+
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.1"
+                          placeholder="Width"
+                          value={jobData.dimensions.split(" x ")[1] || ""}
+                          onChange={(e) => {
+                            const [length, , height] =
+                              jobData.dimensions.split(" x ");
+                            handleInputChange(
+                              "dimensions",
+                              `${length || ""} x ${e.target.value} x ${height || ""}`,
+                            );
+                          }}
+                        />
+
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.1"
+                          placeholder="Height"
+                          value={jobData.dimensions.split(" x ")[2] || ""}
+                          onChange={(e) => {
+                            const [length, width] =
+                              jobData.dimensions.split(" x ");
+                            handleInputChange(
+                              "dimensions",
+                              `${length || ""} x ${width || ""} x ${e.target.value}`,
+                            );
+                          }}
                         />
                       </div>
+
+                      <p className="text-xs text-slate-500">
+                        Enter Length × Width × Height 
+                      </p>
                     </div>
                   </div>
 
@@ -333,15 +373,9 @@ export default function PostJob() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="small">
-                            Small 
-                          </SelectItem>
-                          <SelectItem value="medium">
-                            Medium 
-                          </SelectItem>
-                          <SelectItem value="large">
-                            Large 
-                          </SelectItem>
+                          <SelectItem value="small">Small</SelectItem>
+                          <SelectItem value="medium">Medium</SelectItem>
+                          <SelectItem value="large">Large</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -520,7 +554,7 @@ export default function PostJob() {
               </CardContent>
             </Card>
 
-             {/* These are for example guide what is for what thing  */}
+            {/* These are for example guide what is for what thing  */}
             <Card className="bg-white/90 backdrop-blur-sm">
               <CardContent className="p-6">
                 <h3 className="font-semibold mb-4">Package Size Guide</h3>
