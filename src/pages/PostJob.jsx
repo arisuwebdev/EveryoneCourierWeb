@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { Button } from "../components/ui/button";
 import {
   Card,
@@ -38,6 +38,9 @@ import { toast } from "react-toastify";
 export default function PostJob() {
   const navigate = useNavigate();
   const { token } = useAuth();
+  const lengthRef = useRef(null);
+  const widthRef = useRef(null);
+  const heightRef = useRef(null);
   const today = new Date().toISOString().split("T")[0];
   const [paymentData, setPaymentData] = useState(null);
   // const [user, setUser] = useState(null);
@@ -281,30 +284,33 @@ export default function PostJob() {
                   </div>
 
                   {/* Weight & Dimensions */}
+                  {/* Weight & Dimensions */}
                   <div className="grid md:grid-cols-2 gap-6">
+                    {/* Weight */}
                     <div className="space-y-2">
                       <Label htmlFor="weight">Weight (kg)</Label>
-                      <div className="relative">
-                        <Scale className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
-                        <Input
-                          id="weight"
-                          type="number"
-                          min="0"
-                          step="0.1"
-                          value={jobData.weight}
-                          onChange={(e) =>
-                            handleInputChange("weight", e.target.value)
-                          }
-                          placeholder="e.g., 2.5"
-                          className="pl-10"
-                        />
-                      </div>
+
+                      <Input
+                        id="weight"
+                        type="number"
+                        min="0"
+                        step="0.1"
+                        placeholder="Enter weight"
+                        value={jobData.weight}
+                        onChange={(e) =>
+                          handleInputChange("weight", e.target.value)
+                        }
+                      />
                     </div>
+
+                    {/* Dimensions */}
                     <div className="space-y-2">
                       <Label>Dimensions (L × W × H cm)</Label>
 
                       <div className="grid grid-cols-3 gap-3">
+                        {/* Length */}
                         <Input
+                          ref={lengthRef}
                           type="number"
                           min="0"
                           step="0.1"
@@ -313,14 +319,23 @@ export default function PostJob() {
                           onChange={(e) => {
                             const [, width, height] =
                               jobData.dimensions.split(" x ");
+
                             handleInputChange(
                               "dimensions",
                               `${e.target.value} x ${width || ""} x ${height || ""}`,
                             );
                           }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              widthRef.current?.focus();
+                            }
+                          }}
                         />
 
+                        {/* Width */}
                         <Input
+                          ref={widthRef}
                           type="number"
                           min="0"
                           step="0.1"
@@ -329,14 +344,23 @@ export default function PostJob() {
                           onChange={(e) => {
                             const [length, , height] =
                               jobData.dimensions.split(" x ");
+
                             handleInputChange(
                               "dimensions",
                               `${length || ""} x ${e.target.value} x ${height || ""}`,
                             );
                           }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              heightRef.current?.focus();
+                            }
+                          }}
                         />
 
+                        {/* Height */}
                         <Input
+                          ref={heightRef}
                           type="number"
                           min="0"
                           step="0.1"
@@ -345,16 +369,22 @@ export default function PostJob() {
                           onChange={(e) => {
                             const [length, width] =
                               jobData.dimensions.split(" x ");
+
                             handleInputChange(
                               "dimensions",
                               `${length || ""} x ${width || ""} x ${e.target.value}`,
                             );
                           }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                            }
+                          }}
                         />
                       </div>
 
                       <p className="text-xs text-slate-500">
-                        Enter Length × Width × Height 
+                        Enter Length × Width × Height
                       </p>
                     </div>
                   </div>
