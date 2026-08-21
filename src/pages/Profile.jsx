@@ -264,7 +264,18 @@ export default function Profile() {
     setIsUpdating(true);
 
     try {
-      const res = await updateProfile(profileData, token);
+      //here function for if usertype is customer then pass the null value in vehicle
+
+      // const res = await updateProfile(profileData, token);
+      const dataToUpdate = {
+        ...profileData,
+        vehicle_type:
+          profileData.user_type === "CUSTOMER"
+            ? null
+            : profileData.vehicle_type || null,
+      };
+
+      const res = await updateProfile(dataToUpdate, token);
       if (res?.payload?.user) {
         updateUser(res.payload.user);
         setUser(res.payload.user);

@@ -442,10 +442,10 @@ export default function AssignedJobView() {
         setComplaint(null);
       }
     } catch (error) {
-      console.error(
-        "Failed to fetch complaint:",
-        error.response?.data || error,
-      );
+      // console.error(
+      //   "Failed to fetch complaint:",
+      //   error.response?.data || error,
+      // );
 
       setComplaint(null);
     } finally {
@@ -1116,6 +1116,7 @@ export default function AssignedJobView() {
         onPaymentComplete={async () => {
           setShowPaymentModal(false);
           await fetchJobDetails();
+          navigate("/my-jobs");
         }}
       />
 

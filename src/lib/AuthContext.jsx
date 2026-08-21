@@ -16,18 +16,15 @@
 //     setIsLoadingPublicSettings(false);
 //   };
 
-
 //   const logout = () => {
 //     setUser(null);
 //     setIsAuthenticated(false);
 //   };
 
-
 //   const navigateToLogin = () => {
 //     // Add your own login route later
 //     console.log("Login required");
 //   };
-
 
 //   return (
 //     <AuthContext.Provider
@@ -49,7 +46,6 @@
 //     </AuthContext.Provider>
 //   );
 // };
-
 
 // export const useAuth = () => {
 //   const context = useContext(AuthContext);
@@ -142,8 +138,7 @@
 
 // export const useAuth = () => useContext(AuthContext);
 
-
-import { createContext, useContext, useState , useCallback} from "react";
+import { createContext, useContext, useState, useCallback } from "react";
 import { logoutUser } from "../api/ApiServices/logoutService";
 import { updateDeviceNotificationToken } from "../api/ApiServices/notification/deviceTokenNotificationService";
 import { requestNotificationPermission } from "../firebaseNotification";
@@ -170,18 +165,22 @@ export const AuthProvider = ({ children }) => {
     try {
       const notificationData = await requestNotificationPermission();
 
+      // console.log("🔔 Notification data:", notificationData);
+
       if (notificationData) {
-        await updateDeviceNotificationToken(
+        const notificationResponse = await updateDeviceNotificationToken(
           data.payload.token,
           notificationData.device_type,
           notificationData.fcm_token,
         );
 
-      
+        // console.log("🔔 Device token API response:", notificationResponse);
+      } else {
+        // console.log("❌ No FCM token received");
       }
-    } catch (error) {
-      
-    }
+   } catch (error) {
+  // console.error("❌ Notification token update failed:", error);
+}
   };
   // const updateUser = (updatedUser) => {
   //   localStorage.setItem("user", JSON.stringify(updatedUser));
@@ -189,38 +188,34 @@ export const AuthProvider = ({ children }) => {
   // };
 
   const updateUser = useCallback((updatedUser) => {
-  localStorage.setItem("user", JSON.stringify(updatedUser));
-  setUser(updatedUser);
-}, []);
+    localStorage.setItem("user", JSON.stringify(updatedUser));
+    setUser(updatedUser);
+  }, []);
 
   const updateStripeStatus = (stripeStatus) => {
-  setUser((prevUser) => {
-    if (!prevUser) return prevUser;
+    setUser((prevUser) => {
+      if (!prevUser) return prevUser;
 
-    const updatedUser = {
-      ...prevUser,
+      const updatedUser = {
+        ...prevUser,
 
-      stripe_account_id:
-        stripeStatus.stripe_account_id ?? prevUser.stripe_account_id,
+        stripe_account_id:
+          stripeStatus.stripe_account_id ?? prevUser.stripe_account_id,
 
-      stripe_onboarding_complete:
-        stripeStatus.stripe_onboarding_complete,
+        stripe_onboarding_complete: stripeStatus.stripe_onboarding_complete,
 
-      stripe_payouts_enabled:
-        stripeStatus.stripe_payouts_enabled,
+        stripe_payouts_enabled: stripeStatus.stripe_payouts_enabled,
 
-      stripe_details_submitted:
-        stripeStatus.stripe_details_submitted,
+        stripe_details_submitted: stripeStatus.stripe_details_submitted,
 
-      is_payout_ready:
-        stripeStatus.is_payout_ready,
-    };
+        is_payout_ready: stripeStatus.is_payout_ready,
+      };
 
-    localStorage.setItem("user", JSON.stringify(updatedUser));
+      localStorage.setItem("user", JSON.stringify(updatedUser));
 
-    return updatedUser;
-  });
-};
+      return updatedUser;
+    });
+  };
 
   const logout = async () => {
     try {

@@ -1,9 +1,9 @@
-
-
 import { Toaster } from "./components/ui/toaster";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClientInstance } from "./lib/query-client";
 
+import { useEffect } from "react";
+import { listenForMessages } from "./firebaseNotification";
 
 // for use session logout
 import "./lib/axiosInterceptor";
@@ -41,7 +41,7 @@ import AssignedJobView from "./components/jobs/AssignedJobView";
 import ApplicantList from "./components/jobs/ApplicantList";
 import ScrollToTop from "./components/ScrollToTop";
 import ProtectedRoute from "./lib/ProtectedRoute";
-import UserProfileView from "./pages/UserProfileView"; 
+import UserProfileView from "./pages/UserProfileView";
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError } = useAuth();
@@ -178,17 +178,16 @@ const AuthenticatedApp = () => {
           }
         />
 
-         <Route
+        <Route
           path="/user-profile/:userId"
           element={
             <ProtectedRoute>
               <Layout currentPageName="MyJobs">
-             <UserProfileView/>
+                <UserProfileView />
               </Layout>
             </ProtectedRoute>
           }
         />
-
 
         {/* 404 */}
         <Route path="*" element={<PageNotFound />} />
@@ -198,11 +197,36 @@ const AuthenticatedApp = () => {
 };
 
 export default function App() {
+  useEffect(() => {
+    // Register Firebase Messaging Service Worker
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker
+        // .register(
+        //   "/current-project/react-project/EveryoneCourior/firebase-messaging-sw.js",
+        // )
+          .register(
+          "/firebase-messaging-sw.js",
+         )
+        .then((registration) => {
+          // console.log("✅ Firebase service worker registered:", registration);
+        })
+        .catch((error) => {
+          // console.error(
+          //   "❌ Firebase service worker registration failed:",
+          //   error,
+          // );
+        });
+    }
+
+    // Listen for foreground FCM messages
+    listenForMessages();
+  }, []);
+
   return (
     <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>
-         {/* <Router basename="/current-project/react-project/EveryoneCourior">  */}
-       <Router>
+        {/* <Router basename="/current-project/react-project/EveryoneCourior"> */}
+          <Router>
           {/* here scrolltotop use for need to show top any navigate after  */}
           <ScrollToTop />
           <AuthenticatedApp />
