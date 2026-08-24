@@ -47,6 +47,7 @@ export default function Layout({ children }) {
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
   const [isMobileAccountMenuOpen, setIsMobileAccountMenuOpen] = useState(false);
   const accountMenuRef = useRef(null);
+  const notificationRef = useRef(null);
 
   // for notification
 
@@ -54,6 +55,25 @@ export default function Layout({ children }) {
   const [notifications, setNotifications] = useState([]);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isNotificationLoading, setIsNotificationLoading] = useState(false);
+
+  useEffect(() => {
+    const handleNotificationClickOutside = (event) => {
+      if (
+        notificationRef.current &&
+        !notificationRef.current.contains(event.target)
+      ) {
+        setIsNotificationOpen(false);
+      }
+    };
+
+    if (isNotificationOpen) {
+      document.addEventListener("mousedown", handleNotificationClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleNotificationClickOutside);
+    };
+  }, [isNotificationOpen]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -83,17 +103,32 @@ export default function Layout({ children }) {
     const fetchNotificationCount = async () => {
       try {
         const response = await getNotificationCount(token);
+
         if (response?.status === 1) {
           const count = response?.payload?.count || 0;
-
           setNotificationCount(count);
+        } else {
+          setNotificationCount(0);
         }
       } catch (error) {
+        console.error("Notification count error:", error);
         setNotificationCount(0);
       }
     };
 
+    // Call immediately when user logs in/page loads
     fetchNotificationCount();
+
+    // Then call every 30 seconds
+    const interval = setInterval(() => {
+      fetchNotificationCount();
+    }, 30000);
+
+    // Clear interval when component unmounts
+    // or token/authentication changes
+    return () => {
+      clearInterval(interval);
+    };
   }, [isAuthenticated, token]);
 
   const handleNotificationClick = async () => {
@@ -101,7 +136,6 @@ export default function Layout({ children }) {
       setIsNotificationOpen(false);
       return;
     }
-
     setIsNotificationOpen(true);
 
     if (!token) {
@@ -225,7 +259,7 @@ export default function Layout({ children }) {
                 )}
 
                 {/* for notification  */}
-                <div className="hidden md:block relative">
+                <div ref={notificationRef} className="hidden md:block relative">
                   <button
                     type="button"
                     onClick={handleNotificationClick}

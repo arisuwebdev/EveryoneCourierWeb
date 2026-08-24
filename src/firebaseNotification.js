@@ -144,24 +144,40 @@ export const listenForMessages = async () => {
       return;
     }
 
+    // console.log("✅ FCM listener started");
+
     onMessage(messaging, (payload) => {
-      // console.log("🔥 FCM message received:", payload);
+      // console.log("🔥🔥 FCM MESSAGE RECEIVED 🔥🔥");
+      // console.log("📦 Full payload:", payload);
+      // console.log("🔔 Notification:", payload.notification);
+      // console.log("📊 Data:", payload.data);
 
       const title =
-        payload.notification?.title || "Everyone Courier";
+        payload.notification?.title ||
+        payload.data?.title ||
+        "Everyone Courier";
 
       const body =
         payload.notification?.body ||
+        payload.data?.body ||
         "You have a new notification";
+
+      // console.log("📌 Title:", title);
+      // console.log("📌 Body:", body);
+      // console.log("🔐 Permission:", Notification.permission);
 
       if (Notification.permission === "granted") {
         new Notification(title, {
           body,
           icon: "/logo.png",
         });
+
+        // console.log("✅ Browser notification displayed");
+      } else {
+        // console.log("❌ Notification permission is not granted");
       }
     });
   } catch (error) {
-    // console.error("❌ FCM listener error:", error);
+    console.error("❌ FCM listener error:", error);
   }
 };

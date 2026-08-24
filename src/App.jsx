@@ -37,6 +37,7 @@ import TermsOfService from "./pages/TermsOfService";
 import TermsAcceptanceModal from "./components/TermsAcceptanceModal";
 import UserNotRegisteredError from "./components/UserNotRegisteredError";
 import PageNotFound from "./lib/PageNotFound";
+import ServerError from "./lib/500";
 import AssignedJobView from "./components/jobs/AssignedJobView";
 import ApplicantList from "./components/jobs/ApplicantList";
 import ScrollToTop from "./components/ScrollToTop";
@@ -191,6 +192,10 @@ const AuthenticatedApp = () => {
 
         {/* 404 */}
         <Route path="*" element={<PageNotFound />} />
+
+        {/* 500 */}
+        <Route path="/500" element={<ServerError />} />
+
       </Routes>
     </>
   );
@@ -201,12 +206,10 @@ export default function App() {
     // Register Firebase Messaging Service Worker
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker
-        // .register(
-        //   "/current-project/react-project/EveryoneCourior/firebase-messaging-sw.js",
-        // )
-          .register(
-          "/firebase-messaging-sw.js",
-         )
+        .register(
+          "/current-project/react-project/EveryoneCourior/firebase-messaging-sw.js",
+        )
+        // .register("/firebase-messaging-sw.js")
         .then((registration) => {
           // console.log("✅ Firebase service worker registered:", registration);
         })
@@ -226,7 +229,7 @@ export default function App() {
     <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>
         {/* <Router basename="/current-project/react-project/EveryoneCourior"> */}
-          <Router>
+        <Router>
           {/* here scrolltotop use for need to show top any navigate after  */}
           <ScrollToTop />
           <AuthenticatedApp />

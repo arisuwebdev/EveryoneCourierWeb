@@ -361,6 +361,7 @@ export default function AssignedJobView() {
   const [reviewJustSubmitted, setReviewJustSubmitted] = useState(false);
   const [complaint, setComplaint] = useState(null);
   const [loadingComplaint, setLoadingComplaint] = useState(false);
+  const [isEditingComplaint, setIsEditingComplaint] = useState(false);
 
   const fetchJobDetails = useCallback(async () => {
     try {
@@ -467,14 +468,22 @@ export default function AssignedJobView() {
         complaintData.description,
         token,
       );
+
       if (response?.status === 1) {
-        toast.success(response.msg || "Complaint submitted successfully.");
+        toast.success(response.msg || "Complaint saved successfully.");
+
         setShowComplaintModal(false);
+
+        // Refresh complaint after create/edit
+        await fetchComplaint();
+
+        // Refresh job too, in case status/data changed
+        await fetchJobDetails();
       } else {
-        toast.error(response?.msg || "Failed to submit complaint.");
+        toast.error(response?.msg || "Failed to save complaint.");
       }
     } catch (error) {
-      toast.error(error.response?.data?.msg || "Failed to submit complaint.");
+      toast.error(error.response?.data?.msg || "Failed to save complaint.");
     }
   };
 
@@ -881,24 +890,29 @@ export default function AssignedJobView() {
                             </p>
 
                             <div className="mt-4 space-y-3">
+                              {/* Complaint Type */}
                               <div>
                                 <p className="text-xs font-medium text-slate-500">
                                   Complaint Type
                                 </p>
+
                                 <p className="text-sm font-semibold text-slate-800">
                                   {complaint.subject}
                                 </p>
                               </div>
 
+                              {/* Description */}
                               <div>
                                 <p className="text-xs font-medium text-slate-500">
                                   Description
                                 </p>
+
                                 <p className="text-sm text-slate-700">
                                   {complaint.description}
                                 </p>
                               </div>
 
+                              {/* Status */}
                               <div>
                                 <p className="text-xs font-medium text-slate-500">
                                   Status
@@ -908,15 +922,20 @@ export default function AssignedJobView() {
                                   className={`inline-flex mt-1 px-2.5 py-1 rounded-full text-xs font-semibold ${
                                     complaint.status === "PENDING"
                                       ? "bg-yellow-100 text-yellow-700"
-                                      : complaint.status === "RESOLVED"
-                                        ? "bg-green-100 text-green-700"
-                                        : "bg-slate-100 text-slate-700"
+                                      : complaint.status === "REVIEWED"
+                                        ? "bg-blue-100 text-blue-700"
+                                        : complaint.status === "RESOLVED"
+                                          ? "bg-green-100 text-green-700"
+                                          : complaint.status === "DISMISSED"
+                                            ? "bg-red-100 text-red-700"
+                                            : "bg-slate-100 text-slate-700"
                                   }`}
                                 >
                                   {complaint.status}
                                 </span>
                               </div>
 
+                              {/* Submitted date */}
                               {complaint.created_at && (
                                 <div>
                                   <p className="text-xs font-medium text-slate-500">
@@ -932,6 +951,7 @@ export default function AssignedJobView() {
                                 </div>
                               )}
 
+                              {/* Admin Note */}
                               {complaint.admin_note && (
                                 <div>
                                   <p className="text-xs font-medium text-slate-500">
@@ -942,6 +962,40 @@ export default function AssignedJobView() {
                                     {complaint.admin_note}
                                   </p>
                                 </div>
+                              )}
+                            </div>
+
+                            {/* ACTIONS */}
+                            <div className="flex flex-col md:flex-row gap-3 mt-5">
+                              {/* Edit only when PENDING or REVIEWED */}
+                              {(complaint.status === "PENDING" ||
+                                complaint.status === "REVIEWED") && (
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setIsEditingComplaint(true);
+                                    setShowComplaintModal(true);
+                                  }}
+                                  className="flex-1 border-blue-300 text-blue-600 hover:bg-blue-50"
+                                >
+                                  Edit Complaint
+                                </Button>
+                              )}
+
+                              {/* Confirm only when RESOLVED or DISMISSED */}
+                              {(complaint.status === "RESOLVED" ||
+                                complaint.status === "DISMISSED") && (
+                                <Button
+                                  type="button"
+                                  onClick={handleConfirmDelivery}
+                                  disabled={isUpdating}
+                                  className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                                >
+                                  {isUpdating
+                                    ? "Confirming..."
+                                    : "Confirm Delivery"}
+                                </Button>
                               )}
                             </div>
                           </div>
@@ -1123,8 +1177,13 @@ export default function AssignedJobView() {
       {/* this is for complaint modal  */}
       <ComplaintModal
         open={showComplaintModal}
-        onClose={() => setShowComplaintModal(false)}
+        onClose={() => {
+          setShowComplaintModal(false);
+          setIsEditingComplaint(false);
+        }}
         jobId={job?.id}
+        complaint={isEditingComplaint ? complaint : null}
+        isEditing={isEditingComplaint}
         onSubmit={handleComplaintSubmit}
       />
     </div>
