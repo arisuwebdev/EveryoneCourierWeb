@@ -67,8 +67,6 @@
 //   }
 // };
 
-
-
 import { getToken, onMessage } from "firebase/messaging";
 import { getFirebaseMessaging } from "./firebase";
 
@@ -77,47 +75,38 @@ const VAPID_KEY =
 
 export const requestNotificationPermission = async () => {
   try {
-    // console.log("🔔 Requesting notification permission...");
-
     const permission = await Notification.requestPermission();
 
-    // console.log("🔔 Notification permission:", permission);
+    console.log("🔔 Notification permission:", permission);
 
     if (permission !== "granted") {
-      // console.log("❌ Notification permission not granted");
+      console.log("❌ Notification permission not granted");
       return null;
     }
 
     const messaging = await getFirebaseMessaging();
 
     if (!messaging) {
-      // console.log("❌ Firebase messaging is not supported");
+      console.log("❌ Firebase messaging is not supported");
       return null;
     }
 
-    // console.log("✅ Firebase messaging initialized");
+    console.log("✅ Firebase messaging initialized");
 
-    const registration =
-      await navigator.serviceWorker.getRegistration(
-        "/current-project/react-project/EveryoneCourior/"
-      );
+    // Use the already registered Firebase service worker
+    const registration = await navigator.serviceWorker.ready;
 
-    // console.log("🔧 Firebase service worker:", registration);
-
-    if (!registration) {
-      // console.error("❌ Firebase service worker not found");
-      return null;
-    }
+    console.log("🔧 Firebase service worker:", registration);
 
     const fcmToken = await getToken(messaging, {
       vapidKey: VAPID_KEY,
       serviceWorkerRegistration: registration,
     });
 
-    // console.log("🔥 Current FCM Token:", fcmToken);
+    console.log("🔥 Current FCM Token:", fcmToken);
 
     if (!fcmToken) {
-      // console.log("❌ FCM token is empty");
+      console.log("❌ FCM token is empty");
       return null;
     }
 
@@ -126,11 +115,11 @@ export const requestNotificationPermission = async () => {
       fcm_token: fcmToken,
     };
 
-    // console.log("📱 Device notification data:", deviceData);
+    console.log("📱 Device notification data:", deviceData);
 
     return deviceData;
   } catch (error) {
-    // console.error("❌ FCM TOKEN ERROR:", error);
+    console.error("❌ FCM TOKEN ERROR:", error);
     return null;
   }
 };
@@ -140,17 +129,15 @@ export const listenForMessages = async () => {
     const messaging = await getFirebaseMessaging();
 
     if (!messaging) {
-      // console.log("❌ Firebase messaging unavailable");
+      console.log("❌ Firebase messaging unavailable");
       return;
     }
 
-    // console.log("✅ FCM listener started");
+    console.log("✅ FCM listener started");
 
-    onMessage(messaging, (payload) => {
-      // console.log("🔥🔥 FCM MESSAGE RECEIVED 🔥🔥");
-      // console.log("📦 Full payload:", payload);
-      // console.log("🔔 Notification:", payload.notification);
-      // console.log("📊 Data:", payload.data);
+    onMessage(messaging, async (payload) => {
+      console.log("🔥🔥 FCM MESSAGE RECEIVED 🔥🔥");
+      console.log("📦 Full payload:", payload);
 
       const title =
         payload.notification?.title ||
@@ -162,19 +149,40 @@ export const listenForMessages = async () => {
         payload.data?.body ||
         "You have a new notification";
 
-      // console.log("📌 Title:", title);
-      // console.log("📌 Body:", body);
-      // console.log("🔐 Permission:", Notification.permission);
+      console.log("📌 Title:", title);
+      console.log("📌 Body:", body);
+      console.log("🔐 Permission:", Notification.permission);
 
-      if (Notification.permission === "granted") {
-        new Notification(title, {
+      if (Notification.permission !== "granted") {
+        console.log("❌ Notification permission is not granted");
+        return;
+      }
+
+      try {
+        const registration = await navigator.serviceWorker.ready;
+
+        // await registration.showNotification(title, {
+        //   body,
+        //   icon:
+        //     "/current-project/react-project/EveryoneCourior/icon-192.png",
+        // });
+
+        const notificationUrl =
+          payload.data?.url ||
+          "/current-project/react-project/EveryoneCourior/dashboard";
+
+        await registration.showNotification(title, {
           body,
-          icon: "/logo.png",
+          icon: "/current-project/react-project/EveryoneCourior/icon-192.png",
+
+          data: {
+            url: notificationUrl,
+          },
         });
 
-        // console.log("✅ Browser notification displayed");
-      } else {
-        // console.log("❌ Notification permission is not granted");
+        console.log("✅ Browser notification displayed");
+      } catch (error) {
+        console.error("❌ showNotification error:", error);
       }
     });
   } catch (error) {
