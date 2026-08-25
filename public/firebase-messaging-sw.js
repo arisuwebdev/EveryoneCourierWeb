@@ -53,7 +53,7 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {
-  console.log("🔥 Background FCM message:", payload);
+  // console.log("🔥 Background FCM message:", payload);
 
   const notificationTitle =
     payload.notification?.title ||
@@ -87,7 +87,7 @@ messaging.onBackgroundMessage((payload) => {
 
 // 🔔 Notification click
 self.addEventListener("notificationclick", (event) => {
-  console.log("🔔 Notification clicked");
+  // console.log("🔔 Notification clicked");
 
   event.notification.close();
 

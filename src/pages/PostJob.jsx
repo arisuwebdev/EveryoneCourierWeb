@@ -35,6 +35,7 @@ import { saveJob } from "../api/ApiServices/jobrelated/saveJobService";
 import { useAuth } from "../lib/AuthContext";
 import { toast } from "react-toastify";
 
+
 export default function PostJob() {
   const navigate = useNavigate();
   const { token } = useAuth();
@@ -64,6 +65,10 @@ export default function PostJob() {
     special_instructions: "",
   });
   const [basePrice, setBasePrice] = useState("");
+
+  const validateAustralianPhone = (phone) => {
+    return /^(04\d{8}|0[2378]\d{8})$/.test(phone);
+  };
 
   const handleInputChange = (field, value) => {
     setJobData((prev) => {
@@ -100,49 +105,61 @@ export default function PostJob() {
     navigate(createPageUrl("my-jobs"));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    setIsSubmitting(true);
+  // If job was already created, just reopen payment modal
+  if (paymentData?.job_id && paymentData?.client_secret) {
+    setShowPaymentModal(true);
+    return;
+  }
 
-    try {
-      const payload = {
-        title: jobData.title,
-        pickup_address: jobData.pickup_address,
-        delivery_address: jobData.delivery_address,
-        package_description: jobData.package_description,
-        package_size: jobData.package_size.toUpperCase(),
-        vehicle_required: jobData.vehicle_required.toUpperCase(),
-        price: Number(jobData.price),
-        pickup_date: jobData.pickup_date,
-        delivery_date: jobData.delivery_date,
-        special_instructions: jobData.special_instructions,
-        urgent: jobData.urgent,
-        pickup_contact_phone: jobData.pickup_contact_phone,
-        receiver_contact_phone: jobData.receiver_contact_phone,
-        weight: jobData.weight ? Number(jobData.weight) : null,
-        dimensions: jobData.dimensions,
-      };
+  setIsSubmitting(true);
 
-      const response = await saveJob(payload, token);
+  try {
+    const payload = {
+      title: jobData.title,
+      pickup_address: jobData.pickup_address,
+      delivery_address: jobData.delivery_address,
+      package_description: jobData.package_description,
+      package_size: jobData.package_size.toUpperCase(),
+      vehicle_required: jobData.vehicle_required.toUpperCase(),
+      price: Number(jobData.price),
+      pickup_date: jobData.pickup_date,
+      delivery_date: jobData.delivery_date,
+      special_instructions: jobData.special_instructions,
+      urgent: jobData.urgent,
+      pickup_contact_phone: jobData.pickup_contact_phone,
+      receiver_contact_phone: jobData.receiver_contact_phone,
+      weight: jobData.weight ? Number(jobData.weight) : null,
+      dimensions: jobData.dimensions,
+    };
 
-      if (response.status === 1) {
-        toast.success(response.msg);
-        setPaymentData(response.payload);
-        setShowPaymentModal(true);
-      } else {
-        toast.error(response.msg || "Failed to save job.");
-      }
-    } catch (error) {
-      toast.error(
-        error.response?.data?.msg ||
-          error.response?.data?.message ||
-          "Failed to save job.",
-      );
-    } finally {
-      setIsSubmitting(false);
+    const response = await saveJob(payload, token);
+
+    if (response.status === 1) {
+      toast.success(response.msg);
+
+      // Store payment information + job ID
+      setPaymentData(response.payload);
+
+      // Open payment modal
+      setShowPaymentModal(true);
+    } else {
+      toast.error(response.msg || "Failed to save job.");
     }
-  };
+  } catch (error) {
+    toast.error(
+      error.response?.data?.msg ||
+        error.response?.data?.message ||
+        "Failed to save job."
+    );
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+
+
 
   return (
     <div className="min-h-screen p-4 md:p-8">
@@ -232,13 +249,15 @@ export default function PostJob() {
                           id="pickup_contact_phone"
                           type="tel"
                           value={jobData.pickup_contact_phone}
-                          onChange={(e) =>
-                            handleInputChange(
-                              "pickup_contact_phone",
-                              e.target.value,
-                            )
-                          }
-                          placeholder="Pickup contact number"
+                          onChange={(e) => {
+                            const value = e.target.value
+                              .replace(/\D/g, "")
+                              .slice(0, 10);
+                            handleInputChange("pickup_contact_phone", value);
+                          }}
+                          placeholder="04XXXXXXXX"
+                          maxLength={10}
+                          inputMode="numeric"
                           className="pl-10"
                           required
                         />
@@ -254,13 +273,15 @@ export default function PostJob() {
                           id="receiver_contact_phone"
                           type="tel"
                           value={jobData.receiver_contact_phone}
-                          onChange={(e) =>
-                            handleInputChange(
-                              "receiver_contact_phone",
-                              e.target.value,
-                            )
-                          }
-                          placeholder="Receiver phone number"
+                          onChange={(e) => {
+                            const value = e.target.value
+                              .replace(/\D/g, "")
+                              .slice(0, 10);
+                            handleInputChange("receiver_contact_phone", value);
+                          }}
+                          placeholder="04XXXXXXXX"
+                          maxLength={10}
+                          inputMode="numeric"
                           className="pl-10"
                           required
                         />
@@ -283,7 +304,6 @@ export default function PostJob() {
                     />
                   </div>
 
-                  {/* Weight & Dimensions */}
                   {/* Weight & Dimensions */}
                   <div className="grid md:grid-cols-2 gap-6">
                     {/* Weight */}
@@ -492,6 +512,8 @@ export default function PostJob() {
                         }
                       />
                     </div>
+
+                    
                     <div className="space-y-2">
                       <Label htmlFor="delivery_date">
                         Preferred Delivery Date

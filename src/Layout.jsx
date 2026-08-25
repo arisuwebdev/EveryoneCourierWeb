@@ -111,7 +111,7 @@ export default function Layout({ children }) {
           setNotificationCount(0);
         }
       } catch (error) {
-        console.error("Notification count error:", error);
+        // console.error("Notification count error:", error);
         setNotificationCount(0);
       }
     };
