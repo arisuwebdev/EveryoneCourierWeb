@@ -564,38 +564,44 @@ export default function Layout({ children }) {
       {isAuthenticated && (
         <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-slate-200 shadow-lg">
           <div className="flex items-center justify-around px-1 py-1 max-w-2xl mx-auto">
-            {mobileNavigationItems.map((item) => {
-              const isActive = location.pathname === item.url;
-              const isPost = item.title === "Post Job";
+             {/* here post job only show customer and both */}
+            {mobileNavigationItems
+              .filter(
+                (item) =>
+                  !(user?.user_type === "COURIER" && item.title === "Post Job"),
+              )
+              .map((item) => {
+                const isActive = location.pathname === item.url;
+                const isPost = item.title === "Post Job";
 
-              return (
-                <Link
-                  key={item.title}
-                  to={item.url}
-                  className={`flex flex-col items-center justify-center flex-1 py-1.5 px-1 rounded-xl transition-all duration-200 ${
-                    isPost
-                      ? "relative -top-4 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-2xl shadow-lg w-14 h-14 flex-none mx-2"
-                      : isActive
-                        ? "text-blue-600"
-                        : "text-slate-400"
-                  }`}
-                >
-                  <item.icon
-                    className={`${isPost ? "w-6 h-6" : "w-5 h-5"} mb-0.5`}
-                  />
+                return (
+                  <Link
+                    key={item.title}
+                    to={item.url}
+                    className={`flex flex-col items-center justify-center flex-1 py-1.5 px-1 rounded-xl transition-all duration-200 ${
+                      isPost
+                        ? "relative -top-4 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-2xl shadow-lg w-14 h-14 flex-none mx-2"
+                        : isActive
+                          ? "text-blue-600"
+                          : "text-slate-400"
+                    }`}
+                  >
+                    <item.icon
+                      className={`${isPost ? "w-6 h-6" : "w-5 h-5"} mb-0.5`}
+                    />
 
-                  {!isPost && (
-                    <span
-                      className={`text-[10px] font-medium leading-tight ${
-                        isActive ? "text-blue-600" : "text-slate-400"
-                      }`}
-                    >
-                      {item.title}
-                    </span>
-                  )}
-                </Link>
-              );
-            })}
+                    {!isPost && (
+                      <span
+                        className={`text-[10px] font-medium leading-tight ${
+                          isActive ? "text-blue-600" : "text-slate-400"
+                        }`}
+                      >
+                        {item.title}
+                      </span>
+                    )}
+                  </Link>
+                );
+              })}
           </div>
         </nav>
       )}

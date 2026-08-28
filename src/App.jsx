@@ -228,8 +228,8 @@ export default function App() {
   return (
     <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>
-        {/* <Router basename="/current-project/react-project/EveryoneCourior"> */}
-        <Router>
+        <Router basename="/current-project/react-project/EveryoneCourior">
+        {/* <Router> */}
           {/* here scrolltotop use for need to show top any navigate after  */}
           <ScrollToTop />
           <AuthenticatedApp />

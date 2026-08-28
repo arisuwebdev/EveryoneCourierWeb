@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+
 import { Button } from "../components/ui/button";
 import {
   Card,
@@ -46,6 +47,7 @@ export default function Profile() {
     email: "",
     phone: "",
     emergency_contact_no: "",
+    date_of_birth: "",
     address: "",
     bio: "",
     user_type: "CUSTOMER",
@@ -77,6 +79,7 @@ export default function Profile() {
         email: res.payload.user.email || "",
         phone: res.payload.user.phone || "",
         emergency_contact_no: res.payload.user.emergency_contact_no || "",
+        date_of_birth: res.payload.user.date_of_birth || "",
         address: res.payload.user.address || "",
         bio: res.payload.user.bio || "",
         user_type: (res.payload.user.user_type || "CUSTOMER").toUpperCase(),
@@ -284,6 +287,8 @@ export default function Profile() {
           email: res.payload.user.email || "",
           phone: res.payload.user.phone || "",
           address: res.payload.user.address || "",
+          emergency_contact_no: res.payload.user.emergency_contact_no || "",
+          date_of_birth: res.payload.user.date_of_birth || "",
           bio: res.payload.user.bio || "",
           user_type: (res.payload.user.user_type || "CUSTOMER").toUpperCase(),
           vehicle_type: res.payload.user.vehicle_type || "",
@@ -451,6 +456,18 @@ export default function Profile() {
                     </div>
 
                     <div className="space-y-2">
+                      <Label htmlFor="date_of_birth">Date of Birth</Label>
+                      <Input
+                        id="date_of_birth"
+                        type="date"
+                        value={profileData.date_of_birth}
+                        onChange={(e) =>
+                          handleInputChange("date_of_birth", e.target.value)
+                        }
+                      />
+                    </div>
+
+                    <div className="space-y-2">
                       <Label htmlFor="emergency_contact_no">
                         Emergency Contact Number (optional)
                       </Label>
@@ -558,8 +575,10 @@ export default function Profile() {
               </CardContent>
             </Card>
 
+
+            {/* This is the Id verification old there user upload and verification using thrid party */}
             {/* ID Verification */}
-            <Card className="shadow-xl border-0 bg-white/90 backdrop-blur-sm">
+            {/* <Card className="shadow-xl border-0 bg-white/90 backdrop-blur-sm">
               <CardHeader className="bg-gradient-to-r from-emerald-50 to-teal-50 border-b">
                 <CardTitle className="flex items-center gap-2">
                   <Shield className="w-5 h-5" />
@@ -600,6 +619,111 @@ export default function Profile() {
                           onChange={handleIdUpload}
                           className="hidden"
                         />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() =>
+                            document.getElementById("id-upload").click()
+                          }
+                          disabled={isUploadingId}
+                        >
+                          {isUploadingId ? "Uploading..." : "Choose File"}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card> */}
+
+            <Card className="shadow-xl border-0 bg-white/90 backdrop-blur-sm">
+              <CardHeader className="bg-gradient-to-r from-emerald-50 to-teal-50 border-b">
+                <CardTitle className="flex items-center gap-2">
+                  <Shield className="w-5 h-5" />
+                  Identity Verification
+                </CardTitle>
+              </CardHeader>
+
+              <CardContent className="p-6">
+                {/* ================= VERIFIED ================= */}
+                {Number(user?.id_verified) === 1 ? (
+                  <Alert className="border-green-200 bg-green-50">
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+
+                    <AlertDescription className="text-green-900">
+                      Your identity has been verified! You can now post jobs and
+                      apply as a courier.
+                    </AlertDescription>
+                  </Alert>
+                ) : user?.id_card ? (
+                  /* ================= PENDING ================= */
+                  <div className="space-y-4">
+                    {" "}
+                    <Alert className="border-amber-200 bg-amber-50">
+                      {" "}
+                      <AlertCircle className="h-4 w-4 text-amber-600" />
+                      <AlertDescription className="text-amber-900">
+                        <strong>Identity Verification Under Review</strong>
+                        <br />
+                        Your identity document has been successfully uploaded
+                        and is currently under review. Our team is verifying
+                        your document. You will be notified once the
+                        verification process is completed.
+                      </AlertDescription>
+                    </Alert>
+                    {/* Uploaded ID */}
+                    <div className="space-y-2">
+                      {" "}
+                      <Label>Uploaded ID Document</Label>
+                      <div className="border rounded-lg p-4 bg-slate-50">
+                        <div className="flex items-center justify-center">
+                          <img
+                            src={user.id_card}
+                            alt="Uploaded ID Document"
+                            className="w-48 h-32 rounded-lg border shadow-sm object-contain bg-white"
+                          />
+                        </div>
+
+                        <div className="mt-4 flex items-center justify-center">
+                          {/* <Badge className="bg-amber-100 text-amber-800 border border-amber-200">
+                            <AlertCircle className="w-3 h-3 mr-1" />
+                            Identity Verification Under Review
+                          </Badge> */}
+                        </div>
+                      </div>
+                    </div>{" "}
+                  </div>
+                ) : (
+                  /* ================= NOT UPLOADED ================= */
+                  <div className="space-y-4">
+                    <Alert className="border-amber-200 bg-amber-50">
+                      <AlertCircle className="h-4 w-4 text-amber-600" />
+
+                      <AlertDescription className="text-amber-900">
+                        Please upload a valid ID document to verify your
+                        identity and access all features.
+                      </AlertDescription>
+                    </Alert>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="id-upload">Upload ID Document</Label>
+
+                      <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center">
+                        <Upload className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+
+                        <p className="text-sm text-slate-600 mb-4">
+                          Upload your driver's license, passport, or government
+                          ID
+                        </p>
+
+                        <input
+                          id="id-upload"
+                          type="file"
+                          accept="image/*,.pdf"
+                          onChange={handleIdUpload}
+                          className="hidden"
+                        />
+
                         <Button
                           type="button"
                           variant="outline"
