@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   ArrowLeft,
@@ -561,7 +562,31 @@ export default function AssignedJobView() {
           <div className="lg:col-span-2">
             <Card>
               <CardHeader>
-                <CardTitle>Job Details: {job.title}</CardTitle>
+                <div className="flex items-center justify-between">
+                  {/* Left side */}
+                  <CardTitle>Job Details: {job.title}</CardTitle>
+
+                  {/* Right side */}
+                  {job.payment_status && (
+                    <div className="flex items-center gap-2 rounded-full border bg-gray-50 px-3 py-1.5">
+                      <span className="text-xs font-medium text-gray-500">
+                        Payment
+                      </span>
+
+                      <Badge
+                        className={
+                          job.payment_status === "completed"
+                            ? "bg-green-100 text-green-700 border border-green-200 hover:bg-green-100"
+                            : "bg-amber-100 text-amber-700 border border-amber-200 hover:bg-amber-100"
+                        }
+                      >
+                        {job.payment_status === "completed"
+                          ? "✓ Paid"
+                          : "Pending"}
+                      </Badge>
+                    </div>
+                  )}
+                </div>
               </CardHeader>
               <CardContent className="space-y-6">
                 {job.status !== STATUS.PENDING_PAYMENT && (
@@ -1003,45 +1028,69 @@ export default function AssignedJobView() {
                       </div>
                     )}
 
-                    {/* No complaint and delivery not confirmed */}
+                    {/* =========================================================
+                      DELIVERY CONFIRMATION
+                     ========================================================= */}
                     {isCustomer && !job.is_delivery_confirmed && !complaint && (
-                      <div className="p-5 bg-green-50 border border-green-200 rounded-xl mb-6">
-                        <div className="flex items-center gap-3 mb-3">
-                          <AlertCircle className="w-6 h-6 text-green-600" />
+                      <div className="mb-6 overflow-hidden rounded-2xl border border-emerald-200 bg-white shadow-sm">
+                        {/* Header */}
+                        <div className="border-b border-emerald-100 bg-emerald-50 px-5 py-4">
+                          <div className="flex items-start gap-3">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100">
+                              <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                            </div>
 
-                          <div>
-                            <h3 className="font-semibold text-green-800">
-                              Delivery Confirmation Required
-                            </h3>
+                            <div>
+                              <h3 className="font-semibold text-emerald-900">
+                                Confirm Your Delivery
+                              </h3>
 
-                            <p className="text-sm text-green-700">
-                              The courier has marked this job as delivered.
-                              Please confirm that you received your package.
-                            </p>
+                              <p className="mt-1 text-sm text-emerald-700">
+                                The courier has marked this job as delivered.
+                                Please confirm that you have received your
+                                package.
+                              </p>
+                            </div>
                           </div>
                         </div>
 
-                        <div className="flex flex-col md:flex-row gap-3">
+                        {/* Content */}
+                        <div className="p-5">
+                          <div className="mb-4 rounded-xl bg-slate-50 p-4">
+                            <p className="text-sm font-medium text-slate-700">
+                              Have you received your package?
+                            </p>
+
+                            <p className="mt-1 text-xs text-slate-500">
+                              Confirming the delivery means you have received
+                              the parcel successfully.
+                            </p>
+                          </div>
+
                           <Button
                             onClick={handleConfirmDelivery}
                             disabled={isUpdating}
-                            className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                            className="w-full bg-emerald-600 text-white hover:bg-emerald-700"
                           >
-                            {isUpdating ? "Confirming..." : "Confirm Delivery"}
-                          </Button>
-
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => setShowComplaintModal(true)}
-                            className="flex-1 border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700"
-                          >
-                            <AlertCircle className="w-4 h-4 mr-2" />
-                            Raise a Complaint
+                            {isUpdating ? (
+                              <>
+                                <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                                Confirming Delivery...
+                              </>
+                            ) : (
+                              <>
+                                <CheckCircle2 className="mr-2 h-4 w-4" />
+                                Confirm Delivery
+                              </>
+                            )}
                           </Button>
                         </div>
                       </div>
                     )}
+
+                    {/* =========================================================
+                     RAISE COMPLAINT
+                    ========================================================= */}
 
                     {/* Customer: show review section only AFTER delivery confirmation */}
                     {isCustomer && job.is_delivery_confirmed && (
@@ -1080,6 +1129,65 @@ export default function AssignedJobView() {
                     )}
                   </>
                 )}
+
+                {/* This is complaint box where pick up and deliver time show complaint box */}
+                {isCustomer &&
+                  (job.status === STATUS.PICKED_UP ||
+                    job.status === STATUS.DELIVERED) &&
+                  !job.is_delivery_confirmed &&
+                  !complaint && (
+                    <div className="mb-6 overflow-hidden rounded-2xl border border-red-200 bg-white shadow-sm">
+                      {/* Header */}
+                      <div className="border-b border-red-100 bg-red-50 px-5 py-4">
+                        <div className="flex items-start gap-3">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100">
+                            <AlertCircle className="h-5 w-5 text-red-600" />
+                          </div>
+
+                          <div>
+                            <h3 className="font-semibold text-red-900">
+                              Having a Problem?
+                            </h3>
+
+                            <p className="mt-1 text-sm text-red-700">
+                              If there is an issue with your parcel or delivery,
+                              you can raise a complaint.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Content */}
+                      <div className="p-5">
+                        <div className="mb-4 rounded-xl border border-red-100 bg-red-50 p-4">
+                          <div className="flex items-start gap-3">
+                            <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-500" />
+
+                            <div>
+                              <p className="text-sm font-medium text-red-800">
+                                Having an issue with your delivery?
+                              </p>
+
+                              <p className="mt-1 text-xs text-red-600">
+                                Report damaged items, missing items, or any
+                                other delivery problem to our team.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setShowComplaintModal(true)}
+                          className="w-full border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700"
+                        >
+                          <AlertCircle className="mr-2 h-4 w-4" />
+                          Raise a Complaint
+                        </Button>
+                      </div>
+                    </div>
+                  )}
               </CardContent>
             </Card>
           </div>
