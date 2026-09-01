@@ -211,7 +211,7 @@ export default function App() {
         )
         // .register("/firebase-messaging-sw.js")
         .then((registration) => {
-          // console.log("✅ Firebase service worker registered:", registration);
+          console.log("✅ Firebase service worker registered:", registration);
         })
         .catch((error) => {
           // console.error(

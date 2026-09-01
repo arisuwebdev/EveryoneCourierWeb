@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Package, MapPin, Clock,ArrowRight } from "lucide-react";
+import { Package, MapPin, Clock, ArrowRight } from "lucide-react";
 import { format } from "date-fns";
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -15,6 +15,7 @@ export default function RecentActivity() {
 
   const [jobs, setJobs] = useState([]);
   const [applications, setApplications] = useState([]);
+  const [activities, setActivities] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const userType = user?.user_type;
 
@@ -32,6 +33,7 @@ export default function RecentActivity() {
         // Replace these property names with your actual API response
         setJobs(response.payload?.recentJobsPosted || []);
         setApplications(response.payload?.recentAppliedJobs || []);
+        setActivities(response.payload?.recentActivity || []);
       } catch (error) {
       } finally {
         setIsLoading(false);
@@ -71,15 +73,17 @@ export default function RecentActivity() {
             <Package className="w-5 h-5" />
             {isCourier ? "Recent Applications" : "Recent Jobs Posted"}
           </CardTitle>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate("/my-jobs")}
-            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 group"
-          >
-            View All
-            <ArrowRight className="w-4 h-4 ml-1 transition-transform group-hover:translate-x-1" />
-          </Button>
+          {(isCourier ? applications : jobs).length > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate("/my-jobs")}
+              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 group"
+            >
+              View All
+              <ArrowRight className="w-4 h-4 ml-1 transition-transform group-hover:translate-x-1" />
+            </Button>
+          )}
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -146,6 +150,7 @@ export default function RecentActivity() {
             Activity Feed
           </CardTitle>
         </CardHeader>
+
         <CardContent>
           {isLoading ? (
             <div className="space-y-4">
@@ -158,27 +163,43 @@ export default function RecentActivity() {
                   </div>
                 ))}
             </div>
-          ) : (
+          ) : activities.length > 0 ? (
             <div className="space-y-4">
-              {/* Sample activity items */}
-              <div className="flex items-center gap-3 p-3 border rounded-lg">
-                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                <div>
-                  <p className="text-sm font-medium">
-                    Welcome to Everyone's a Courier!
-                  </p>
-                  <p className="text-xs text-slate-500">
-                    Complete your profile to get started
-                  </p>
-                </div>
-              </div>
+              {activities.slice(0, 5).map((activity) => (
+                <div
+                  key={activity.id}
+                  className="flex items-start gap-3 p-3 border rounded-lg"
+                >
+                  {/* Activity dot */}
+                  <div className="w-2 h-2 mt-2 bg-blue-500 rounded-full shrink-0" />
 
-              {jobs.length === 0 && applications.length === 0 && (
-                <p className="text-center text-slate-500 py-8">
-                  No recent activity
-                </p>
-              )}
+                  <div className="flex-1 min-w-0">
+                    {/* Title + Date/Time */}
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-sm font-medium text-slate-900">
+                        {activity.title}
+                      </p>
+
+                      <p className="text-xs text-slate-500 whitespace-nowrap">
+                        {format(
+                          new Date(activity.created_at),
+                          "MMM d, yyyy h:mm a",
+                        )}
+                      </p>
+                    </div>
+
+                    {/* Description */}
+                    <p className="text-sm text-slate-600 mt-1">
+                      {activity.description}
+                    </p>
+                  </div>
+                </div>
+              ))}
             </div>
+          ) : (
+            <p className="text-center text-slate-500 py-8">
+              No recent activity
+            </p>
           )}
         </CardContent>
       </Card>

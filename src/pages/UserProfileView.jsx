@@ -16,6 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "../lib/AuthContext";
 import { getUserProfileService } from "../api/ApiServices/profile/getUserProfileService";
+import { format } from "date-fns";
 
 export default function UserProfileView() {
   const { userId } = useParams();
@@ -152,6 +153,18 @@ export default function UserProfileView() {
                   <CheckCircle2 className="w-4 h-4 text-green-500" />
                 )}
               </div>
+
+              {/* Date of Birth */}
+              {profile.date_of_birth && (
+                <div className="flex items-center gap-3 text-sm text-slate-600">
+                  <span className="w-4 h-4 flex items-center justify-center text-slate-400">
+                    🎂
+                  </span>
+                  <span>
+                    {format(new Date(profile.date_of_birth), "dd MMM yyyy")}
+                  </span>
+                </div>
+              )}
 
               {/* Emergency Contact */}
               <div className="flex items-center gap-3 text-sm text-slate-600">

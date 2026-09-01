@@ -159,6 +159,7 @@ export default function Profile() {
     }));
   };
 
+
   const handleSendOtp = async () => {
     let phoneNumber = profileData.phone.trim();
 
@@ -262,8 +263,16 @@ export default function Profile() {
     }
   };
 
+  const isValidAustralianMobile = (phone) => {
+  const cleaned = phone.replace(/\s+/g, "");
+
+  return /^04\d{8}$/.test(cleaned) || /^\+614\d{8}$/.test(cleaned);
+};
+
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
+    const phone = profileData.phone.trim();
+
     setIsUpdating(true);
 
     try {
@@ -435,7 +444,7 @@ export default function Profile() {
                         onChange={(e) =>
                           handleInputChange("phone", e.target.value)
                         }
-                        placeholder="+61 412 345 678"
+                        placeholder="0412 345 678"
                         disabled={phoneVerified}
                         className="flex-1"
                       />
@@ -482,7 +491,7 @@ export default function Profile() {
                             e.target.value,
                           )
                         }
-                        placeholder="+61 412 345 678"
+                        placeholder="0412 345 678"
                       />
                     </div>
 

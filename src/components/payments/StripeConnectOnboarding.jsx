@@ -67,30 +67,69 @@ export default function StripeConnectOnboarding({ user }) {
   //   checkStripeStatus();
   // }, [token, user?.is_payout_ready]);
 
-  useEffect(() => {
-    const checkStripeStatus = async () => {
-      if (!token) return;
+  // useEffect(() => {
+  //   const checkStripeStatus = async () => {
+  //     if (!token) return;
 
+  //     try {
+  //       // 1. Check latest Stripe status
+  //       const stripeRes = await getStripeConnectStatusService(token);
+
+  //       if (stripeRes?.status === 1) {
+  //         // 2. Now get updated profile from backend
+  //         const profileRes = await getProfile(token);
+
+  //         if (profileRes?.status === 1 && profileRes?.payload?.user) {
+  //           const updatedUser = profileRes.payload.user;
+
+  //           // 3. Update AuthContext + localStorage
+  //           updateUser(updatedUser);
+  //         }
+  //       }
+  //     } catch (error) {}
+  //   };
+
+  //   checkStripeStatus();
+  // }, [token, updateUser]);
+
+  useEffect(() => {
+  const checkStripeStatus = async () => {
+    if (!token) return;
+
+    for (let attempt = 1; attempt <= 5; attempt++) {
       try {
-        // 1. Check latest Stripe status
+        console.log(`Checking Stripe status ${attempt}/5`);
+
         const stripeRes = await getStripeConnectStatusService(token);
 
         if (stripeRes?.status === 1) {
-          // 2. Now get updated profile from backend
           const profileRes = await getProfile(token);
 
           if (profileRes?.status === 1 && profileRes?.payload?.user) {
             const updatedUser = profileRes.payload.user;
 
-            // 3. Update AuthContext + localStorage
+            // Update AuthContext
             updateUser(updatedUser);
+
+            // Stop when Stripe is fully ready
+            if (updatedUser?.is_payout_ready === true) {
+              return;
+            }
           }
         }
-      } catch (error) {}
-    };
+      } catch (error) {
+        console.error("Stripe status check failed:", error);
+      }
 
-    checkStripeStatus();
-  }, [token, updateUser]);
+      // Wait 2 seconds before checking again
+      if (attempt < 5) {
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+      }
+    }
+  };
+
+  checkStripeStatus();
+}, [token, updateUser]);
 
   const handleOnboard = async () => {
     setIsLoading(true);
