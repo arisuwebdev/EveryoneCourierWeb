@@ -17,9 +17,16 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "../lib/AuthContext";
 import { getUserProfileService } from "../api/ApiServices/profile/getUserProfileService";
 import { format } from "date-fns";
+import { decryptId } from "../utils/urlEncryption";
 
 export default function UserProfileView() {
-  const { userId } = useParams();
+  // const { userId } = useParams();
+  const { userId: encryptedUserId } = useParams();
+
+const userId = decryptId(
+  decodeURIComponent(encryptedUserId || "")
+);
+  
   const navigate = useNavigate();
   const { token } = useAuth();
 

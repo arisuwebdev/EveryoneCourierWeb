@@ -16,7 +16,7 @@ import {
   AlertCircle,
   Truck,
   Scale,
-  Ruler
+  Ruler,
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -107,7 +107,7 @@ export default function JobCard({ job, onApply }) {
 
   return (
     <Card className="shadow-lg border-0 bg-white/90 backdrop-blur-sm hover:shadow-xl transition-all duration-300">
-      <CardHeader className="border-b bg-gradient-to-r from-slate-50 to-blue-50">
+      <CardHeader className="border-b bg-gradient-to-r from-slate-50 to-blue-50 pb-3">
         <div className="flex justify-between items-start">
           <div className="flex-1">
             <CardTitle className="text-lg font-bold text-slate-900 mb-2">
@@ -139,9 +139,19 @@ export default function JobCard({ job, onApply }) {
                   vehicleRequired.slice(1)}
               </Badge>
             </div>
+            {/* Posted */}
+            {job.created_at && (
+              <div className="flex items-center gap-1.5 mt-3 text-xs text-slate-500">
+                <Clock className="w-3.5 h-3.5" />
+                <span>
+                  Posted:{" "}
+                  {format(new Date(job.created_at), "MMM d, yyyy hh:mm a")}
+                </span>
+              </div>
+            )}
           </div>
 
-          <div className="flex flex-col items-end gap-1.5">
+          <div className="flex flex-col items-end gap-0.5">
             <div className="flex flex-col items-end gap-0.5 rounded-xl bg-gradient-to-br from-green-50 to-emerald-50 border border-green-100 px-3 py-2">
               <div className="flex items-baseline gap-1">
                 <span className="text-sm font-semibold text-green-600">
@@ -166,22 +176,45 @@ export default function JobCard({ job, onApply }) {
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-4 p-6">
-        {/* Pickup / Delivery */}
+      <CardContent className="space-y-3 px-6 py-3">
+        {/* Pickup & Delivery */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Pickup */}
           <div className="flex items-start gap-3">
-            <MapPin className="w-5 h-5 text-blue-500 mt-0.5" />
-            <div>
-              <p className="text-sm font-medium text-slate-600">Pickup</p>
-              <p className="text-slate-900">{job.pickup_address}</p>
+            <MapPin className="w-5 h-5 text-blue-500 mt-0.5 shrink-0" />
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-slate-700">
+                Pickup{" "}
+                {job.pickup_date && (
+                  <span className="font-normal text-slate-900">
+                    ({format(new Date(job.pickup_date), "MMM d, yyyy")})
+                  </span>
+                )}
+              </p>
+
+              <p className="mt-1 text-sm text-slate-900">
+                {job.pickup_address}
+              </p>
             </div>
           </div>
 
+          {/* Delivery */}
           <div className="flex items-start gap-3">
-            <MapPin className="w-5 h-5 text-green-500 mt-0.5" />
-            <div>
-              <p className="text-sm font-medium text-slate-600">Delivery</p>
-              <p className="text-slate-900">{job.delivery_address}</p>
+            <MapPin className="w-5 h-5 text-green-500 mt-0.5 shrink-0" />
+
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-slate-700">
+                Delivery{" "}
+                {job.delivery_date && (
+                  <span className="font-normal text-slate-900">
+                    ({format(new Date(job.delivery_date), "MMM d, yyyy")})
+                  </span>
+                )}
+              </p>
+
+              <p className="mt-1 text-sm text-slate-900">
+                {job.delivery_address}
+              </p>
             </div>
           </div>
         </div>
@@ -189,98 +222,64 @@ export default function JobCard({ job, onApply }) {
         <div className="flex items-start gap-3">
           <Package className="w-5 h-5 text-purple-500 mt-1" />
           <div>
-            <p className="font-medium">Package</p>
+            <p className="text-sm font-semibold text-slate-700">Package</p>
             <p>{job.package_description}</p>
           </div>
         </div>
 
         {/* Package Weight & Dimensions */}
         {(job.weight || job.dimensions) && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {/* Weight */}
             {job.weight && (
-              <div className="group rounded-xl border border-slate-200 bg-gradient-to-br from-slate-50 to-white p-4 shadow-sm hover:shadow-md transition-all">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-100">
-                    <Scale className="h-5 w-5 text-blue-600" />
-                  </div>
-
-                  <div className="min-w-0">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      Weight
-                    </p>
-
-                    <p className="mt-1 text-lg font-bold text-slate-900">
-                      {job.weight}{" "}
-                      <span className="text-sm font-medium text-slate-500">
-                        kg
-                      </span>
-                    </p>
-                  </div>
+              <div className="flex items-center gap-2.5 rounded-lg border border-slate-200 px-3 py-2">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-50">
+                  <Scale className="h-4 w-4 text-blue-600" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-medium text-slate-500">Weight</p>
+                  <p className="text-sm font-semibold text-slate-900">
+                    {job.weight}{" "}
+                    <span className="text-xs font-medium text-slate-500">
+                      kg
+                    </span>
+                  </p>
                 </div>
               </div>
             )}
 
             {/* Dimensions */}
             {job.dimensions && (
-              <div className="group rounded-xl border border-slate-200 bg-gradient-to-br from-purple-50 to-white p-4 shadow-sm hover:shadow-md transition-all">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-purple-100">
-                    <Ruler className="h-5 w-5 text-purple-600" />
-                  </div>
+              <div className="flex items-center gap-2.5 rounded-lg border border-slate-200 px-3 py-2">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-purple-50">
+                  <Ruler className="h-4 w-4 text-purple-600" />
+                </div>
 
-                  <div className="min-w-0">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      Dimensions
-                    </p>
+                <div className="min-w-0">
+                  <p className="text-xs font-medium text-slate-500">
+                    Dimensions
+                  </p>
 
-                    <p className="mt-1 text-lg font-bold text-slate-900">
-                      {job.dimensions}
-                    </p>
+                  <p className="text-sm font-semibold text-slate-900">
+                    {job.dimensions}
+                  </p>
 
-                    <p className="text-xs text-slate-500">L × W × H cm</p>
-                  </div>
+                  <p className="text-[10px] text-slate-400">L × W × H cm</p>
                 </div>
               </div>
             )}
           </div>
         )}
 
-        {(job.pickup_date || job.delivery_date) && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {job.pickup_date && (
-              <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-slate-500" />
-                <span className="text-sm text-slate-600">
-                  Pickup: {format(new Date(job.pickup_date), "MMM d, yyyy")}
-                </span>
-              </div>
-            )}
-
-            {job.delivery_date && (
-              <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-slate-500" />
-                <span className="text-sm text-slate-600">
-                  Delivery: {format(new Date(job.delivery_date), "MMM d, yyyy")}
-                </span>
-              </div>
-            )}
-          </div>
-        )}
-
         {job.special_instructions && (
-          <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
-            <p className="text-sm font-semibold text-yellow-800 mb-1">
+          <div className="rounded-lg border border-yellow-200 bg-yellow-50 px-3 py-2">
+            <p className="text-xs font-semibold text-yellow-800 mb-0.5">
               Special Instructions
             </p>
-            <p className="text-sm text-slate-700">{job.special_instructions}</p>
-          </div>
-        )}
 
-        {job.created_at && (
-          <div className="flex items-center gap-2 text-xs text-gray-500">
-            <Clock className="w-4 h-4" />
-            Posted: {format(new Date(job.created_at), "MMM d, yyyy hh:mm a")}
+            <p className="text-xs text-slate-700 leading-4">
+              {job.special_instructions}
+            </p>
           </div>
         )}
 

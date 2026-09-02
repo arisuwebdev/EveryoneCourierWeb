@@ -3,6 +3,7 @@ import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { encryptId } from "../../utils/urlEncryption";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   ArrowLeft,
@@ -671,7 +672,6 @@ export default function AssignedJobView() {
                         <h3 className="text-lg font-bold text-red-700">
                           Job Cancelled
                         </h3>
-
                         {/* <Badge className="border border-red-200 bg-red-100 text-red-700 hover:bg-red-100">
                           Cancelled
                         </Badge> */}
@@ -1206,9 +1206,17 @@ export default function AssignedJobView() {
                                       Complaint Submitted
                                     </h3>
 
+                                    {/* this one complaint status according message show  */}
                                     <p className="mt-1 text-sm text-red-700">
-                                      Your complaint has been submitted and is
-                                      currently being reviewed.
+                                      {complaint.status === "PENDING"
+                                        ? "Your complaint has been submitted and is currently being reviewed."
+                                        : complaint.status === "REVIEWED"
+                                          ? "Your complaint has been reviewed by our team."
+                                          : complaint.status === "RESOLVED"
+                                            ? "Your complaint has been resolved by our team."
+                                            : complaint.status === "DISMISSED"
+                                              ? "Your complaint has been reviewed and dismissed."
+                                              : "Your complaint has been submitted and is currently being reviewed."}
                                     </p>
                                   </div>
                                 </div>
@@ -1425,13 +1433,16 @@ export default function AssignedJobView() {
 
                   <p
                     className="font-bold text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
-                    onClick={() =>
+                    onClick={() => {
+                      const userId = isCustomer
+                        ? job.courier_id
+                        : job.customer_id;
+                      const encryptedId = encryptId(userId);
+
                       navigate(
-                        `/user-profile/${
-                          isCustomer ? job.courier_id : job.customer_id
-                        }`,
-                      )
-                    }
+                        `/user-profile/${encodeURIComponent(encryptedId)}`,
+                      );
+                    }}
                   >
                     {isCustomer ? job.courier_name : job.customer_name}
                   </p>

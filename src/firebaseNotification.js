@@ -211,6 +211,6 @@ export const listenForMessages = async () => {
       }
     });
   } catch (error) {
-    console.error("❌ FCM listener error:", error);
+    // console.error("❌ FCM listener error:", error);
   }
 };

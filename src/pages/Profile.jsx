@@ -67,6 +67,12 @@ export default function Profile() {
     loadUser();
   }, []);
 
+  useEffect(() => {
+    if (authUser) {
+      setUser(authUser);
+    }
+  }, [authUser]);
+
   const loadUser = async () => {
     try {
       setIsLoading(true);
@@ -158,7 +164,6 @@ export default function Profile() {
       [field]: value,
     }));
   };
-
 
   const handleSendOtp = async () => {
     let phoneNumber = profileData.phone.trim();
@@ -264,14 +269,24 @@ export default function Profile() {
   };
 
   const isValidAustralianMobile = (phone) => {
-  const cleaned = phone.replace(/\s+/g, "");
+    const cleaned = phone.replace(/\s+/g, "");
 
-  return /^04\d{8}$/.test(cleaned) || /^\+614\d{8}$/.test(cleaned);
-};
+    return /^04\d{8}$/.test(cleaned) || /^\+614\d{8}$/.test(cleaned);
+  };
 
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
     const phone = profileData.phone.trim();
+
+    const emergencyContact = profileData.emergency_contact_no.trim();
+
+    if (emergencyContact && !isValidAustralianMobile(emergencyContact)) {
+      toast.error(
+        "Please enter a valid Australian mobile number (e.g. 0412 345 678).",
+      );
+      setIsUpdating(false);
+      return;
+    }
 
     setIsUpdating(true);
 
@@ -440,30 +455,35 @@ export default function Profile() {
                     <div className="flex gap-2">
                       <Input
                         id="phone"
+                        type="tel"
                         value={profileData.phone}
-                        onChange={(e) =>
-                          handleInputChange("phone", e.target.value)
-                        }
-                        placeholder="0412 345 678"
+                        onChange={(e) => {
+                          const value = e.target.value
+                            .replace(/\D/g, "")
+                            .slice(0, 10);
+
+                          handleInputChange("phone", value);
+                        }}
+                        placeholder="0412345678"
+                        maxLength={10}
                         disabled={phoneVerified}
                         className="flex-1"
                       />
 
                       {/* {phoneVerified ? (
-                        <div className="flex items-center px-4 bg-green-50 text-green-700 border border-green-200 rounded-md">
-                          ✓ Verified
-                        </div>
-                      ) : (
-                        <Button
-                          type="button"
-                          onClick={handleSendOtp}
-                          disabled={isSendingOtp}
-                        >
-                          {isSendingOtp ? "Sending..." : "Verify"}
-                        </Button>
-                      )} */}
+    <div className="flex items-center px-4 bg-green-50 text-green-700 border border-green-200 rounded-md">
+      ✓ Verified
+    </div>
+  ) : (
+    <Button
+      type="button"
+      onClick={handleSendOtp}
+      disabled={isSendingOtp}
+    >
+      {isSendingOtp ? "Sending..." : "Verify"}
+    </Button>
+  )} */}
                     </div>
-
                     <div className="space-y-2">
                       <Label htmlFor="date_of_birth">Date of Birth</Label>
                       <Input
@@ -485,13 +505,15 @@ export default function Profile() {
                         id="emergency_contact_no"
                         type="tel"
                         value={profileData.emergency_contact_no}
-                        onChange={(e) =>
-                          handleInputChange(
-                            "emergency_contact_no",
-                            e.target.value,
-                          )
-                        }
-                        placeholder="0412 345 678"
+                        maxLength={10}
+                        onChange={(e) => {
+                          const value = e.target.value
+                            .replace(/\D/g, "")
+                            .slice(0, 10);
+
+                          handleInputChange("emergency_contact_no", value);
+                        }}
+                        placeholder="0412345678"
                       />
                     </div>
 
@@ -584,7 +606,6 @@ export default function Profile() {
               </CardContent>
             </Card>
 
-
             {/* This is the Id verification old there user upload and verification using thrid party */}
             {/* ID Verification */}
             {/* <Card className="shadow-xl border-0 bg-white/90 backdrop-blur-sm">
@@ -666,42 +687,56 @@ export default function Profile() {
                   </Alert>
                 ) : user?.id_card ? (
                   /* ================= PENDING ================= */
-                  <div className="space-y-4">
-                    {" "}
-                    <Alert className="border-amber-200 bg-amber-50">
-                      {" "}
-                      <AlertCircle className="h-4 w-4 text-amber-600" />
-                      <AlertDescription className="text-amber-900">
-                        <strong>Identity Verification Under Review</strong>
-                        <br />
-                        Your identity document has been successfully uploaded
-                        and is currently under review. Our team is verifying
-                        your document. You will be notified once the
-                        verification process is completed.
-                      </AlertDescription>
-                    </Alert>
-                    {/* Uploaded ID */}
-                    <div className="space-y-2">
-                      {" "}
-                      <Label>Uploaded ID Document</Label>
-                      <div className="border rounded-lg p-4 bg-slate-50">
-                        <div className="flex items-center justify-center">
-                          <img
-                            src={user.id_card}
-                            alt="Uploaded ID Document"
-                            className="w-48 h-32 rounded-lg border shadow-sm object-contain bg-white"
-                          />
-                        </div>
+                <div className="space-y-4">
+    <Alert className="border-amber-200 bg-amber-50">
+      <AlertCircle className="h-4 w-4 text-amber-600" />
 
-                        <div className="mt-4 flex items-center justify-center">
-                          {/* <Badge className="bg-amber-100 text-amber-800 border border-amber-200">
-                            <AlertCircle className="w-3 h-3 mr-1" />
-                            Identity Verification Under Review
-                          </Badge> */}
-                        </div>
-                      </div>
-                    </div>{" "}
-                  </div>
+      <AlertDescription className="text-amber-900">
+        <strong>Identity Verification Under Review</strong>
+        <br />
+        Your identity document has been successfully uploaded and is currently
+        under review. You can re-upload your document if needed.
+      </AlertDescription>
+    </Alert>
+
+    {/* Uploaded ID */}
+    <div className="space-y-2">
+      <Label>Uploaded ID Document</Label>
+
+      <div className="border rounded-lg p-4 bg-slate-50">
+        <div className="flex items-center justify-center">
+          <img
+            src={user.id_card}
+            alt="Uploaded ID Document"
+            className="w-48 h-32 rounded-lg border shadow-sm object-contain bg-white"
+          />
+        </div>
+
+        {/* Re-upload */}
+        <div className="mt-4 flex items-center justify-center">
+          <input
+            id="reupload-id"
+            type="file"
+            accept="image/*,.pdf"
+            onChange={handleIdUpload}
+            className="hidden"
+          />
+
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() =>
+              document.getElementById("reupload-id").click()
+            }
+            disabled={isUploadingId}
+            className="border-blue-300 text-blue-600 hover:bg-blue-50"
+          >
+            {isUploadingId ? "Uploading..." : "Re-upload ID"}
+          </Button>
+        </div>
+      </div>
+    </div>
+  </div>
                 ) : (
                   /* ================= NOT UPLOADED ================= */
                   <div className="space-y-4">
