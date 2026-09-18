@@ -98,7 +98,7 @@ export default function StripeConnectOnboarding({ user }) {
 
     for (let attempt = 1; attempt <= 5; attempt++) {
       try {
-        console.log(`Checking Stripe status ${attempt}/5`);
+        // console.log(`Checking Stripe status ${attempt}/5`);
 
         const stripeRes = await getStripeConnectStatusService(token);
 
@@ -118,7 +118,7 @@ export default function StripeConnectOnboarding({ user }) {
           }
         }
       } catch (error) {
-        console.error("Stripe status check failed:", error);
+        // console.error("Stripe status check failed:", error);
       }
 
       // Wait 2 seconds before checking again

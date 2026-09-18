@@ -49,7 +49,7 @@ axios.interceptors.response.use(
       localStorage.removeItem("tokenExpiry");
 
       window.location.href =
-        "/current-project/react-project/EveryoneCourior/login";
+        "/login";
 
       return Promise.reject(error);
     }

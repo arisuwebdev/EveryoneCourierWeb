@@ -22,9 +22,9 @@ export const googleLoginApi =  baseUrl + "/auth/social-login";
 
 //priacy and policy
 
-export const getPrivacyPolicyUrlApi =  baseUrl + "/getPrivacyPolicyUrl";
+export const getPrivacyPolicyUrlApi =  baseUrl + "/getPrivacyPolicy";
 
-export const getTermsOfServiceUrlApi =  baseUrl + "/getTermsOfServiceUrl";
+export const getTermsOfServiceUrlApi =  baseUrl + "/getTermsOfService";
 
 export const getTermsAcceptedApi =  baseUrl + "/saveTermsAccepted";
 

@@ -96,8 +96,8 @@ import path from "path";
 export default defineConfig({
   plugins: [react()],
 
-  base: "/current-project/react-project/EveryoneCourior/",
-  //  base: "/",
+  // base: "/current-project/react-project/EveryoneCourior/",
+   base: "/",
 
   resolve: {
     alias: {
