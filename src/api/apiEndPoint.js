@@ -20,6 +20,9 @@ export const uploadIdCardApi =  baseUrl + "/uploadIdCard";
 
 export const googleLoginApi =  baseUrl + "/auth/social-login";
 
+export const changePasswordApi =  baseUrl + "/auth/changPassword";
+
+
 //priacy and policy
 
 export const getPrivacyPolicyUrlApi =  baseUrl + "/getPrivacyPolicy";
@@ -54,6 +57,9 @@ export const SaveCourierReview =  baseUrl + "/saveCourierReview";
 export const confirmJobCompleteApi =  baseUrl + "/confirmJobComplete";
 
 export const removeJobApi =  baseUrl + "/removeJob";
+
+export const appliedJobApi =  baseUrl + "/appliedJobList";
+
 
 
 // dashboard

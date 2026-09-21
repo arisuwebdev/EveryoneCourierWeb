@@ -17,10 +17,12 @@ import {
   MapPin,
   ChevronDown,
   X,
+  Lock,
 } from "lucide-react";
 import { useAuth } from "../src/lib/AuthContext";
 import { getNotificationCount } from "./api/ApiServices/notification/getNotficationCountService";
 import { getNotificationList } from "./api/ApiServices/notification/getNotificationListService";
+import ChangePasswordModal from "./components/modal/ChangePasswordModal";
 
 // Links shown inline in the desktop nav (Post Job is rendered separately as a CTA button)
 const navigationItems = [
@@ -46,6 +48,8 @@ export default function Layout({ children }) {
   const { logout, isAuthenticated, user, token } = useAuth();
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
   const [isMobileAccountMenuOpen, setIsMobileAccountMenuOpen] = useState(false);
+  const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] =
+    useState(false);
   const accountMenuRef = useRef(null);
   const notificationRef = useRef(null);
 
@@ -160,52 +164,45 @@ export default function Layout({ children }) {
     }
   };
 
-const handleNotificationItemClick = (notification) => {
-  const jobNotificationTypes = [
-    "JOB_POSTED",
-    "JOB_ASSIGNED",
-    "JOB_APPLIED",
-    "JOB_STATUS_UPDATE",
-  ];
+  const handleNotificationItemClick = (notification) => {
+    const jobNotificationTypes = [
+      "JOB_POSTED",
+      "JOB_ASSIGNED",
+      "JOB_APPLIED",
+      "JOB_STATUS_UPDATE",
+    ];
 
-  if (
-    !notification?.job_id ||
-    !jobNotificationTypes.includes(notification?.notifyType)
-  ) {
-    return;
-  }
+    if (
+      !notification?.job_id ||
+      !jobNotificationTypes.includes(notification?.notifyType)
+    ) {
+      return;
+    }
 
-  setIsNotificationOpen(false);
+    setIsNotificationOpen(false);
 
-  // JOB_ASSIGNED → Assigned delivery page
-  if (notification.notifyType === "JOB_ASSIGNED") {
-    navigate(
-      `/my-jobs/${notification.job_id}/assigned?type=deliveries`
-    );
-    return;
-  }
+    // JOB_ASSIGNED → Assigned delivery page
+    if (notification.notifyType === "JOB_ASSIGNED") {
+      navigate(`/my-jobs/${notification.job_id}/assigned?type=deliveries`);
+      return;
+    }
 
-  // JOB_STATUS_UPDATE → Job details/posting page
-  if (notification.notifyType === "JOB_STATUS_UPDATE") {
-    navigate(
-      `/my-jobs/${notification.job_id}/assigned?type=postings`
-    );
-    return;
-  }
+    // JOB_STATUS_UPDATE → Job details/posting page
+    if (notification.notifyType === "JOB_STATUS_UPDATE") {
+      navigate(`/my-jobs/${notification.job_id}/assigned?type=postings`);
+      return;
+    }
 
-  // JOB_POSTED / JOB_APPLIED → Applicants page
-  navigate(
-    `/my-jobs/${notification.job_id}/applicants?type=postings`
-  );
-};
-
+    // JOB_POSTED / JOB_APPLIED → Applicants page
+    navigate(`/my-jobs/${notification.job_id}/applicants?type=postings`);
+  };
 
   const handlePrivacyClick = () => {
-   navigate("/PrivacyPolicy");
- };
- const handleTermsClick = () => {
-  navigate("/TermsOfService");
- };
+    navigate("/PrivacyPolicy");
+  };
+  const handleTermsClick = () => {
+    navigate("/TermsOfService");
+  };
 
   const handleLogout = async () => {
     await logout();
@@ -270,6 +267,10 @@ const handleNotificationItemClick = (notification) => {
                 })}
             </nav>
           )}
+           <ChangePasswordModal
+        isOpen={isChangePasswordModalOpen}
+        onClose={() => setIsChangePasswordModalOpen(false)}
+      />
 
           {/* Right side: Post Job CTA, notifications, avatar, logout */}
           <div className="flex items-center gap-2 md:gap-3 shrink-0">
@@ -409,13 +410,28 @@ const handleNotificationItemClick = (notification) => {
 
                   {isAccountMenuOpen && (
                     <>
-                      {/* backdrop to close on outside click */}
                       <div
                         className="fixed inset-0 z-40"
                         onClick={() => setIsAccountMenuOpen(false)}
                       />
-                      <div className="absolute right-0 top-full mt-2 w-44 bg-white rounded-xl shadow-lg border border-slate-200 py-1.5 z-50">
+
+                      <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-200 py-1.5 z-50">
+                        {/* CHANGE PASSWORD - ADD THIS BEFORE LOGOUT */}
                         <button
+                          type="button"
+                          onClick={() => {
+                            setIsAccountMenuOpen(false);
+                            setIsChangePasswordModalOpen(true);
+                          }}
+                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded-lg mx-1"
+                        >
+                          <Lock className="w-4 h-4" />
+                          Change Password
+                        </button>
+
+                        {/* EXISTING LOGOUT */}
+                        <button
+                          type="button"
                           onClick={() => {
                             setIsAccountMenuOpen(false);
                             handleLogout();
@@ -576,8 +592,10 @@ const handleNotificationItemClick = (notification) => {
                   onClick={() => setIsMobileAccountMenuOpen(false)}
                 />
 
-                <div className="absolute right-0 top-full mt-2 w-44 bg-white rounded-xl shadow-lg border border-slate-200 py-1.5 z-50">
+                <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-200 py-1.5 z-50">
+                  {/* PROFILE */}
                   <button
+                    type="button"
                     onClick={() => {
                       setIsMobileAccountMenuOpen(false);
                       navigate("/profile");
@@ -588,7 +606,22 @@ const handleNotificationItemClick = (notification) => {
                     Profile
                   </button>
 
+                  {/* CHANGE PASSWORD - ADD HERE */}
                   <button
+                    type="button"
+                    onClick={() => {
+                      setIsMobileAccountMenuOpen(false);
+                      setIsChangePasswordModalOpen(true);
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded-lg mx-1"
+                  >
+                    <Lock className="w-4 h-4" />
+                    Change Password
+                  </button>
+
+                  {/* LOGOUT */}
+                  <button
+                    type="button"
                     onClick={() => {
                       setIsMobileAccountMenuOpen(false);
                       handleLogout();
@@ -661,7 +694,7 @@ const handleNotificationItemClick = (notification) => {
 
       {/* Footer */}
       <footer className="bg-gradient-to-b from-white to-slate-50 border-t border-slate-200">
-       <div className="max-w-7xl mx-auto px-6 lg:px-8 py-12 pb-24 md:pb-12">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 py-12 pb-24 md:pb-12">
           {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-10"> */}
           <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr_1fr] gap-4">
             {/* Brand */}
@@ -756,6 +789,7 @@ const handleNotificationItemClick = (notification) => {
           </div>
         </div>
       </footer>
+
     </div>
   );
 }

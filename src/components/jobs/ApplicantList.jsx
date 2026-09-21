@@ -364,7 +364,8 @@ export default function ApplicantList() {
                   </h3>
 
                   <p className="text-sm text-slate-500 mt-1">
-                    The following couriers have applied to deliver this job and Also Review their profiles.
+                    The following couriers have applied to deliver this job and
+                    Also Review their profiles.
                   </p>
                 </div>
 
@@ -435,19 +436,29 @@ export default function ApplicantList() {
                             </Badge>
                           )}
 
-                          <Button
-                            onClick={() => handleAssignCourier(app)}
-                            disabled={assigningApplicantId === app.id}
-                            className={
-                              assigningApplicantId === app.id
-                                ? "bg-green-400 cursor-not-allowed"
-                                : "bg-green-600 hover:bg-green-700"
-                            }
-                          >
-                            {assigningApplicantId === app.id
-                              ? "Assigning..."
-                              : "Assign Courier"}
-                          </Button>
+                          {app.status === "ACCEPTED" ? (
+                            <Badge
+                              variant="secondary"
+                              className="text-green-700 bg-green-100 px-3 py-1"
+                            >
+                              <CheckCircle className="w-4 h-4 mr-1" />
+                              Accepted
+                            </Badge>
+                          ) : job?.status === "OPEN" ? (
+                            <Button
+                              onClick={() => handleAssignCourier(app)}
+                              disabled={assigningApplicantId === app.id}
+                              className={
+                                assigningApplicantId === app.id
+                                  ? "bg-green-400 cursor-not-allowed"
+                                  : "bg-green-600 hover:bg-green-700"
+                              }
+                            >
+                              {assigningApplicantId === app.id
+                                ? "Assigning..."
+                                : "Assign Courier"}
+                            </Button>
+                          ) : null}
                         </div>
                       </div>
                     </div>

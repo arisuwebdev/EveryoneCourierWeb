@@ -634,8 +634,10 @@ export default function AssignedJobView() {
               ================================================= */}
 
               <CardHeader>
-               <div className="flex items-start justify-between gap-4">
-                  <CardTitle className="min-w-0 flex-1">Job Details: {job.title}</CardTitle>
+                <div className="flex items-start justify-between gap-4">
+                  <CardTitle className="min-w-0 flex-1">
+                    Job Details: {job.title}
+                  </CardTitle>
 
                   {/* PAYMENT STATUS */}
 
@@ -1424,21 +1426,13 @@ export default function AssignedJobView() {
                 </CardHeader>
 
                 <CardContent className="text-center">
-                  <Avatar className="w-20 h-20 mx-auto mb-4">
-                    <AvatarFallback>
-                      {(isCustomer
-                        ? job.courier_name
-                        : job.customer_name
-                      )?.charAt(0) || "U"}
-                    </AvatarFallback>
-                  </Avatar>
-
                   <p
-                    className="font-bold text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
+                    className="font-bold text-blue-600 hover:text-blue-800 hover:underline cursor-pointer mb-4"
                     onClick={() => {
                       const userId = isCustomer
                         ? job.courier_id
                         : job.customer_id;
+
                       const encryptedId = encryptId(userId);
 
                       navigate(
@@ -1449,53 +1443,22 @@ export default function AssignedJobView() {
                     {isCustomer ? job.courier_name : job.customer_name}
                   </p>
 
-                  {/* <p className="text-sm text-slate-500">
-                    {isCustomer ? job.courier_email : job.customer_email}
-                  </p> */}
+                  {/* Profile Image */}
+<Avatar className="w-20 h-20 mx-auto mb-4">
+  {isCustomer && job.courier_profile_pic && (
+    <AvatarImage
+      src={job.courier_profile_pic}
+      alt={job.courier_name}
+    />
+  )}
 
-                  {/* <p className="text-sm text-slate-500 mt-1">
-                    {isCustomer ? job.courier_phone : job.customer_phone}
-                  </p> */}
-
-                  {/* <div className="flex justify-center gap-2 mt-4">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => {
-                        const email = isCustomer
-                          ? job.courier_email
-                          : job.customer_email;
-
-                        if (email) {
-                          window.location.href = `mailto:${email}`;
-                        }
-                      }}
-                      disabled={
-                        !(isCustomer ? job.courier_email : job.customer_email)
-                      }
-                    >
-                      <Mail className="w-4 h-4" />
-                    </Button>
-
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => {
-                        const phone = isCustomer
-                          ? job.courier_phone
-                          : job.customer_phone;
-
-                        if (phone) {
-                          window.location.href = `tel:${phone}`;
-                        }
-                      }}
-                      disabled={
-                        !(isCustomer ? job.courier_phone : job.customer_phone)
-                      }
-                    >
-                      <Phone className="w-4 h-4" />
-                    </Button>
-                  </div> */}
+  <AvatarFallback>
+    {(isCustomer
+      ? job.courier_name
+      : job.customer_name
+    )?.charAt(0)?.toUpperCase() || "U"}
+  </AvatarFallback>
+</Avatar>
                 </CardContent>
               </Card>
             )}
@@ -1560,9 +1523,7 @@ export default function AssignedJobView() {
   );
 }
 
-
-
-// ------------------------------------- this is the old code 
+// ------------------------------------- this is the old code
 
 // import React, { useState, useEffect, useCallback } from "react";
 // import { format } from "date-fns";

@@ -1,5 +1,3 @@
-
-
 import { Card, CardContent } from "@/components/ui/card";
 import { Package, Loader2 } from "lucide-react";
 import JobCard from "../components/jobs/JobCard";
@@ -7,6 +5,7 @@ import JobFilters from "../components/jobs/JobFilters";
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "../lib/AuthContext";
 import { findJob } from "../api/ApiServices/jobrelated/findJobService";
+import { appliedJobApplied } from "../api/ApiServices/jobrelated/appliedJobAppliedService";
 // import { useNotificationTrigger } from "../components/notifications/useNotificationTrigger";
 
 export default function FindJobs() {
@@ -17,6 +16,10 @@ export default function FindJobs() {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [activeTab, setActiveTab] = useState("available");
+  const [appliedJobs, setAppliedJobs] = useState([]);
+  const [isLoadingApplied, setIsLoadingApplied] = useState(false);
+  const [appliedLoaded, setAppliedLoaded] = useState(false);
   const [filters, setFilters] = useState({
     location: "",
     packageSize: "all",
@@ -68,12 +71,16 @@ export default function FindJobs() {
   }, [jobs, filters]);
 
   const handleApply = async (jobId) => {
-    // Remove immediately
     setJobs((prev) => prev.filter((job) => job.id !== jobId));
+
     setFilteredJobs((prev) => prev.filter((job) => job.id !== jobId));
 
-    // Refresh in background (optional)
-    loadJobs(1, false);
+    await loadJobs(1, false);
+
+    // Refresh applied jobs if they have already been loaded
+    if (appliedLoaded) {
+      await loadAppliedJobs();
+    }
   };
 
   const buildParams = useCallback(
@@ -128,11 +135,42 @@ export default function FindJobs() {
     }
   };
 
+  const loadAppliedJobs = async () => {
+    if (!token) return;
+
+    setIsLoadingApplied(true);
+
+    try {
+      const res = await appliedJobApplied({}, token);
+
+      const newAppliedJobs = res?.payload?.jobs || [];
+
+      const formattedJobs = newAppliedJobs.map((job) => ({
+        ...job,
+        id: job.job_id,
+      }));
+
+      setAppliedJobs(formattedJobs);
+      setAppliedLoaded(true);
+    } catch (error) {
+      console.error("Error loading applied jobs:", error);
+      setAppliedJobs([]);
+    } finally {
+      setIsLoadingApplied(false);
+    }
+  };
+
   // Reset to page 1 whenever filters change
   useEffect(() => {
     setHasMore(true);
     loadJobs(1, false);
   }, [filters]);
+
+  useEffect(() => {
+  if (token) {
+    loadAppliedJobs();
+  }
+}, [token]);
 
   // Keep filteredJobs in sync with jobs/filters (client-side filtering on top of loaded pages)
   useEffect(() => {
@@ -187,55 +225,119 @@ export default function FindJobs() {
               </div>
             ) : (
               <>
-                <div className="flex justify-between items-center mb-6">
-                  <p className="text-slate-600">
-                    {filteredJobs.length} job
-                    {filteredJobs.length !== 1 ? "s" : ""} available
-                  </p>
+                <div className="flex items-center justify-between mb-6 border-b border-slate-200">
+                  <div className="flex gap-6">
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("available")}
+                      className={`pb-3 text-sm font-medium border-b-2 transition-colors ${
+                        activeTab === "available"
+                          ? "border-blue-600 text-blue-600"
+                          : "border-transparent text-slate-500 hover:text-slate-700"
+                      }`}
+                    >
+                      Available Jobs ({filteredJobs.length})
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveTab("applied");
+
+                        if (!appliedLoaded) {
+                          loadAppliedJobs();
+                        }
+                      }}
+                      className={`pb-3 text-sm font-medium border-b-2 transition-colors ${
+                        activeTab === "applied"
+                          ? "border-blue-600 text-blue-600"
+                          : "border-transparent text-slate-500 hover:text-slate-700"
+                      }`}
+                    >
+                      Applied Jobs ({appliedJobs.length})
+                    </button>
+                  </div>
                 </div>
 
                 <div className="grid gap-6">
-                  {filteredJobs.map((job) => (
-                    <JobCard
-                      key={job.id}
-                      job={job}
-                      onApply={handleApply}
-                      userVerified={user?.id_verified}
-                      userType={user?.user_type}
-                    />
-                  ))}
+                  {activeTab === "available" ? (
+                    <>
+                      {filteredJobs.map((job) => (
+                        <JobCard
+                          key={job.id}
+                          job={job}
+                          onApply={handleApply}
+                          userVerified={user?.id_verified}
+                          userType={user?.user_type}
+                        />
+                      ))}
 
-                  {filteredJobs.length === 0 && (
-                    <Card className="text-center py-12">
-                      <CardContent>
-                        <Package className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-                        <h3 className="text-lg font-medium text-slate-900 mb-2">
-                          No jobs found
-                        </h3>
-                        <p className="text-slate-600">
-                          Try adjusting your filters or check back later for new
-                          opportunities
-                        </p>
-                      </CardContent>
-                    </Card>
+                      {filteredJobs.length === 0 && (
+                        <Card className="text-center py-12">
+                          <CardContent>
+                            <Package className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+
+                            <h3 className="text-lg font-medium text-slate-900 mb-2">
+                              No jobs found
+                            </h3>
+
+                            <p className="text-slate-600">
+                              Try adjusting your filters or check back later for
+                              new opportunities
+                            </p>
+                          </CardContent>
+                        </Card>
+                      )}
+
+                      {filteredJobs.length > 0 && (
+                        <div ref={sentinelRef} className="h-4" />
+                      )}
+
+                      {isLoadingMore && (
+                        <div className="flex justify-center py-6">
+                          <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      {isLoadingApplied ? (
+                        <div className="min-h-[300px] flex items-center justify-center">
+                          <div className="text-center">
+                            <Loader2 className="w-10 h-10 animate-spin text-blue-600 mx-auto" />
+
+                            <p className="mt-4 text-gray-600">
+                              Loading applied jobs...
+                            </p>
+                          </div>
+                        </div>
+                      ) : appliedJobs.length > 0 ? (
+                        appliedJobs.map((job) => (
+                          <JobCard
+                            key={job.id}
+                            job={job}
+                            isApplied={true}
+                            userVerified={user?.id_verified}
+                            userType={user?.user_type}
+                          />
+                        ))
+                      ) : (
+                        <Card className="text-center py-12">
+                          <CardContent>
+                            <Package className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+
+                            <h3 className="text-lg font-medium text-slate-900 mb-2">
+                              No applied jobs
+                            </h3>
+
+                            <p className="text-slate-600">
+                              You haven't applied for any jobs yet.
+                            </p>
+                          </CardContent>
+                        </Card>
+                      )}
+                    </>
                   )}
-
-                  {/* Sentinel for infinite scroll */}
-                  {filteredJobs.length > 0 && (
-                    <div ref={sentinelRef} className="h-4" />
-                  )}
-
-                  {isLoadingMore && (
-                    <div className="flex justify-center py-6">
-                      <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
-                    </div>
-                  )}
-
-                  {/* {!hasMore && filteredJobs.length > 0 && (
-                    <p className="text-center text-sm text-slate-400 py-4">
-                      You've reached the end of the list
-                    </p>
-                  )} */}
                 </div>
               </>
             )}

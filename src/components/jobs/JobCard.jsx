@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 
-export default function JobCard({ job, onApply }) {
+export default function JobCard({ job, onApply, isApplied = false }) {
   const { token, user } = useAuth();
 
   const userVerified = user?.id_verified;
@@ -286,53 +286,46 @@ export default function JobCard({ job, onApply }) {
           </div>
         )}
 
-        <div className="space-y-3 border-t pt-4">
-          <Input
-            placeholder="Message"
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-          />
+       {!isApplied && (
+  <div className="space-y-3 border-t pt-4">
+    <Input
+      placeholder="Message"
+      value={message}
+      onChange={(e) => setMessage(e.target.value)}
+    />
 
-          {userType === "CUSTOMER" ? (
-            <div className="flex items-center gap-2 text-red-600 text-sm">
-              <AlertCircle className="w-4 h-4" />
-              Customers cannot apply for delivery jobs.
-            </div>
-          ) : Number(userVerified) !== 1 ? (
-            <div className="flex items-center gap-2 text-amber-600 text-sm">
-              <AlertCircle className="w-4 h-4" />
-              Please verify your identity first.
-            </div>
-          ) : user?.is_payout_ready !== true ? (
-            <div className="flex items-center gap-2 text-amber-600 text-sm">
-              <AlertCircle className="w-4 h-4" />
-              Please connect and complete Stripe payouts before applying for a
-              job.
-            </div>
-          ) : null}
-          {/* <Button
-            onClick={handleApply}
-            className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
-            disabled={!userVerified}
-          >
-            Apply for This Job
-          </Button> */}
+    {userType === "CUSTOMER" ? (
+      <div className="flex items-center gap-2 text-red-600 text-sm">
+        <AlertCircle className="w-4 h-4" />
+        Customers cannot apply for delivery jobs.
+      </div>
+    ) : Number(userVerified) !== 1 ? (
+      <div className="flex items-center gap-2 text-amber-600 text-sm">
+        <AlertCircle className="w-4 h-4" />
+        Please verify your identity first.
+      </div>
+    ) : user?.is_payout_ready !== true ? (
+      <div className="flex items-center gap-2 text-amber-600 text-sm">
+        <AlertCircle className="w-4 h-4" />
+        Please connect and complete Stripe payouts before applying for a job.
+      </div>
+    ) : null}
 
-          <Button
-            onClick={handleApply}
-            className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
-            disabled={!canApply}
-          >
-            Apply for This Job
-          </Button>
-        </div>
+    <Button
+      onClick={handleApply}
+      className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
+      disabled={!canApply}
+    >
+      Apply for This Job
+    </Button>
+  </div>
+)}
       </CardContent>
     </Card>
   );
 }
 
-
-// -------------------------------------------------- this is old code 
+// -------------------------------------------------- this is old code
 
 // import React, { useState } from "react";
 // import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
