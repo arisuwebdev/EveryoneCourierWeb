@@ -7,6 +7,20 @@ import { getJob } from "../api/ApiServices/jobrelated/getJobService";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 
+const STATUS_CARD_STYLES = {
+  OPEN: "bg-blue-50 border-blue-200",
+  PENDING: "bg-yellow-50 border-yellow-200",
+  PENDING_PAYMENT: "bg-amber-50 border-amber-200",
+  APPLIED: "bg-sky-50 border-sky-200",
+  ASSIGNED: "bg-yellow-50 border-yellow-200",
+  PICKED_UP: "bg-cyan-50 border-cyan-200",
+  IN_TRANSIT: "bg-indigo-50 border-indigo-200",
+  DELIVERED: "bg-green-50 border-green-200",
+  COMPLETED: "bg-emerald-50 border-emerald-200",
+  CANCELLED: "bg-red-50 border-red-200",
+  FAILED: "bg-rose-50 border-rose-200",
+};
+
 export default function MyJobs() {
   const [myPostings, setMyPostings] = useState([]);
   const [myDeliveries, setMyDeliveries] = useState([]);
@@ -122,10 +136,14 @@ export default function MyJobs() {
     return (
       <div className="space-y-4">
         {jobs.map((job) => (
-          <Card
-            key={job.id}
-            className="hover:shadow-md transition-shadow cursor-pointer"
-            onClick={() => {
+         <Card
+  key={job.id}
+  className={`transition-shadow cursor-pointer ${
+    STATUS_CARD_STYLES[job.status?.trim().toUpperCase()] ||
+    "bg-white border-slate-200"
+  } hover:shadow-md`}
+  onClick={() => {
+
               if (
                 user?.user_type === "CUSTOMER" ||
                 user?.user_type === "BOTH"

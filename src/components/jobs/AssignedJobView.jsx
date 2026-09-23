@@ -1412,75 +1412,54 @@ export default function AssignedJobView() {
               RIGHT COLUMN
           =================================================== */}
 
-          <div className="space-y-6">
-            {/* =================================================
-                CUSTOMER / COURIER CARD
-            ================================================= */}
+         <div className="space-y-6">
+  {job.status !== STATUS.PENDING_PAYMENT && (
+    <Card>
+      <CardHeader>
+        <CardTitle>
+          {isCustomer ? "Your Courier" : "Your Customer"}
+        </CardTitle>
+      </CardHeader>
 
-            {job.status !== STATUS.PENDING_PAYMENT && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>
-                    {isCustomer ? "Your Courier" : "Your Customer"}
-                  </CardTitle>
-                </CardHeader>
+      <CardContent className="text-center">
+        {isCustomer && job.is_complain_resolved === true ? (
+          <p
+            className="font-bold text-blue-600 hover:text-blue-800 hover:underline cursor-pointer mb-4"
+            onClick={() => {
+              const userId = job.courier_id;
+              const encryptedId = encryptId(userId);
 
-                <CardContent className="text-center">
-                  <p
-                    className="font-bold text-blue-600 hover:text-blue-800 hover:underline cursor-pointer mb-4"
-                    onClick={() => {
-                      const userId = isCustomer
-                        ? job.courier_id
-                        : job.customer_id;
+              navigate(
+                `/user-profile/${encodeURIComponent(encryptedId)}`
+              );
+            }}
+          >
+            {job.courier_name}
+          </p>
+        ) : (
+          <p className="font-bold text-gray-700 mb-4">
+            {isCustomer ? job.courier_name : job.customer_name}
+          </p>
+        )}
 
-                      const encryptedId = encryptId(userId);
+        <Avatar className="w-20 h-20 mx-auto mb-4">
+          {isCustomer && job.courier_profile_pic && (
+            <AvatarImage
+              src={job.courier_profile_pic}
+              alt={job.courier_name}
+            />
+          )}
 
-                      navigate(
-                        `/user-profile/${encodeURIComponent(encryptedId)}`,
-                      );
-                    }}
-                  >
-                    {isCustomer ? job.courier_name : job.customer_name}
-                  </p>
-
-                  {/* Profile Image */}
-<Avatar className="w-20 h-20 mx-auto mb-4">
-  {isCustomer && job.courier_profile_pic && (
-    <AvatarImage
-      src={job.courier_profile_pic}
-      alt={job.courier_name}
-    />
+          <AvatarFallback>
+            {(isCustomer ? job.courier_name : job.customer_name)
+              ?.charAt(0)
+              ?.toUpperCase() || "U"}
+          </AvatarFallback>
+        </Avatar>
+      </CardContent>
+    </Card>
   )}
-
-  <AvatarFallback>
-    {(isCustomer
-      ? job.courier_name
-      : job.customer_name
-    )?.charAt(0)?.toUpperCase() || "U"}
-  </AvatarFallback>
-</Avatar>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* =================================================
-                CHAT
-            ================================================= */}
-            {job.status !== STATUS.PENDING_PAYMENT &&
-              job.status !== STATUS.DELIVERED &&
-              job.status !== STATUS.CANCELLED && (
-                <ChatBox
-                  jobId={job.id}
-                  currentUserId={currentUser?.user_id}
-                  receiverId={isCustomer ? job.courier_id : job.customer_id}
-                  otherUserName={
-                    isCustomer
-                      ? job?.courier_name || "Courier"
-                      : job?.customer_name || "Customer"
-                  }
-                />
-              )}
-          </div>
+</div>
         </div>
       </div>
 

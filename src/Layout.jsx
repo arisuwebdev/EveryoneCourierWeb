@@ -39,6 +39,8 @@ const mobileNavigationItems = [
   { title: "My Jobs", url: "/my-jobs", icon: Briefcase },
   { title: "Post Job", url: "/post-job", icon: Plus },
   { title: "Find Jobs", url: "/find-jobs", icon: Search },
+  { title: "Profile", url: "/profile", icon: User },
+
   // { title: "Analytics", url: "/analytics", icon: BarChart2 },
 ];
 
@@ -594,7 +596,7 @@ export default function Layout({ children }) {
 
                 <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-200 py-1.5 z-50">
                   {/* PROFILE */}
-                  <button
+                  {/* <button
                     type="button"
                     onClick={() => {
                       setIsMobileAccountMenuOpen(false);
@@ -604,7 +606,7 @@ export default function Layout({ children }) {
                   >
                     <User className="w-4 h-4" />
                     Profile
-                  </button>
+                  </button> */}
 
                   {/* CHANGE PASSWORD - ADD HERE */}
                   <button

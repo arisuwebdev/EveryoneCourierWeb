@@ -1,144 +1,4 @@
-// import React, { createContext, useState, useContext } from "react";
-
-// const AuthContext = createContext();
-
-// export const AuthProvider = ({ children }) => {
-//   const [user, setUser] = useState(null);
-//   const [isAuthenticated, setIsAuthenticated] = useState(false);
-//   const [isLoadingAuth, setIsLoadingAuth] = useState(false);
-//   const [isLoadingPublicSettings, setIsLoadingPublicSettings] = useState(false);
-//   const [authError, setAuthError] = useState(null);
-//   const [appPublicSettings, setAppPublicSettings] = useState(null);
-
-//   const checkAppState = async () => {
-//     // No backend currently
-//     setIsLoadingAuth(false);
-//     setIsLoadingPublicSettings(false);
-//   };
-
-//   const logout = () => {
-//     setUser(null);
-//     setIsAuthenticated(false);
-//   };
-
-//   const navigateToLogin = () => {
-//     // Add your own login route later
-//     console.log("Login required");
-//   };
-
-//   return (
-//     <AuthContext.Provider
-//       value={{
-//         user,
-//         setUser,
-//         isAuthenticated,
-//         setIsAuthenticated,
-//         isLoadingAuth,
-//         isLoadingPublicSettings,
-//         authError,
-//         appPublicSettings,
-//         logout,
-//         navigateToLogin,
-//         checkAppState
-//       }}
-//     >
-//       {children}
-//     </AuthContext.Provider>
-//   );
-// };
-
-// export const useAuth = () => {
-//   const context = useContext(AuthContext);
-
-//   if (!context) {
-//     throw new Error("useAuth must be used within AuthProvider");
-//   }
-
-//   return context;
-// };
-
-//----------------------------this is for mobile number verification ------------------------------------- //
-
-// import { createContext, useContext, useState } from "react";
-// import { logoutUser } from "../api/ApiServices/logoutService";
-// import { updateDeviceNotificationToken } from "../api/ApiServices/notification/deviceTokenNotificationService";
-// import { requestNotificationPermission } from "../firebaseNotification";
-
-// const AuthContext = createContext();
-
-// export const AuthProvider = ({ children }) => {
-//   const [user, setUser] = useState(JSON.parse(localStorage.getItem("user")));
-
-//   const [token, setToken] = useState(localStorage.getItem("token"));
-
-//   const login = async (data) => {
-//     const expiryTime = Date.now() + 60 * 60 * 1000;
-
-//     localStorage.setItem("token", data.payload.token);
-//     localStorage.setItem("user", JSON.stringify(data.payload.user));
-//     localStorage.setItem("isLoggedIn", "true");
-//     localStorage.setItem("tokenExpiry", String(expiryTime));
-
-//     setToken(data.payload.token);
-//     setUser(data.payload.user);
-
-//     // Update device notification token
-//     try {
-//       const notificationData = await requestNotificationPermission();
-
-//       if (notificationData) {
-//         await updateDeviceNotificationToken(
-//           data.payload.token,
-//           notificationData.device_type,
-//           notificationData.fcm_token,
-//         );
-
-//         console.log("Device token updated successfully");
-//       }
-//     } catch (error) {
-//       console.error("Failed to update device notification token:", error);
-//     }
-//   };
-//   const updateUser = (updatedUser) => {
-//     localStorage.setItem("user", JSON.stringify(updatedUser));
-//     setUser(updatedUser);
-//   };
-
-//   const logout = async () => {
-//     try {
-//       if (token) {
-//         await logoutUser(token);
-//       }
-//     } catch (error) {
-//     } finally {
-//       localStorage.removeItem("token");
-//       localStorage.removeItem("user");
-//       localStorage.removeItem("isLoggedIn");
-
-//       setToken(null);
-//       setUser(null);
-//     }
-//   };
-
-//   return (
-//     <AuthContext.Provider
-//       value={{
-//         user,
-//         token,
-//         login,
-//         logout,
-//         updateUser,
-//         isAuthenticated: !!token,
-//       }}
-//     >
-//       {children}
-//     </AuthContext.Provider>
-//   );
-// };
-
-// export const useAuth = () => useContext(AuthContext);
-
-import { createContext, useContext, useState, useCallback } from "react";
+import { createContext, useContext, useState, useCallback, useEffect} from "react";
 import { logoutUser } from "../api/ApiServices/logoutService";
 import { updateDeviceNotificationToken } from "../api/ApiServices/notification/deviceTokenNotificationService";
 import { requestNotificationPermission } from "../firebaseNotification";
@@ -146,17 +6,20 @@ import { requestNotificationPermission } from "../firebaseNotification";
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(JSON.parse(localStorage.getItem("user")));
-
-  const [token, setToken] = useState(localStorage.getItem("token"));
-
+  const [user, setUser] = useState(() => {
+    const storedUser = sessionStorage.getItem("user");
+    return storedUser ? JSON.parse(storedUser) : null;
+  });
+  const [token, setToken] = useState(() => {
+    return sessionStorage.getItem("token");
+  });
   const login = async (data) => {
     const expiryTime = Date.now() + 60 * 60 * 1000;
 
-    localStorage.setItem("token", data.payload.token);
-    localStorage.setItem("user", JSON.stringify(data.payload.user));
-    localStorage.setItem("isLoggedIn", "true");
-    localStorage.setItem("tokenExpiry", String(expiryTime));
+    sessionStorage.setItem("token", data.payload.token);
+    sessionStorage.setItem("user", JSON.stringify(data.payload.user));
+    sessionStorage.setItem("isLoggedIn", "true");
+    sessionStorage.setItem("tokenExpiry", String(expiryTime));
 
     setToken(data.payload.token);
     setUser(data.payload.user);
@@ -178,9 +41,9 @@ export const AuthProvider = ({ children }) => {
       } else {
         // console.log("❌ No FCM token received");
       }
-   } catch (error) {
-  // console.error("❌ Notification token update failed:", error);
-}
+    } catch (error) {
+      // console.error("❌ Notification token update failed:", error);
+    }
   };
   // const updateUser = (updatedUser) => {
   //   localStorage.setItem("user", JSON.stringify(updatedUser));
@@ -188,7 +51,7 @@ export const AuthProvider = ({ children }) => {
   // };
 
   const updateUser = useCallback((updatedUser) => {
-    localStorage.setItem("user", JSON.stringify(updatedUser));
+    sessionStorage.setItem("user", JSON.stringify(updatedUser));
     setUser(updatedUser);
   }, []);
 
@@ -224,14 +87,38 @@ export const AuthProvider = ({ children }) => {
       }
     } catch (error) {
     } finally {
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      localStorage.removeItem("isLoggedIn");
+      sessionStorage.removeItem("token");
+      sessionStorage.removeItem("user");
+      sessionStorage.removeItem("isLoggedIn");
+      sessionStorage.removeItem("tokenExpiry");
 
       setToken(null);
       setUser(null);
     }
   };
+
+
+
+  useEffect(() => {
+  const expiry = sessionStorage.getItem("tokenExpiry");
+
+  if (!token || !expiry) {
+    return;
+  }
+
+  const remainingTime = Number(expiry) - Date.now();
+
+  if (remainingTime <= 0) {
+    logout();
+    return;
+  }
+
+  const timer = setTimeout(() => {
+    logout();
+  }, remainingTime);
+
+  return () => clearTimeout(timer);
+}, [token, logout]);
 
   return (
     <AuthContext.Provider

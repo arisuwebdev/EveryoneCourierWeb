@@ -37,6 +37,7 @@ import { uploadProfilePic } from "../api/ApiServices/profile/getUploadProfilePic
 import StripeConnectOnboarding from "../components/payments/StripeConnectOnboarding";
 import { toast } from "react-toastify";
 import { auth, RecaptchaVerifier, signInWithPhoneNumber } from "../firebase";
+import { useNavigate } from "react-router-dom";
 
 export default function Profile() {
   const [user, setUser] = useState(null);
@@ -54,7 +55,8 @@ export default function Profile() {
     user_type: "CUSTOMER",
     vehicle_type: "",
   });
-  const { token, user: authUser, updateUser } = useAuth();
+  const { token, user: authUser, updateUser , logout} = useAuth();
+  const navigate = useNavigate();
   const [phoneVerified, setPhoneVerified] = useState(false);
   const [otpModalOpen, setOtpModalOpen] = useState(false);
   const [otp, setOtp] = useState("");
@@ -63,6 +65,11 @@ export default function Profile() {
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState(null);
+
+  const handleLogout = async () => {
+  await logout();
+  navigate("/login");
+};
 
   useEffect(() => {
     loadUser();
@@ -904,6 +911,14 @@ export default function Profile() {
                 )}
               </CardContent>
             </Card>
+            <Button
+  type="button"
+  variant="destructive"
+  className="w-full"
+  onClick={handleLogout}
+>
+  Logout
+</Button>
 
             {/* STRIPE CONNECT BELOW ACCOUNT STATS */}
             {(profileData.user_type === "COURIER" ||
