@@ -15,6 +15,7 @@ import {
   Mail,
   Phone,
   MapPin,
+  FileText,
   ChevronDown,
   X,
   Lock,
@@ -39,6 +40,7 @@ const mobileNavigationItems = [
   { title: "My Jobs", url: "/my-jobs", icon: Briefcase },
   { title: "Post Job", url: "/post-job", icon: Plus },
   { title: "Find Jobs", url: "/find-jobs", icon: Search },
+  { title: "Terms", url: "/TermsOfService", icon: FileText },
   { title: "Profile", url: "/profile", icon: User },
 
   // { title: "Analytics", url: "/analytics", icon: BarChart2 },
@@ -269,10 +271,10 @@ export default function Layout({ children }) {
                 })}
             </nav>
           )}
-           <ChangePasswordModal
-        isOpen={isChangePasswordModalOpen}
-        onClose={() => setIsChangePasswordModalOpen(false)}
-      />
+          <ChangePasswordModal
+            isOpen={isChangePasswordModalOpen}
+            onClose={() => setIsChangePasswordModalOpen(false)}
+          />
 
           {/* Right side: Post Job CTA, notifications, avatar, logout */}
           <div className="flex items-center gap-2 md:gap-3 shrink-0">
@@ -576,27 +578,28 @@ export default function Layout({ children }) {
           )}
 
           {/* Mobile Account */}
-          <div className="md:hidden relative">
-            <button
-              type="button"
-              onClick={() => setIsMobileAccountMenuOpen((prev) => !prev)}
-              className="flex items-center justify-center"
-            >
-              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-slate-200 to-slate-300 flex items-center justify-center text-xs font-semibold text-slate-700">
-                {initials}
-              </div>
-            </button>
+          {isAuthenticated && (
+            <div className="md:hidden relative">
+              <button
+                type="button"
+                onClick={() => setIsMobileAccountMenuOpen((prev) => !prev)}
+                className="flex items-center justify-center"
+              >
+                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-slate-200 to-slate-300 flex items-center justify-center text-xs font-semibold text-slate-700">
+                  {initials}
+                </div>
+              </button>
 
-            {isMobileAccountMenuOpen && (
-              <>
-                <div
-                  className="fixed inset-0 z-40"
-                  onClick={() => setIsMobileAccountMenuOpen(false)}
-                />
+              {isMobileAccountMenuOpen && (
+                <>
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setIsMobileAccountMenuOpen(false)}
+                  />
 
-                <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-200 py-1.5 z-50">
-                  {/* PROFILE */}
-                  {/* <button
+                  <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-200 py-1.5 z-50">
+                    {/* PROFILE */}
+                    {/* <button
                     type="button"
                     onClick={() => {
                       setIsMobileAccountMenuOpen(false);
@@ -608,35 +611,36 @@ export default function Layout({ children }) {
                     Profile
                   </button> */}
 
-                  {/* CHANGE PASSWORD - ADD HERE */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsMobileAccountMenuOpen(false);
-                      setIsChangePasswordModalOpen(true);
-                    }}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded-lg mx-1"
-                  >
-                    <Lock className="w-4 h-4" />
-                    Change Password
-                  </button>
+                    {/* CHANGE PASSWORD - ADD HERE */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsMobileAccountMenuOpen(false);
+                        setIsChangePasswordModalOpen(true);
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded-lg mx-1"
+                    >
+                      <Lock className="w-4 h-4" />
+                      Change Password
+                    </button>
 
-                  {/* LOGOUT */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsMobileAccountMenuOpen(false);
-                      handleLogout();
-                    }}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg mx-1"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    Logout
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
+                    {/* LOGOUT */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsMobileAccountMenuOpen(false);
+                        handleLogout();
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg mx-1"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Logout
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
         </div>
       </header>
 
@@ -654,10 +658,25 @@ export default function Layout({ children }) {
           <div className="flex items-center justify-around px-1 py-1 max-w-2xl mx-auto">
             {/* here post job only show customer and both */}
             {mobileNavigationItems
-              .filter(
-                (item) =>
-                  !(user?.user_type === "COURIER" && item.title === "Post Job"),
-              )
+              .filter((item) => {
+                // Courier should not see Post Job
+                if (
+                  user?.user_type === "COURIER" &&
+                  item.title === "Post Job"
+                ) {
+                  return false;
+                }
+
+                // Customer should not see Find Jobs
+                if (
+                  user?.user_type === "CUSTOMER" &&
+                  item.title === "Find Jobs"
+                ) {
+                  return false;
+                }
+
+                return true;
+              })
               .map((item) => {
                 const isActive = location.pathname === item.url;
                 const isPost = item.title === "Post Job";
@@ -791,7 +810,6 @@ export default function Layout({ children }) {
           </div>
         </div>
       </footer>
-
     </div>
   );
 }

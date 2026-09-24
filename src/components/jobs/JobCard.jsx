@@ -19,11 +19,13 @@ import {
   Truck,
   Scale,
   Ruler,
+  MessageCircle,
 } from "lucide-react";
 import { format } from "date-fns";
 
-export default function JobCard({ job, onApply, isApplied = false }) {
+export default function JobCard({ job, onApply, onChat, isApplied = false }) {
   const { token, user } = useAuth();
+  const [proposedPrice, setProposedPrice] = useState("");
 
   const userVerified = user?.id_verified;
   const userType = user?.user_type;
@@ -96,6 +98,7 @@ export default function JobCard({ job, onApply, isApplied = false }) {
       const response = await ApplyJob(payload, token);
 
       toast.success(response.msg || "Job applied successfully");
+      
 
       onApply?.(job.id);
     } catch (error) {
@@ -286,40 +289,66 @@ export default function JobCard({ job, onApply, isApplied = false }) {
           </div>
         )}
 
-       {!isApplied && (
-  <div className="space-y-3 border-t pt-4">
-    <Input
-      placeholder="Message"
-      value={message}
-      onChange={(e) => setMessage(e.target.value)}
-    />
+        {!isApplied && (
+          <div className="space-y-3 border-t pt-4">
+            {/* <Input
+  type="number"
+  min="0"
+  step="0.01"
+  placeholder={`Your price (${currency})`}
+  value={proposedPrice}
+  onChange={(e) => setProposedPrice(e.target.value)}
+/> */}
+            <Input
+              placeholder="Message"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+            />
 
-    {userType === "CUSTOMER" ? (
-      <div className="flex items-center gap-2 text-red-600 text-sm">
-        <AlertCircle className="w-4 h-4" />
-        Customers cannot apply for delivery jobs.
-      </div>
-    ) : Number(userVerified) !== 1 ? (
-      <div className="flex items-center gap-2 text-amber-600 text-sm">
-        <AlertCircle className="w-4 h-4" />
-        Please verify your identity first.
-      </div>
-    ) : user?.is_payout_ready !== true ? (
-      <div className="flex items-center gap-2 text-amber-600 text-sm">
-        <AlertCircle className="w-4 h-4" />
-        Please connect and complete Stripe payouts before applying for a job.
-      </div>
-    ) : null}
+            {userType === "CUSTOMER" ? (
+              <div className="flex items-center gap-2 text-red-600 text-sm">
+                <AlertCircle className="w-4 h-4" />
+                Customers cannot apply for delivery jobs.
+              </div>
+            ) : Number(userVerified) !== 1 ? (
+              <div className="flex items-center gap-2 text-amber-600 text-sm">
+                <AlertCircle className="w-4 h-4" />
+                Please verify your identity first.
+              </div>
+            ) : user?.is_payout_ready !== true ? (
+              <div className="flex items-center gap-2 text-amber-600 text-sm">
+                <AlertCircle className="w-4 h-4" />
+                Please connect and complete Stripe payouts before applying for a
+                job.
+              </div>
+            ) : null}
 
+            <Button
+              onClick={handleApply}
+              className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
+              disabled={!canApply}
+            >
+              Apply for This Job
+            </Button>
+          </div>
+        )}
+
+   
+{/* {isApplied && (
+  <div className="border-t pt-4">
     <Button
-      onClick={handleApply}
-      className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
-      disabled={!canApply}
+      type="button"
+      variant="outline"
+      className="w-full border-blue-200 text-blue-600 hover:bg-blue-50"
+      onClick={() => onChat?.(job)}
     >
-      Apply for This Job
+      <MessageCircle className="w-4 h-4 mr-2" />
+      Chat with Customer
     </Button>
   </div>
-)}
+)} */}
+
+
       </CardContent>
     </Card>
   );

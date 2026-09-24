@@ -150,7 +150,7 @@ export default function Home() {
 
             {/* Trust Indicators */}
             <div className="mt-12 flex justify-center items-center gap-8 text-sm font-semibold">
-              <div className="flex items-center gap-2 text-yellow-600">
+              <div className="flex items-center gap-1 sm:gap-2 text-yellow-600">
                 <Star className="w-5 h-5 text-yellow-500 fill-current" />
                 <span>4.9/5 Rating</span>
               </div>

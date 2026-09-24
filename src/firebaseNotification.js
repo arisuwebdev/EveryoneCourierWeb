@@ -177,28 +177,37 @@ export const listenForMessages = async () => {
 
         let notificationUrl =
           payload.data?.url ||
-          "/current-project/react-project/EveryoneCourior/dashboard";
+          // "/current-project/react-project/EveryoneCourior/dashboard";
+          "/dashboard";
+
 
         const notifyType = payload.data?.notifyType;
         const jobId = payload.data?.job_id;
 
         if (notifyType === "JOB_POSTED" && jobId) {
-          notificationUrl = `/current-project/react-project/EveryoneCourior/my-jobs/${jobId}/applicants`;
+           notificationUrl = `/my-jobs/${jobId}/applicants`;
+          // notificationUrl = `/current-project/react-project/EveryoneCourior/my-jobs/${jobId}/applicants`;
         } else if (notifyType === "JOB_APPLIED" && jobId) {
-          notificationUrl = `/current-project/react-project/EveryoneCourior/my-jobs/${jobId}/applicants`;
+            notificationUrl = `/my-jobs/${jobId}/applicants`;
+          // notificationUrl = `/current-project/react-project/EveryoneCourior/my-jobs/${jobId}/applicants`;
         } else if (notifyType === "JOB_ASSIGNED" && jobId) {
-          notificationUrl = `/current-project/react-project/EveryoneCourior/my-jobs/${jobId}/assigned`;
+          notificationUrl = `/my-jobs/${jobId}/assigned`;
+          // notificationUrl = `/current-project/react-project/EveryoneCourior/my-jobs/${jobId}/assigned`;
         } else if (notifyType === "JOB_STATUS_UPDATE" && jobId) {
-          notificationUrl = `/current-project/react-project/EveryoneCourior/my-jobs/${jobId}/assigned`;
+          notificationUrl = `/my-jobs/${jobId}/assigned`;
+          // notificationUrl = `/current-project/react-project/EveryoneCourior/my-jobs/${jobId}/assigned`;
         } else if (notifyType === "MESSAGE_RECEIVED" && jobId) {
-          notificationUrl = `/current-project/react-project/EveryoneCourior/my-jobs/${jobId}/assigned`;
+          notificationUrl = `/my-jobs/${jobId}/assigned`;
+          // notificationUrl = `/current-project/react-project/EveryoneCourior/my-jobs/${jobId}/assigned`;
         }
 
         // ---------------------------
 
         await registration.showNotification(title, {
           body,
-          icon: "/current-project/react-project/EveryoneCourior/icon-192.png",
+          icon: "/icon-192.png",
+
+          // icon: "/current-project/react-project/EveryoneCourior/icon-192.png",
 
           data: {
             url: notificationUrl,

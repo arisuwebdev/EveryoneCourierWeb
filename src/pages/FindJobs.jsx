@@ -6,6 +6,7 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "../lib/AuthContext";
 import { findJob } from "../api/ApiServices/jobrelated/findJobService";
 import { appliedJobApplied } from "../api/ApiServices/jobrelated/appliedJobAppliedService";
+import ChatBox from "../components/jobs/ChatBox";
 // import { useNotificationTrigger } from "../components/notifications/useNotificationTrigger";
 
 export default function FindJobs() {
@@ -20,6 +21,14 @@ export default function FindJobs() {
   const [appliedJobs, setAppliedJobs] = useState([]);
   const [isLoadingApplied, setIsLoadingApplied] = useState(false);
   const [appliedLoaded, setAppliedLoaded] = useState(false);
+
+  // for pagination
+  const [appliedPage, setAppliedPage] = useState(1);
+  const [appliedLastPage, setAppliedLastPage] = useState(1);
+  const [isLoadingMoreApplied, setIsLoadingMoreApplied] = useState(false);
+const [appliedTotal, setAppliedTotal] = useState(0);
+  const appliedSentinelRef = useRef(null);
+  const [selectedChatJob, setSelectedChatJob] = useState(null);
   const [filters, setFilters] = useState({
     location: "",
     packageSize: "all",
@@ -70,14 +79,24 @@ export default function FindJobs() {
     setFilteredJobs(filtered);
   }, [jobs, filters]);
 
+  // const handleApply = async (jobId) => {
+  //   setJobs((prev) => prev.filter((job) => job.id !== jobId));
+
+  //   setFilteredJobs((prev) => prev.filter((job) => job.id !== jobId));
+
+  //   await loadJobs(1, false);
+
+  //   // Refresh applied jobs if they have already been loaded
+  //   if (appliedLoaded) {
+  //     await loadAppliedJobs();
+  //   }
+  // };
+
   const handleApply = async (jobId) => {
-    setJobs((prev) => prev.filter((job) => job.id !== jobId));
-
-    setFilteredJobs((prev) => prev.filter((job) => job.id !== jobId));
-
+    // Call findJob API again and refresh Available Jobs
     await loadJobs(1, false);
 
-    // Refresh applied jobs if they have already been loaded
+    // Refresh Applied Jobs if already loaded
     if (appliedLoaded) {
       await loadAppliedJobs();
     }
@@ -135,28 +154,50 @@ export default function FindJobs() {
     }
   };
 
-  const loadAppliedJobs = async () => {
+  // this is function use for applied job
+  const loadAppliedJobs = async (pageNum = 1, append = false) => {
     if (!token) return;
 
-    setIsLoadingApplied(true);
+    if (append) {
+      setIsLoadingMoreApplied(true);
+    } else {
+      setIsLoadingApplied(true);
+    }
 
     try {
-      const res = await appliedJobApplied({}, token);
+      const res = await appliedJobApplied(
+        {
+          page: pageNum,
+        },
+        token,
+      );
 
       const newAppliedJobs = res?.payload?.jobs || [];
 
       const formattedJobs = newAppliedJobs.map((job) => ({
         ...job,
-        id: job.job_id,
+        id: job.id || job.job_id,
       }));
 
-      setAppliedJobs(formattedJobs);
+      setAppliedJobs((prev) =>
+        append ? [...prev, ...formattedJobs] : formattedJobs,
+      );
+
+      setAppliedPage(res?.payload?.currentPage ?? pageNum);
+      setAppliedLastPage(res?.payload?.lastPage ?? 1);
+      setAppliedTotal(res?.payload?.total ?? 0);
+
+
       setAppliedLoaded(true);
     } catch (error) {
-      console.error("Error loading applied jobs:", error);
-      setAppliedJobs([]);
+      // console.error("Failed to load applied jobs:", error);
+
+      if (!append) {
+        setAppliedJobs([]);
+      }
     } finally {
       setIsLoadingApplied(false);
+      setIsLoadingMoreApplied(false);
     }
   };
 
@@ -167,10 +208,10 @@ export default function FindJobs() {
   }, [filters]);
 
   useEffect(() => {
-  if (token) {
-    loadAppliedJobs();
-  }
-}, [token]);
+    if (token) {
+      loadAppliedJobs();
+    }
+  }, [token]);
 
   // Keep filteredJobs in sync with jobs/filters (client-side filtering on top of loaded pages)
   useEffect(() => {
@@ -195,6 +236,40 @@ export default function FindJobs() {
 
     return () => observer.disconnect();
   }, [page, hasMore, isLoading, isLoadingMore, filters]);
+
+  // Infinite scroll for Applied Jobs
+  useEffect(() => {
+    if (activeTab !== "applied") return;
+    if (!appliedSentinelRef.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+
+        if (
+          entry.isIntersecting &&
+          appliedPage < appliedLastPage &&
+          !isLoadingApplied &&
+          !isLoadingMoreApplied
+        ) {
+          loadAppliedJobs(appliedPage + 1, true);
+        }
+      },
+      {
+        rootMargin: "200px",
+      },
+    );
+
+    observer.observe(appliedSentinelRef.current);
+
+    return () => observer.disconnect();
+  }, [
+    activeTab,
+    appliedPage,
+    appliedLastPage,
+    isLoadingApplied,
+    isLoadingMoreApplied,
+  ]);
 
   return (
     <div className="min-h-screen p-4 md:p-8">
@@ -254,7 +329,7 @@ export default function FindJobs() {
                           : "border-transparent text-slate-500 hover:text-slate-700"
                       }`}
                     >
-                      Applied Jobs ({appliedJobs.length})
+                      Applied Jobs ({appliedTotal})
                     </button>
                   </div>
                 </div>
@@ -267,10 +342,50 @@ export default function FindJobs() {
                           key={job.id}
                           job={job}
                           onApply={handleApply}
+                          isApplied={false}
+                          onChat={() => setSelectedChatJob(job)}
                           userVerified={user?.id_verified}
                           userType={user?.user_type}
                         />
                       ))}
+
+                      {selectedChatJob && (
+                        <Card className="mt-6 overflow-hidden border-blue-200 shadow-lg">
+                          <CardContent className="p-0">
+                            <ChatBox
+                              jobId={selectedChatJob.id}
+                              currentUserId={user?.id}
+                              receiverId={
+                                selectedChatJob.customer_id ||
+                                selectedChatJob.customer?.id
+                              }
+                              otherUserName={
+                                selectedChatJob.customer_name ||
+                                selectedChatJob.customer?.name ||
+                                "Customer"
+                              }
+                              jobPrice={selectedChatJob.price}
+                              agreedPrice={
+                                selectedChatJob.agreed_price ??
+                                selectedChatJob.final_price ??
+                                null
+                              }
+                              jobStatus={selectedChatJob.status}
+                              userType={user?.user_type}
+                            />
+
+                            <div className="border-t p-3">
+                              <button
+                                type="button"
+                                onClick={() => setSelectedChatJob(null)}
+                                className="text-sm text-slate-500 hover:text-slate-700"
+                              >
+                                Close Chat
+                              </button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
 
                       {filteredJobs.length === 0 && (
                         <Card className="text-center py-12">
@@ -312,15 +427,36 @@ export default function FindJobs() {
                           </div>
                         </div>
                       ) : appliedJobs.length > 0 ? (
-                        appliedJobs.map((job) => (
-                          <JobCard
-                            key={job.id}
-                            job={job}
-                            isApplied={true}
-                            userVerified={user?.id_verified}
-                            userType={user?.user_type}
-                          />
-                        ))
+                        <>
+                          {appliedJobs.map((job) => (
+                            <JobCard
+                              key={job.id}
+                              job={job}
+                              isApplied={true}
+                              onChat={() => setSelectedChatJob(job)}
+                              userVerified={user?.id_verified}
+                              userType={user?.user_type}
+                            />
+                          ))}
+
+                          {/* Applied Jobs infinite scroll sentinel */}
+                          {appliedPage < appliedLastPage && (
+                            <div
+                              ref={appliedSentinelRef}
+                              className="h-10 flex justify-center items-center"
+                            >
+                              {isLoadingMoreApplied && (
+                                <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+                              )}
+                            </div>
+                          )}
+
+                          {appliedPage >= appliedLastPage && (
+                            <div className="text-center py-6 text-sm text-slate-500">
+                              No more applied jobs
+                            </div>
+                          )}
+                        </>
                       ) : (
                         <Card className="text-center py-12">
                           <CardContent>

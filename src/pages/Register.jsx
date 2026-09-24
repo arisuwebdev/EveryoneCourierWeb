@@ -13,8 +13,6 @@ import {
   InputOTPSlot,
 } from "../components/ui/input-otp";
 import AuthLayout from "../components/AuthLayout";
-import GoogleIcon from "../components/GoogleIcon";
-// import { toast } from "../components/ui/use-toast";
 import { Checkbox } from "../components/ui/checkbox";
 import { getTermsOfServiceUrl } from "../api/ApiServices/getTermsOfServiceUrlApiService";
 import { getPrivacyPolicyUrl } from "../api/ApiServices/getPrivacyPolicyUrlApiService";
@@ -155,9 +153,6 @@ export default function Register() {
     }
   };
 
-  const handleGoogle = () => {
-    alert("Google Sign-In is disabled.");
-  };
 
   if (showOtp) {
     return (
@@ -359,23 +354,19 @@ export default function Register() {
             className="text-sm text-muted-foreground leading-6 cursor-pointer"
           >
             I have read and agree to the{" "}
-            <a
-              href={termsUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary underline"
+            <Link
+             to="/TermsOfService"
+            className="text-primary underline"
             >
               Terms of Service
-            </a>{" "}
+            </Link>{" "}
             and{" "}
-            <a
-              href={privacyUrl}
-              target="_blank"
-              rel="noopener noreferrer"
+            <Link
+              to="/PrivacyPolicy"
               className="text-primary underline"
             >
               Privacy Policy
-            </a>
+            </Link>
             . I confirm I am 17 years of age or older.
           </label>
         </div>

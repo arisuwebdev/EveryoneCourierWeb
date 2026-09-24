@@ -67,11 +67,14 @@ messaging.onBackgroundMessage((payload) => {
 
   const notificationUrl =
     payload.data?.url ||
-    "/current-project/react-project/EveryoneCourior/dashboard";
+         "/dashboard";
+
+    // "/current-project/react-project/EveryoneCourior/dashboard";
 
   const notificationOptions = {
     body: notificationBody,
-    icon: "/current-project/react-project/EveryoneCourior/icon-192.png",
+     icon: "/icon-192.png",
+    // icon: "/current-project/react-project/EveryoneCourior/icon-192.png",
 
     data: {
       url: notificationUrl,
@@ -93,7 +96,8 @@ self.addEventListener("notificationclick", (event) => {
 
   const urlToOpen =
     event.notification.data?.url ||
-    "/current-project/react-project/EveryoneCourior/dashboard";
+      "/dashboard";
+    // "/current-project/react-project/EveryoneCourior/dashboard";
 
   event.waitUntil(
     clients.matchAll({

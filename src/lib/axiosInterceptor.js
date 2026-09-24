@@ -63,7 +63,7 @@ axios.interceptors.response.use(
       isHandlingServerError = true;
 
       window.location.href =
-        "/current-project/react-project/EveryoneCourior/500";
+        "/500";
 
       return Promise.reject(error);
     }

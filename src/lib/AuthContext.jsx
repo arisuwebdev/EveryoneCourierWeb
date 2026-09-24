@@ -1,4 +1,10 @@
-import { createContext, useContext, useState, useCallback, useEffect} from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+} from "react";
 import { logoutUser } from "../api/ApiServices/logoutService";
 import { updateDeviceNotificationToken } from "../api/ApiServices/notification/deviceTokenNotificationService";
 import { requestNotificationPermission } from "../firebaseNotification";
@@ -74,18 +80,19 @@ export const AuthProvider = ({ children }) => {
         is_payout_ready: stripeStatus.is_payout_ready,
       };
 
-      localStorage.setItem("user", JSON.stringify(updatedUser));
+      sessionStorage.setItem("user", JSON.stringify(updatedUser));
 
       return updatedUser;
     });
   };
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     try {
       if (token) {
         await logoutUser(token);
       }
     } catch (error) {
+   
     } finally {
       sessionStorage.removeItem("token");
       sessionStorage.removeItem("user");
@@ -95,30 +102,28 @@ export const AuthProvider = ({ children }) => {
       setToken(null);
       setUser(null);
     }
-  };
-
-
+  }, [token]);
 
   useEffect(() => {
-  const expiry = sessionStorage.getItem("tokenExpiry");
+    const expiry = sessionStorage.getItem("tokenExpiry");
 
-  if (!token || !expiry) {
-    return;
-  }
+    if (!token || !expiry) {
+      return;
+    }
 
-  const remainingTime = Number(expiry) - Date.now();
+    const remainingTime = Number(expiry) - Date.now();
 
-  if (remainingTime <= 0) {
-    logout();
-    return;
-  }
+    if (remainingTime <= 0) {
+      logout();
+      return;
+    }
 
-  const timer = setTimeout(() => {
-    logout();
-  }, remainingTime);
+    const timer = setTimeout(() => {
+      logout();
+    }, remainingTime);
 
-  return () => clearTimeout(timer);
-}, [token, logout]);
+    return () => clearTimeout(timer);
+  }, [token, logout]);
 
   return (
     <AuthContext.Provider
