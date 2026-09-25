@@ -366,9 +366,11 @@ export default function AssignedJobView() {
   const [isUpdating, setIsUpdating] = useState(false);
 
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentData, setPaymentData] = useState(null);
 
   const [showComplaintModal, setShowComplaintModal] = useState(false);
 
+  const [paymentCompleted, setPaymentCompleted] = useState(false);
   const [reviewJustSubmitted, setReviewJustSubmitted] = useState(false);
 
   const [complaint, setComplaint] = useState(null);
@@ -439,28 +441,47 @@ export default function AssignedJobView() {
   // CONFIRM DELIVERY
   // =========================================================
 
-  const handleConfirmDelivery = async () => {
-    if (!isCustomer) return;
+const handleConfirmDelivery = async () => {
+  if (!isCustomer) return;
 
-    try {
-      setIsUpdating(true);
+  try {
+    setIsUpdating(true);
 
-      const res = await confirmJobCompleteService(job.id, token);
+    const res = await confirmJobCompleteService(job.id, token);
 
-      if (res.status === 1) {
-        toast.success(res.msg || "Delivery confirmed successfully.");
+    if (res.status === 1) {
+      toast.success(res.msg || "Delivery confirmed successfully.");
 
-        // Refresh job so is_delivery_confirmed becomes true
-        await fetchJobDetails();
-      } else {
-        toast.error(res.msg || "Failed to confirm delivery.");
+      // Get Stripe payment information directly
+      // from confirmJobComplete API response
+      const paymentInfo = {
+        clientSecret: res.payload?.client_secret,
+        publishableKey: res.payload?.publishable_key,
+      };
+
+      if (!paymentInfo.clientSecret || !paymentInfo.publishableKey) {
+        toast.error("Unable to initialize payment.");
+        return;
       }
-    } catch (err) {
-      toast.error(err.response?.data?.msg || "Failed to confirm delivery.");
-    } finally {
-      setIsUpdating(false);
+
+      setPaymentData(paymentInfo);
+
+      // Refresh job details for latest job status
+      await fetchJobDetails();
+
+      // Open payment modal
+      setShowPaymentModal(true);
+    } else {
+      toast.error(res.msg || "Failed to confirm delivery.");
     }
-  };
+  } catch (err) {
+    toast.error(
+      err.response?.data?.msg || "Failed to confirm delivery."
+    );
+  } finally {
+    setIsUpdating(false);
+  }
+};
 
   // =========================================================
   // REMOVE JOB
@@ -641,7 +662,7 @@ export default function AssignedJobView() {
 
                   {/* PAYMENT STATUS */}
 
-                  {job.payment_status && (
+                  {/* {job.payment_status && (
                     <div className="flex shrink-0 items-center gap-2 rounded-full border bg-gray-50 px-3 py-1.5">
                       <span className="text-xs font-medium text-gray-500">
                         Payment
@@ -659,7 +680,7 @@ export default function AssignedJobView() {
                           : "Pending"}
                       </Badge>
                     </div>
-                  )}
+                  )} */}
                 </div>
               </CardHeader>
 
@@ -711,7 +732,7 @@ export default function AssignedJobView() {
                     PAYMENT REQUIRED
                 ================================================= */}
 
-                {job.status === STATUS.PENDING_PAYMENT && (
+                {/* {job.status === STATUS.PENDING_PAYMENT && (
                   <div className="mt-6 p-5 bg-amber-50 border border-amber-200 rounded-xl">
                     <div className="flex items-center gap-2 mb-4">
                       <AlertCircle className="w-5 h-5 text-amber-600" />
@@ -746,7 +767,7 @@ export default function AssignedJobView() {
                       </Button>
                     </div>
                   </div>
-                )}
+                )} */}
 
                 {/* =================================================
                     TRACKING
@@ -1012,10 +1033,9 @@ export default function AssignedJobView() {
                     JOB ACTIONS
                 ================================================= */}
 
-                {((isCourier &&
-                  (job.status === STATUS.ASSIGNED ||
-                    job.status === STATUS.PICKED_UP)) ||
-                  (isCustomer && job.status === STATUS.ASSIGNED)) && (
+                {isCourier &&
+  (job.status === STATUS.ASSIGNED ||
+    job.status === STATUS.PICKED_UP) && (
                   <div className="pt-6 border-t">
                     <h3 className="font-semibold mb-4">Actions</h3>
 
@@ -1045,7 +1065,7 @@ export default function AssignedJobView() {
 
                       {/* CUSTOMER -> CANCEL */}
 
-                      {isCustomer && job.status === STATUS.ASSIGNED && (
+                      {/* {isCustomer && job.status === STATUS.ASSIGNED && (
                         <Button
                           variant="destructive"
                           onClick={() => PostupdateJobStatus(STATUS.CANCELLED)}
@@ -1053,7 +1073,7 @@ export default function AssignedJobView() {
                         >
                           Cancel Job
                         </Button>
-                      )}
+                      )} */}
                     </div>
                   </div>
                 )}
@@ -1067,6 +1087,46 @@ export default function AssignedJobView() {
                     {/* =================================================
                         NO DELIVERY CONFIRMATION YET
                     ================================================= */}
+
+                    
+    {paymentCompleted ? (
+      <div className="mb-6 overflow-hidden rounded-2xl border border-emerald-200 bg-white shadow-sm">
+        <div className="border-b border-emerald-100 bg-emerald-50 px-5 py-4">
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100">
+              <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+            </div>
+
+            <div>
+              <h3 className="font-semibold text-emerald-900">
+                Payment Completed
+              </h3>
+
+              <p className="mt-1 text-sm text-emerald-700">
+                Your delivery has been confirmed and payment has been
+                completed successfully.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-5">
+          <div className="rounded-xl bg-emerald-50 p-4">
+            <p className="text-sm font-medium text-emerald-800">
+              Payment successful
+            </p>
+
+            <p className="mt-1 text-sm text-emerald-700">
+              Amount paid:{" "}
+              <strong>
+                {job.currency || "AUD"} {Number(job.price).toFixed(2)}
+              </strong>
+            </p>
+          </div>
+        </div>
+      </div>
+    ) : (
+      <>
 
                     {!job.is_delivery_confirmed && (
                       <>
@@ -1347,7 +1407,7 @@ export default function AssignedJobView() {
                                       >
                                         {isUpdating
                                           ? "Confirming..."
-                                          : "Confirm Delivery"}
+                                          : "Confirm Delivery & Continue to Payment"}
                                       </Button>
                                     )}
                                 </div>
@@ -1356,6 +1416,8 @@ export default function AssignedJobView() {
                           )}
                       </>
                     )}
+
+
                   </>
                 )}
 
@@ -1403,6 +1465,8 @@ export default function AssignedJobView() {
                     courierReview={job?.courier_given_review}
                     onReviewed={fetchJobDetails}
                   />
+                )}
+                </>
                 )}
               </CardContent>
             </Card>
@@ -1482,21 +1546,21 @@ export default function AssignedJobView() {
           PAYMENT MODAL
       ======================================================= */}
 
-      <PaymentModal
-        isOpen={showPaymentModal}
-        onClose={() => setShowPaymentModal(false)}
-        jobId={job.id}
-        jobAmount={Number(job.price)}
-        clientSecret={job.client_secret}
-        publishableKey={job.publishable_key}
-        onPaymentComplete={async () => {
-          setShowPaymentModal(false);
+<PaymentModal
+  isOpen={showPaymentModal}
+  onClose={() => setShowPaymentModal(false)}
+  jobId={job.id}
+  jobAmount={Number(job.price)}
+  clientSecret={paymentData?.clientSecret}
+  publishableKey={paymentData?.publishableKey}
+onPaymentComplete={async () => {
+  setShowPaymentModal(false);
+  setPaymentData(null);
+  setPaymentCompleted(true);
 
-          await fetchJobDetails();
-
-          navigate("/my-jobs");
-        }}
-      />
+  await fetchJobDetails();
+}}
+/>
 
       {/* =======================================================
           COMPLAINT MODAL

@@ -169,36 +169,46 @@ export default function Layout({ children }) {
   };
 
   const handleNotificationItemClick = (notification) => {
-    const jobNotificationTypes = [
-      "JOB_POSTED",
-      "JOB_ASSIGNED",
-      "JOB_APPLIED",
-      "JOB_STATUS_UPDATE",
-    ];
-
-    if (
-      !notification?.job_id ||
-      !jobNotificationTypes.includes(notification?.notifyType)
-    ) {
+    if (!notification?.job_id) {
       return;
     }
 
     setIsNotificationOpen(false);
 
-    // JOB_ASSIGNED → Assigned delivery page
-    if (notification.notifyType === "JOB_ASSIGNED") {
-      navigate(`/my-jobs/${notification.job_id}/assigned?type=deliveries`);
-      return;
-    }
+    switch (notification.notifyType) {
+      case "JOB_ASSIGNED":
+        // Courier side
+        navigate(`/my-jobs/${notification.job_id}/assigned?type=deliveries`);
+        break;
 
-    // JOB_STATUS_UPDATE → Job details/posting page
-    if (notification.notifyType === "JOB_STATUS_UPDATE") {
-      navigate(`/my-jobs/${notification.job_id}/assigned?type=postings`);
-      return;
-    }
+      case "JOB_STATUS_UPDATE":
+        // Customer / posting side
+        navigate(`/my-jobs/${notification.job_id}/assigned?type=postings`);
+        break;
 
-    // JOB_POSTED / JOB_APPLIED → Applicants page
-    navigate(`/my-jobs/${notification.job_id}/applicants?type=postings`);
+      case "COMPLAINT_SENT":
+        // Customer / posting side
+        navigate(`/my-jobs/${notification.job_id}/assigned?type=postings`);
+        break;
+
+      case "PICKUP_MARKED":
+        // Courier side
+        navigate(`/my-jobs/${notification.job_id}/assigned?type=deliveries`);
+        break;
+
+      case "JOB_APPLIED":
+        // Customer sees applicants
+        navigate(`/my-jobs/${notification.job_id}/applicants?type=postings`);
+        break;
+
+      case "JOB_POSTED":
+        // Courier sees available/applicants-related job
+        navigate(`/my-jobs/${notification.job_id}/applicants?type=postings`);
+        break;
+
+      default:
+        break;
+    }
   };
 
   const handlePrivacyClick = () => {
@@ -363,6 +373,7 @@ export default function Layout({ children }) {
                                     "JOB_ASSIGNED",
                                     "JOB_STATUS_UPDATE",
                                     "JOB_POSTED",
+                                    "COMPLAINT_SENT",
                                   ].includes(notification.notifyType)
                                     ? "cursor-pointer hover:bg-slate-50"
                                     : ""
@@ -455,7 +466,7 @@ export default function Layout({ children }) {
 
           {/* Mobile Notifications */}
           {isAuthenticated && (
-            <div className="md:hidden relative">
+            <div  ref={notificationRef} className="md:hidden relative">
               <button
                 type="button"
                 onClick={handleNotificationClick}
@@ -543,6 +554,7 @@ export default function Layout({ children }) {
                                   "JOB_ASSIGNED",
                                   "JOB_STATUS_UPDATE",
                                   "JOB_POSTED",
+                                  "COMPLAINT_SENT",
                                 ].includes(notification.notifyType)
                                   ? "cursor-pointer hover:bg-slate-100 active:bg-slate-200"
                                   : ""
@@ -664,6 +676,11 @@ export default function Layout({ children }) {
                   user?.user_type === "COURIER" &&
                   item.title === "Post Job"
                 ) {
+                  return false;
+                }
+
+                // Courier should not see Terms
+                if (user?.user_type === "COURIER" && item.title === "Terms") {
                   return false;
                 }
 

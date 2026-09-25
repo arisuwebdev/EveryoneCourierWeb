@@ -206,10 +206,10 @@ export default function App() {
     // Register Firebase Messaging Service Worker
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker
-        // .register(
-        //   "/current-project/react-project/EveryoneCourior/firebase-messaging-sw.js",
-        // )
-        .register("/firebase-messaging-sw.js")
+        .register(
+          "/current-project/react-project/EveryoneCourior/firebase-messaging-sw.js",
+        )
+        // .register("/firebase-messaging-sw.js")
         .then((registration) => {
           // console.log("✅ Firebase service worker registered:", registration);
         })

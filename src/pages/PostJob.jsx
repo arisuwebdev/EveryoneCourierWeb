@@ -1,4 +1,5 @@
 import React, { useRef, useState } from "react";
+import ReCAPTCHA from "react-google-recaptcha";
 import { Button } from "../components/ui/button";
 import {
   Card,
@@ -35,7 +36,6 @@ import { saveJob } from "../api/ApiServices/jobrelated/saveJobService";
 import { useAuth } from "../lib/AuthContext";
 import { toast } from "react-toastify";
 
-
 export default function PostJob() {
   const navigate = useNavigate();
   const { token } = useAuth();
@@ -65,6 +65,7 @@ export default function PostJob() {
     special_instructions: "",
   });
   const [basePrice, setBasePrice] = useState("");
+  const [captchaToken, setCaptchaToken] = useState("");
 
   const validateAustralianPhone = (phone) => {
     return /^(04\d{8}|0[2378]\d{8})$/.test(phone);
@@ -105,61 +106,62 @@ export default function PostJob() {
     navigate(createPageUrl("my-jobs"));
   };
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-  // If job was already created, just reopen payment modal
-  if (paymentData?.job_id && paymentData?.client_secret) {
-    setShowPaymentModal(true);
-    return;
-  }
-
-  setIsSubmitting(true);
-
-  try {
-    const payload = {
-      title: jobData.title,
-      pickup_address: jobData.pickup_address,
-      delivery_address: jobData.delivery_address,
-      package_description: jobData.package_description,
-      package_size: jobData.package_size.toUpperCase(),
-      vehicle_required: jobData.vehicle_required.toUpperCase(),
-      price: Number(jobData.price),
-      pickup_date: jobData.pickup_date,
-      delivery_date: jobData.delivery_date,
-      special_instructions: jobData.special_instructions,
-      urgent: jobData.urgent,
-      pickup_contact_phone: jobData.pickup_contact_phone,
-      receiver_contact_phone: jobData.receiver_contact_phone,
-      weight: jobData.weight ? Number(jobData.weight) : null,
-      dimensions: jobData.dimensions,
-    };
-
-    const response = await saveJob(payload, token);
-
-    if (response.status === 1) {
-      toast.success(response.msg);
-
-      // Store payment information + job ID
-      setPaymentData(response.payload);
-
-      // Open payment modal
-      setShowPaymentModal(true);
-    } else {
-      toast.error(response.msg || "Failed to save job.");
+    // CAPTCHA validation
+    if (!captchaToken) {
+      toast.error("Please complete the reCAPTCHA verification.");
+      return;
     }
-  } catch (error) {
-    toast.error(
-      error.response?.data?.msg ||
-        error.response?.data?.message ||
-        "Failed to save job."
-    );
-  } finally {
-    setIsSubmitting(false);
-  }
-};
 
+    // If job was already created, just reopen payment modal
+    if (paymentData?.job_id && paymentData?.client_secret) {
+      setShowPaymentModal(true);
+      return;
+    }
 
+    setIsSubmitting(true);
+
+    try {
+      const payload = {
+        title: jobData.title,
+        pickup_address: jobData.pickup_address,
+        delivery_address: jobData.delivery_address,
+        package_description: jobData.package_description,
+        package_size: jobData.package_size.toUpperCase(),
+        vehicle_required: jobData.vehicle_required.toUpperCase(),
+        price: Number(jobData.price),
+        pickup_date: jobData.pickup_date,
+        delivery_date: jobData.delivery_date,
+        special_instructions: jobData.special_instructions,
+        urgent: jobData.urgent,
+        pickup_contact_phone: jobData.pickup_contact_phone,
+        receiver_contact_phone: jobData.receiver_contact_phone,
+        weight: jobData.weight ? Number(jobData.weight) : null,
+        dimensions: jobData.dimensions,
+      };
+
+      const response = await saveJob(payload, token);
+
+      if (response.status === 1) {
+        toast.success(response.msg);
+
+        // Store payment information + job ID
+        navigate(createPageUrl("my-jobs"));
+      } else {
+        toast.error(response.msg || "Failed to save job.");
+      }
+    } catch (error) {
+      toast.error(
+        error.response?.data?.msg ||
+          error.response?.data?.message ||
+          "Failed to save job.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="min-h-screen p-4 md:p-8">
@@ -513,7 +515,6 @@ const handleSubmit = async (e) => {
                       />
                     </div>
 
-                    
                     <div className="space-y-2">
                       <Label htmlFor="delivery_date">
                         Preferred Delivery Date
@@ -563,6 +564,14 @@ const handleSubmit = async (e) => {
                     </Label>
                   </div>
 
+                  {/* CAPTCHA */}
+                  <div className="space-y-2">
+                    <ReCAPTCHA
+                      sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
+                      onChange={(token) => setCaptchaToken(token || "")}
+                    />
+                  </div>
+
                   {/* Submit Button */}
                   <Button
                     type="submit"
@@ -575,7 +584,7 @@ const handleSubmit = async (e) => {
                         Creating Job...
                       </>
                     ) : (
-                      "Continue to Payment"
+                      "Post Job"
                     )}
                   </Button>
                 </form>
