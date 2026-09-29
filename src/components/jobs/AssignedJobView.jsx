@@ -387,14 +387,16 @@ export default function AssignedJobView() {
       setLoading(true);
 
       const res = await getJobDetails(id, type, token);
+if (res.status === 1) {
+  // console.log("FETCHED JOB STATUS:", res.payload.job.status);
+  // console.log("FETCHED JOB:", res.payload.job);
 
-      if (res.status === 1) {
-        setJob({
-          ...res.payload.job,
-          client_secret: res.payload.client_secret,
-          publishable_key: res.payload.publishable_key,
-        });
-      } else {
+  setJob({
+    ...res.payload.job,
+    client_secret: res.payload.client_secret,
+    publishable_key: res.payload.publishable_key,
+  });
+} else {
         toast.error(res.msg || "Failed to load job.");
       }
     } catch (err) {
@@ -602,34 +604,41 @@ const handleConfirmDelivery = async () => {
   // UPDATE JOB STATUS
   // =========================================================
 
-  const PostupdateJobStatus = async (newStatus) => {
-    try {
-      setIsUpdating(true);
+const PostupdateJobStatus = async (newStatus) => {
+  try {
+    setIsUpdating(true);
 
-      const payload = {
-        job_id: job.id,
-        status: newStatus,
-      };
+    const payload = {
+      job_id: job.id,
+      status: newStatus,
+    };
 
-      const res = await updateJobStatus(payload, token);
+    // console.log("Updating job status:", payload);
 
-      if (res.status === 1) {
-        toast.success(res.msg || "Job status updated successfully.");
+    const res = await updateJobStatus(payload, token);
 
-        // Refresh current job
-        await fetchJobDetails();
+    // console.log("Status update response:", res);
 
-        // Refresh complaint too
-        await fetchComplaint();
-      } else {
-        toast.error(res.msg || "Failed to update job status.");
-      }
-    } catch (err) {
-      toast.error(err.response?.data?.msg || "Failed to update job status.");
-    } finally {
-      setIsUpdating(false);
+    if (res.status === 1) {
+      toast.success(res.msg || "Job status updated successfully.");
+
+      await fetchJobDetails();
+      await fetchComplaint();
+
+      // console.log("Job should now be DELIVERED");
+    } else {
+      toast.error(res.msg || "Failed to update job status.");
     }
-  };
+  } catch (err) {
+    // console.error("Status update error:", err);
+
+    toast.error(
+      err.response?.data?.msg || "Failed to update job status."
+    );
+  } finally {
+    setIsUpdating(false);
+  }
+};
 
   return (
     <div className="min-h-screen p-4 md:p-8">
@@ -1077,6 +1086,28 @@ const handleConfirmDelivery = async () => {
                     </div>
                   </div>
                 )}
+
+{/* new add for couier delivery after review box open  */}
+                {/* =================================================
+    COURIER REVIEW AFTER DELIVERY
+================================================= */}
+
+{isCourier && job.status === STATUS.DELIVERED && (
+  <DeliveredSection
+    jobId={job.id}
+    token={token}
+    isCustomer={false}
+    courierName={job.courier_name}
+    customerName={job.customer_name}
+    customerHasReviewed={customerHasReviewed}
+    customerRating={job.customer_given_rating}
+    customerReview={job.customer_given_review}
+    courierHasReviewed={courierHasReviewed}
+    courierRating={job?.courier_given_rating}
+    courierReview={job?.courier_given_review}
+    onReviewed={fetchJobDetails}
+  />
+)}
 
                 {/* =================================================
                     CUSTOMER DELIVERY / COMPLAINT SECTION

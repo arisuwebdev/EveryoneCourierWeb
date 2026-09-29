@@ -16,7 +16,7 @@ import {
   AlertCircle,
   Calendar,
   DollarSign,
-  // MessageCircle,
+  MessageCircle,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useNotificationTrigger } from "../notifications/useNotificationTrigger";
@@ -366,9 +366,9 @@ export default function ApplicantList() {
                       <div className="flex items-center gap-4">
                         <Avatar
                           className="w-16 h-16 cursor-pointer"
-                          onClick={() =>
-                            navigate(`/user-profile/${app.courier?.id}`)
-                          }
+                          // onClick={() =>
+                          //   navigate(`/user-profile/${app.courier?.id}`)
+                          // }
                         >
                           <AvatarImage src={app.courier?.avatar_url} />
 
@@ -378,14 +378,17 @@ export default function ApplicantList() {
                         </Avatar>
 
                         <div>
-                          <p
+                          {/* <p
                             className="font-bold text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
                             onClick={() =>
                               navigate(`/user-profile/${app.courier?.id}`)
                             }
                           >
                             {app.courier?.name}
-                          </p>
+                          </p> */}
+                          <p className="font-bold text-slate-800">
+  {app.courier?.name}
+</p>
 
                           <div className="flex items-center gap-1 text-sm text-slate-500">
                             <Star className="w-4 h-4 text-yellow-500 fill-current" />

@@ -27,6 +27,40 @@ export default function StatsOverview() {
     }
   };
 
+// const stats = [
+//   {
+//     title: "Active Jobs",
+//     value: statsData?.activeJobs ?? 0,
+//     icon: Package,
+//     color: "text-blue-600",
+//     bgColor: "bg-blue-50",
+//   },
+//   {
+//     title: "Applications",
+//     value: statsData?.applications ?? 0,
+//     icon: MapPin,
+//     color: "text-green-600",
+//     bgColor: "bg-green-50",
+//   },
+//   {
+//     title: "Completed",
+//     value: statsData?.completed ?? 0,
+//     icon: Clock,
+//     color: "text-purple-600",
+//     bgColor: "bg-purple-50",
+//   },
+//   {
+//     title: user?.user_type === "COURIER" ? "Total Earned" : "Total Spent",
+//     value:
+//       user?.user_type === "COURIER"
+//         ? `$${Number(statsData?.totalEarned ?? 0).toFixed(2)}`
+//         : `$${Number(statsData?.totalSpent ?? 0).toFixed(2)}`,
+//     icon: DollarSign,
+//     color: "text-amber-600",
+//     bgColor: "bg-amber-50",
+//   },
+// ];
+
 const stats = [
   {
     title: "Active Jobs",
@@ -49,18 +83,33 @@ const stats = [
     color: "text-purple-600",
     bgColor: "bg-purple-50",
   },
-  {
-    title: user?.user_type === "COURIER" ? "Total Earned" : "Total Spent",
-    value:
-      user?.user_type === "COURIER"
-        ? `$${Number(statsData?.totalEarned ?? 0).toFixed(2)}`
-        : `$${Number(statsData?.totalSpent ?? 0).toFixed(2)}`,
-    icon: DollarSign,
-    color: "text-amber-600",
-    bgColor: "bg-amber-50",
-  },
-];
 
+  // COURIER or BOTH → Total Earned
+  ...(user?.user_type === "COURIER" || user?.user_type === "BOTH"
+    ? [
+        {
+          title: "Total Earned",
+          value: `$${Number(statsData?.totalEarned ?? 0).toFixed(2)}`,
+          icon: DollarSign,
+          color: "text-emerald-600",
+          bgColor: "bg-emerald-50",
+        },
+      ]
+    : []),
+
+  // CUSTOMER or BOTH → Total Spent
+  ...(user?.user_type === "CUSTOMER" || user?.user_type === "BOTH"
+    ? [
+        {
+          title: "Total Spent",
+          value: `$${Number(statsData?.totalSpent ?? 0).toFixed(2)}`,
+          icon: DollarSign,
+          color: "text-amber-600",
+          bgColor: "bg-amber-50",
+        },
+      ]
+    : []),
+];
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
       {stats.map((stat, index) => (

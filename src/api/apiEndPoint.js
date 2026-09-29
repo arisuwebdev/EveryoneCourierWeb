@@ -20,7 +20,7 @@ export const uploadIdCardApi =  baseUrl + "/uploadIdCard";
 
 export const googleLoginApi =  baseUrl + "/auth/social-login";
 
-export const changePasswordApi =  baseUrl + "/auth/changPassword";
+export const changePasswordApi =  baseUrl + "/auth/changePassword";
 
 
 //priacy and policy

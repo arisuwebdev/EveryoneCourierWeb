@@ -175,7 +175,8 @@ export default function RecentActivity() {
 
                   if (
                     activity.activity_type === "JOB_ASSIGNED" ||
-                    activity.activity_type === "PICKUP_MARKED"
+                    activity.activity_type === "PICKUP_MARKED" ||
+                      activity.activity_type === "DELIVERY_CONFIRMED"
                   ) {
                     navigate(`/my-jobs/${activity.job_id}/assigned`);
                     return;

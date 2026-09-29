@@ -55,7 +55,9 @@ export default function Layout({ children }) {
   const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] =
     useState(false);
   const accountMenuRef = useRef(null);
-  const notificationRef = useRef(null);
+  // const notificationRef = useRef(null);
+  const desktopNotificationRef = useRef(null);
+  const mobileNotificationRef = useRef(null);
 
   // for notification
 
@@ -66,10 +68,15 @@ export default function Layout({ children }) {
 
   useEffect(() => {
     const handleNotificationClickOutside = (event) => {
-      if (
-        notificationRef.current &&
-        !notificationRef.current.contains(event.target)
-      ) {
+      const clickedInsideDesktop = desktopNotificationRef.current?.contains(
+        event.target,
+      );
+
+      const clickedInsideMobile = mobileNotificationRef.current?.contains(
+        event.target,
+      );
+
+      if (!clickedInsideDesktop && !clickedInsideMobile) {
         setIsNotificationOpen(false);
       }
     };
@@ -206,6 +213,11 @@ export default function Layout({ children }) {
         navigate(`/my-jobs/${notification.job_id}/applicants?type=postings`);
         break;
 
+      case "DELIVERY_CONFIRMED":
+        // Courier sees available/applicants-related job
+         navigate(`/my-jobs/${notification.job_id}/assigned?type=deliveries`);
+        break;
+
       default:
         break;
     }
@@ -301,7 +313,10 @@ export default function Layout({ children }) {
                 )}
 
                 {/* for notification  */}
-                <div ref={notificationRef} className="hidden md:block relative">
+                <div
+                  ref={desktopNotificationRef}
+                  className="hidden md:block relative"
+                >
                   <button
                     type="button"
                     onClick={handleNotificationClick}
@@ -374,6 +389,7 @@ export default function Layout({ children }) {
                                     "JOB_STATUS_UPDATE",
                                     "JOB_POSTED",
                                     "COMPLAINT_SENT",
+                                    "DELIVERY_CONFIRMED",
                                   ].includes(notification.notifyType)
                                     ? "cursor-pointer hover:bg-slate-50"
                                     : ""
@@ -466,7 +482,7 @@ export default function Layout({ children }) {
 
           {/* Mobile Notifications */}
           {isAuthenticated && (
-            <div  ref={notificationRef} className="md:hidden relative">
+            <div ref={mobileNotificationRef} className="md:hidden relative">
               <button
                 type="button"
                 onClick={handleNotificationClick}
@@ -555,6 +571,7 @@ export default function Layout({ children }) {
                                   "JOB_STATUS_UPDATE",
                                   "JOB_POSTED",
                                   "COMPLAINT_SENT",
+                                   "DELIVERY_CONFIRMED"
                                 ].includes(notification.notifyType)
                                   ? "cursor-pointer hover:bg-slate-100 active:bg-slate-200"
                                   : ""
@@ -680,7 +697,11 @@ export default function Layout({ children }) {
                 }
 
                 // Courier should not see Terms
-                if (user?.user_type === "COURIER" && item.title === "Terms") {
+                if (
+                  (user?.user_type === "COURIER" ||
+                    user?.user_type === "BOTH") &&
+                  item.title === "Terms"
+                ) {
                   return false;
                 }
 
