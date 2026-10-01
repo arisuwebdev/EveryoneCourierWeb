@@ -6,7 +6,9 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "../lib/AuthContext";
 import { findJob } from "../api/ApiServices/jobrelated/findJobService";
 import { appliedJobApplied } from "../api/ApiServices/jobrelated/appliedJobAppliedService";
-import ChatBox from "../components/jobs/ChatBox";
+import WithoutJobApplyChat from "../components/jobs/WithoutJobApplyChat";
+
+
 // import { useNotificationTrigger } from "../components/notifications/useNotificationTrigger";
 
 export default function FindJobs() {
@@ -26,7 +28,7 @@ export default function FindJobs() {
   const [appliedPage, setAppliedPage] = useState(1);
   const [appliedLastPage, setAppliedLastPage] = useState(1);
   const [isLoadingMoreApplied, setIsLoadingMoreApplied] = useState(false);
-const [appliedTotal, setAppliedTotal] = useState(0);
+  const [appliedTotal, setAppliedTotal] = useState(0);
   const appliedSentinelRef = useRef(null);
   const [selectedChatJob, setSelectedChatJob] = useState(null);
   const [filters, setFilters] = useState({
@@ -186,7 +188,6 @@ const [appliedTotal, setAppliedTotal] = useState(0);
       setAppliedPage(res?.payload?.currentPage ?? pageNum);
       setAppliedLastPage(res?.payload?.lastPage ?? 1);
       setAppliedTotal(res?.payload?.total ?? 0);
-
 
       setAppliedLoaded(true);
     } catch (error) {
@@ -350,11 +351,20 @@ const [appliedTotal, setAppliedTotal] = useState(0);
                       ))}
 
                       {selectedChatJob && (
-                        <Card className="mt-6 overflow-hidden border-blue-200 shadow-lg">
-                          <CardContent className="p-0">
-                            <ChatBox
+                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                          <div className="relative w-full max-w-lg">
+                            <button
+                              type="button"
+                              onClick={() => setSelectedChatJob(null)}
+                              className="absolute right-3 top-3 z-10 text-slate-500 hover:text-slate-800"
+                            >
+                              ✕
+                            </button>
+
+                            <WithoutJobApplyChat
                               jobId={selectedChatJob.id}
-                              currentUserId={user?.id}
+currentUserId={user?.id || user?.user_id}
+courierId={user?.id || user?.user_id}
                               receiverId={
                                 selectedChatJob.customer_id ||
                                 selectedChatJob.customer?.id
@@ -362,29 +372,13 @@ const [appliedTotal, setAppliedTotal] = useState(0);
                               otherUserName={
                                 selectedChatJob.customer_name ||
                                 selectedChatJob.customer?.name ||
+                                selectedChatJob.other_party?.name || 
                                 "Customer"
                               }
-                              jobPrice={selectedChatJob.price}
-                              agreedPrice={
-                                selectedChatJob.agreed_price ??
-                                selectedChatJob.final_price ??
-                                null
-                              }
-                              jobStatus={selectedChatJob.status}
-                              userType={user?.user_type}
+                               showAgreedAmount={true}
                             />
-
-                            <div className="border-t p-3">
-                              <button
-                                type="button"
-                                onClick={() => setSelectedChatJob(null)}
-                                className="text-sm text-slate-500 hover:text-slate-700"
-                              >
-                                Close Chat
-                              </button>
-                            </div>
-                          </CardContent>
-                        </Card>
+                          </div>
+                        </div>
                       )}
 
                       {filteredJobs.length === 0 && (

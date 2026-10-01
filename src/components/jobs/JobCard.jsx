@@ -330,6 +330,16 @@ export default function JobCard({ job, onApply, onChat, isApplied = false }) {
             >
               Apply for This Job
             </Button>
+
+            <Button
+  type="button"
+  variant="outline"
+  onClick={onChat}
+  className="w-full border-blue-200 text-blue-600 hover:bg-blue-50"
+>
+  <MessageCircle className="w-4 h-4 mr-2" />
+  Chat for Price Increase
+</Button>
           </div>
         )}
 

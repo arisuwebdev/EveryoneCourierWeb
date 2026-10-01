@@ -6,7 +6,7 @@ import { useEffect } from "react";
 import { listenForMessages } from "./firebaseNotification";
 
 // for use session logout
-import "./lib/axiosInterceptor";
+// import "./lib/axiosInterceptor";
 
 import {
   BrowserRouter as Router,
@@ -37,7 +37,7 @@ import TermsOfService from "./pages/TermsOfService";
 import TermsAcceptanceModal from "./components/TermsAcceptanceModal";
 import UserNotRegisteredError from "./components/UserNotRegisteredError";
 import PageNotFound from "./lib/PageNotFound";
-import ServerError from "./lib/500";
+// import ServerError from "./lib/500";
 import AssignedJobView from "./components/jobs/AssignedJobView";
 import ApplicantList from "./components/jobs/ApplicantList";
 import ScrollToTop from "./components/ScrollToTop";
@@ -194,7 +194,7 @@ const AuthenticatedApp = () => {
         <Route path="*" element={<PageNotFound />} />
 
         {/* 500 */}
-        <Route path="/500" element={<ServerError />} />
+        {/* <Route path="/500" element={<ServerError />} /> */}
 
       </Routes>
     </>

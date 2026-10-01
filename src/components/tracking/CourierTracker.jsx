@@ -910,27 +910,83 @@
 
 // --------------------------------------  this is the use for google map
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Navigation, WifiOff, Clock } from "lucide-react";
+import {
+  MapPin,
+  Navigation,
+  WifiOff,
+  Clock,
+} from "lucide-react";
+
 import { useAuth } from "../../lib/AuthContext";
 import { saveJobTracking } from "../../api/ApiServices/tracking/saveJobTrackingService";
+
+/*
+|--------------------------------------------------------------------------
+| Google Maps Loader
+|--------------------------------------------------------------------------
+|
+| We load:
+| - Maps JavaScript API
+| - Routes library
+| - Marker library
+|
+| Routes replaces the old DirectionsService / DirectionsRenderer.
+|
+*/
 
 function loadGoogleMaps(apiKey) {
   return new Promise((resolve, reject) => {
     if (window.google?.maps) {
-      return resolve(window.google.maps);
+      resolve(window.google.maps);
+      return;
+    }
+
+    const existingScript = document.querySelector(
+      'script[data-google-maps="true"]'
+    );
+
+    if (existingScript) {
+      existingScript.addEventListener("load", () => {
+        resolve(window.google.maps);
+      });
+
+      existingScript.addEventListener("error", reject);
+
+      return;
     }
 
     const script = document.createElement("script");
 
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=directions`;
-    script.async = true;
+    script.src =
+      `https://maps.googleapis.com/maps/api/js` +
+      `?key=${apiKey}` +
+      `&v=weekly` +
+      `&libraries=routes,marker`;
 
-    script.onload = () => resolve(window.google.maps);
-    script.onerror = reject;
+    script.async = true;
+    script.defer = true;
+    script.dataset.googleMaps = "true";
+
+    script.onload = () => {
+      if (window.google?.maps) {
+        resolve(window.google.maps);
+      } else {
+        reject(new Error("Google Maps failed to initialize."));
+      }
+    };
+
+    script.onerror = () => {
+      reject(new Error("Failed to load Google Maps."));
+    };
 
     document.head.appendChild(script);
   });
@@ -939,324 +995,1134 @@ function loadGoogleMaps(apiKey) {
 export default function CourierTracker({ job }) {
   const { token } = useAuth();
 
+  /*
+  |--------------------------------------------------------------------------
+  | DOM / Google Maps refs
+  |--------------------------------------------------------------------------
+  */
+
   const mapRef = useRef(null);
+
   const mapInstanceRef = useRef(null);
-  const myMarkerRef = useRef(null);
-  const directionsRendererRef = useRef(null);
+
+  const courierMarkerRef = useRef(null);
+
+  const accuracyCircleRef = useRef(null);
+
+  const routePolylinesRef = useRef([]);
+
+  const gpsPolylineRef = useRef(null);
+
+  /*
+  |--------------------------------------------------------------------------
+  | GPS refs
+  |--------------------------------------------------------------------------
+  */
+
   const watchIdRef = useRef(null);
 
-  // Used to control the 5 second API calls
   const locationIntervalRef = useRef(null);
 
-  // Store latest GPS position
   const latestPositionRef = useRef(null);
 
-  // const [isSharing, setIsSharing] = useState(false);
+  /*
+  |--------------------------------------------------------------------------
+  | GPS travelled path
+  |--------------------------------------------------------------------------
+  */
+
+  const gpsPathRef = useRef([]);
+
+  /*
+  |--------------------------------------------------------------------------
+  | Route request control
+  |--------------------------------------------------------------------------
+  */
+
+  const lastRouteRequestRef = useRef(0);
+
+  const routeRequestInProgressRef = useRef(false);
+
+  /*
+  |--------------------------------------------------------------------------
+  | Google Maps libraries
+  |--------------------------------------------------------------------------
+  */
+
+  const RouteClassRef = useRef(null);
+
+  /*
+  |--------------------------------------------------------------------------
+  | React state
+  |--------------------------------------------------------------------------
+  */
+
   const [isSharing, setIsSharing] = useState(() => {
-    if (!job?.id) return false;
-
-    return localStorage.getItem(`locationSharing_${job.id}`) === "true";
-  });
-  const [error, setError] = useState(null);
-  const [mapsReady, setMapsReady] = useState(false);
-  const [routeInfo, setRouteInfo] = useState(null);
-  const [apiKey, setApiKey] = useState(null);
-
-  useEffect(() => {
-    if (!job?.id) return;
-
-    const savedSharing =
-      localStorage.getItem(`locationSharing_${job.id}`) === "true";
-
-    if (savedSharing && watchIdRef.current === null) {
-      startSharing();
+    if (!job?.id) {
+      return false;
     }
-  }, [job?.id]);
 
-  // --------------------------------------------------
-  // Google Maps API Key
-  // --------------------------------------------------
-  useEffect(() => {
-    setApiKey("AIzaSyBCVw6il2IO_JKc1yuIC4zQ8vTv-a1hEl8");
-  }, []);
-
-  // --------------------------------------------------
-  // Initialize Google Map
-  // --------------------------------------------------
-  useEffect(() => {
-    if (!apiKey || !mapRef.current) return;
-
-    loadGoogleMaps(apiKey)
-      .then((maps) => {
-        mapInstanceRef.current = new maps.Map(mapRef.current, {
-          zoom: 13,
-          center: {
-            lat: -33.8688,
-            lng: 151.2093,
-          },
-          mapTypeControl: false,
-          fullscreenControl: false,
-          streetViewControl: false,
-        });
-
-        directionsRendererRef.current = new maps.DirectionsRenderer({
-          suppressMarkers: false,
-          polylineOptions: {
-            strokeColor: "#10b981",
-            strokeWeight: 4,
-          },
-        });
-
-        directionsRendererRef.current.setMap(mapInstanceRef.current);
-
-        myMarkerRef.current = new maps.Marker({
-          map: mapInstanceRef.current,
-          title: "You",
-          icon: {
-            path: maps.SymbolPath.FORWARD_CLOSED_ARROW,
-            scale: 7,
-            fillColor: "#10b981",
-            fillOpacity: 1,
-            strokeColor: "#fff",
-            strokeWeight: 2,
-          },
-        });
-
-        setMapsReady(true);
-      })
-      .catch(() => {
-        setError("Failed to load Google Maps.");
-      });
-  }, [apiKey]);
-
-  // --------------------------------------------------
-  // Fetch route
-  // --------------------------------------------------
-  const fetchRoute = (lat, lng) => {
-    if (!mapsReady || !job) return;
-
-    const maps = window.google.maps;
-
-    const directionsService = new maps.DirectionsService();
-
-    const destination =
-      job.status === "ASSIGNED" ? job.pickup_address : job.delivery_address;
-
-    if (!destination) return;
-
-    directionsService.route(
-      {
-        origin: {
-          lat,
-          lng,
-        },
-        destination,
-        travelMode: maps.TravelMode.DRIVING,
-      },
-      (result, status) => {
-        if (status === "OK") {
-          directionsRendererRef.current?.setDirections(result);
-
-          const leg = result.routes[0]?.legs[0];
-
-          if (leg) {
-            setRouteInfo({
-              duration: leg.duration.text,
-              distance: leg.distance.text,
-            });
-          }
-        }
-      },
+    return (
+      localStorage.getItem(`locationSharing_${job.id}`) === "true"
     );
+  });
+
+  const [error, setError] = useState(null);
+
+  const [mapsReady, setMapsReady] = useState(false);
+
+  const [routeInfo, setRouteInfo] = useState(null);
+
+  /*
+  |--------------------------------------------------------------------------
+  | Google Maps API Key
+  |--------------------------------------------------------------------------
+  */
+
+  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+
+  /*
+  |--------------------------------------------------------------------------
+  | Get destination
+  |--------------------------------------------------------------------------
+  */
+
+  const getDestination = () => {
+    if (!job) {
+      return null;
+    }
+
+    /*
+     * ASSIGNED:
+     * Courier is travelling to pickup.
+     *
+     * PICKED_UP:
+     * Courier is travelling to delivery.
+     */
+
+    if (job.status === "ASSIGNED") {
+      return job.pickup_address;
+    }
+
+    if (
+      job.status === "PICKED_UP" ||
+      job.status === "IN_TRANSIT"
+    ) {
+      return job.delivery_address;
+    }
+
+    /*
+     * Fallback
+     */
+
+    return job.delivery_address || job.pickup_address;
   };
 
-  // --------------------------------------------------
-  // Send location to backend
-  // --------------------------------------------------
-  const sendLocationToBackend = async (position) => {
-    if (!token || !job?.id) {
+  /*
+  |--------------------------------------------------------------------------
+  | Clear Google calculated route
+  |--------------------------------------------------------------------------
+  */
+
+  const clearRoute = () => {
+    routePolylinesRef.current.forEach((polyline) => {
+      polyline.setMap(null);
+    });
+
+    routePolylinesRef.current = [];
+
+    setRouteInfo(null);
+  };
+
+  /*
+  |--------------------------------------------------------------------------
+  | Clear actual GPS path
+  |--------------------------------------------------------------------------
+  */
+
+  const clearGpsPath = () => {
+    gpsPathRef.current = [];
+
+    if (gpsPolylineRef.current) {
+      gpsPolylineRef.current.setPath([]);
+    }
+  };
+
+  /*
+  |--------------------------------------------------------------------------
+  | Create Google Maps
+  |--------------------------------------------------------------------------
+  */
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!apiKey) {
+      setError(
+        "Google Maps API key is missing. Please add VITE_GOOGLE_MAPS_API_KEY to your .env file."
+      );
       return;
     }
 
-    const { latitude, longitude, accuracy } = position.coords;
+    if (!mapRef.current) {
+      return;
+    }
+
+    const initializeMap = async () => {
+      try {
+        const maps = await loadGoogleMaps(apiKey);
+
+        if (cancelled || !mapRef.current) {
+          return;
+        }
+
+        /*
+         * Load Maps library
+         */
+
+        const { Map } = await maps.importLibrary("maps");
+
+        /*
+         * Load Routes library
+         */
+
+        const { Route } = await maps.importLibrary("routes");
+
+        RouteClassRef.current = Route;
+
+        /*
+         * Load Marker library
+         */
+
+        const { AdvancedMarkerElement } =
+          await maps.importLibrary("marker");
+
+        /*
+         * Create map
+         */
+
+        const map = new Map(mapRef.current, {
+          center: {
+            lat: 20.5937,
+            lng: 78.9629,
+          },
+
+          zoom: 13,
+
+          mapId: "DEMO_MAP_ID",
+
+          mapTypeControl: false,
+
+          fullscreenControl: false,
+
+          streetViewControl: false,
+
+          zoomControl: true,
+
+          gestureHandling: "greedy",
+        });
+
+        mapInstanceRef.current = map;
+
+        /*
+         |--------------------------------------------------------------------------
+         | Blue courier location marker
+         |--------------------------------------------------------------------------
+         */
+
+        const markerElement = document.createElement("div");
+
+        markerElement.style.width = "18px";
+        markerElement.style.height = "18px";
+        markerElement.style.borderRadius = "50%";
+        markerElement.style.background = "#4285F4";
+        markerElement.style.border = "3px solid #ffffff";
+        markerElement.style.boxShadow =
+          "0 1px 5px rgba(0,0,0,0.35)";
+
+        courierMarkerRef.current = new AdvancedMarkerElement({
+          map,
+
+          position: {
+            lat: 20.5937,
+            lng: 78.9629,
+          },
+
+          title: "Your current location",
+
+          content: markerElement,
+        });
+
+        /*
+         |--------------------------------------------------------------------------
+         | Accuracy circle
+         |--------------------------------------------------------------------------
+         */
+
+        accuracyCircleRef.current = new maps.Circle({
+          map,
+
+          center: {
+            lat: 20.5937,
+            lng: 78.9629,
+          },
+
+          radius: 30,
+
+          fillColor: "#4285F4",
+
+          fillOpacity: 0.12,
+
+          strokeColor: "#4285F4",
+
+          strokeOpacity: 0.25,
+
+          strokeWeight: 1,
+
+          clickable: false,
+        });
+
+        /*
+         |--------------------------------------------------------------------------
+         | Actual GPS travelled path
+         |--------------------------------------------------------------------------
+         */
+
+        gpsPolylineRef.current = new maps.Polyline({
+          map,
+
+          path: [],
+
+          geodesic: true,
+
+          strokeColor: "#4285F4",
+
+          strokeOpacity: 0.75,
+
+          strokeWeight: 5,
+
+          clickable: false,
+
+          zIndex: 2,
+        });
+
+        setMapsReady(true);
+
+        /*
+         |--------------------------------------------------------------------------
+         | If GPS position already exists, display it
+         |--------------------------------------------------------------------------
+         */
+
+        if (latestPositionRef.current) {
+          updateMapPosition(latestPositionRef.current);
+        }
+      } catch (err) {
+        // console.error("Google Maps initialization error:", err);
+
+        setError(
+          "Failed to load Google Maps. Please check your Google Maps API configuration."
+        );
+      }
+    };
+
+    initializeMap();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [apiKey]);
+
+  /*
+  |--------------------------------------------------------------------------
+  | Update map with GPS position
+  |--------------------------------------------------------------------------
+  */
+
+  const updateMapPosition = (position) => {
+    if (!position) {
+      return;
+    }
+
+    const maps = window.google?.maps;
+
+    if (!maps || !mapInstanceRef.current) {
+      return;
+    }
+
+    const {
+      latitude,
+      longitude,
+      accuracy,
+    } = position.coords;
+
+    const currentLocation = {
+      lat: latitude,
+      lng: longitude,
+    };
+
+    /*
+     * Update blue location marker
+     */
+
+    if (courierMarkerRef.current) {
+      courierMarkerRef.current.position = currentLocation;
+    }
+
+    /*
+     * Update accuracy circle
+     */
+
+    if (accuracyCircleRef.current) {
+      accuracyCircleRef.current.setCenter(currentLocation);
+
+      /*
+       * Don't allow the circle to become extremely large.
+       */
+
+      const safeAccuracy = Math.min(
+        Math.max(Number(accuracy) || 30, 10),
+        100
+      );
+
+      accuracyCircleRef.current.setRadius(safeAccuracy);
+    }
+
+    /*
+     * Add location to actual GPS path
+     */
+
+    const lastPoint =
+      gpsPathRef.current[gpsPathRef.current.length - 1];
+
+    /*
+     * Only add a point when courier has moved
+     * at least approximately 5 meters.
+     */
+
+    if (lastPoint) {
+      const distance = calculateDistanceMeters(
+        lastPoint.lat,
+        lastPoint.lng,
+        latitude,
+        longitude
+      );
+
+      if (distance >= 5) {
+        gpsPathRef.current.push(currentLocation);
+      }
+    } else {
+      gpsPathRef.current.push(currentLocation);
+    }
+
+    /*
+     * Update actual travelled GPS polyline
+     */
+
+    if (gpsPolylineRef.current) {
+      gpsPolylineRef.current.setPath(
+        gpsPathRef.current
+      );
+    }
+
+    /*
+     * Keep courier visible
+     */
+
+    mapInstanceRef.current.panTo(currentLocation);
+  };
+
+  /*
+  |--------------------------------------------------------------------------
+  | Calculate distance between two GPS coordinates
+  |--------------------------------------------------------------------------
+  */
+
+  const calculateDistanceMeters = (
+    lat1,
+    lon1,
+    lat2,
+    lon2
+  ) => {
+    const earthRadius = 6371000;
+
+    const dLat =
+      ((lat2 - lat1) * Math.PI) / 180;
+
+    const dLon =
+      ((lon2 - lon1) * Math.PI) / 180;
+
+    const a =
+      Math.sin(dLat / 2) *
+        Math.sin(dLat / 2) +
+      Math.cos((lat1 * Math.PI) / 180) *
+        Math.cos((lat2 * Math.PI) / 180) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+
+    const c =
+      2 *
+      Math.atan2(
+        Math.sqrt(a),
+        Math.sqrt(1 - a)
+      );
+
+    return earthRadius * c;
+  };
+
+  /*
+  |--------------------------------------------------------------------------
+  | Fetch Google route
+  |--------------------------------------------------------------------------
+  |
+  | IMPORTANT:
+  | This uses the new Route.computeRoutes()
+  | instead of the deprecated DirectionsService.
+  |
+  */
+
+  const fetchRoute = async (
+    latitude,
+    longitude,
+    force = false
+  ) => {
+    if (!mapsReady || !mapInstanceRef.current) {
+      return;
+    }
+
+    const Route = RouteClassRef.current;
+
+    if (!Route) {
+      return;
+    }
+
+    const destination = getDestination();
+
+    if (!destination) {
+      return;
+    }
+
+    /*
+     * Don't call Google Routes API on every GPS update.
+     *
+     * Normal refresh:
+     * once every 30 seconds.
+     *
+     * Force:
+     * immediately.
+     */
+
+    const now = Date.now();
+
+    if (
+      !force &&
+      now - lastRouteRequestRef.current < 30000
+    ) {
+      return;
+    }
+
+    if (routeRequestInProgressRef.current) {
+      return;
+    }
+
+    routeRequestInProgressRef.current = true;
+
+    lastRouteRequestRef.current = now;
+
+    try {
+      clearRoute();
+
+      const request = {
+        origin: {
+          lat: latitude,
+          lng: longitude,
+        },
+
+        destination,
+
+        travelMode: "DRIVING",
+
+        routingPreference: "TRAFFIC_AWARE",
+
+        /*
+         * We need:
+         * - path for route polyline
+         * - distanceMeters
+         * - durationMillis
+         */
+
+        fields: [
+          "path",
+          "distanceMeters",
+          "durationMillis",
+        ],
+      };
+
+      const result =
+        await Route.computeRoutes(request);
+
+      if (
+        !result?.routes ||
+        result.routes.length === 0
+      ) {
+        // console.warn(
+        //   "No Google route found."
+        // );
+
+        return;
+      }
+
+      const route = result.routes[0];
+
+      /*
+       * Draw Google calculated route
+       */
+
+      const polylines =
+        route.createPolylines({
+          polylineOptions: {
+            strokeColor: "#2563EB",
+
+            strokeOpacity: 0.9,
+
+            strokeWeight: 5,
+          },
+        });
+
+      polylines.forEach((polyline) => {
+        polyline.setMap(
+          mapInstanceRef.current
+        );
+      });
+
+      routePolylinesRef.current = polylines;
+
+      /*
+       * Route distance
+       */
+
+      const distanceKm =
+        Number(route.distanceMeters || 0) /
+        1000;
+
+      /*
+       * Route duration
+       */
+
+      const durationMinutes =
+        Number(route.durationMillis || 0) /
+        60000;
+
+      let durationText = "";
+
+      if (durationMinutes < 1) {
+        durationText = "< 1 min";
+      } else if (durationMinutes < 60) {
+        durationText =
+          `${Math.round(durationMinutes)} min`;
+      } else {
+        const hours =
+          Math.floor(durationMinutes / 60);
+
+        const minutes =
+          Math.round(durationMinutes % 60);
+
+        durationText =
+          minutes > 0
+            ? `${hours} hr ${minutes} min`
+            : `${hours} hr`;
+      }
+
+      setRouteInfo({
+        duration: durationText,
+
+        distance:
+          distanceKm < 1
+            ? `${Math.round(
+                Number(route.distanceMeters || 0)
+              )} m`
+            : `${distanceKm.toFixed(1)} km`,
+      });
+    } catch (err) {
+      // console.error(
+      //   "Google Routes API error:",
+      //   err
+      // );
+
+      /*
+       * Don't show a scary error every time a route
+       * calculation temporarily fails.
+       */
+
+      setError(
+        "Unable to calculate the current route."
+      );
+    } finally {
+      routeRequestInProgressRef.current = false;
+    }
+  };
+
+  /*
+  |--------------------------------------------------------------------------
+  | Send GPS location to backend
+  |--------------------------------------------------------------------------
+  */
+
+  const sendLocationToBackend = async (
+    position
+  ) => {
+    if (!token || !job?.id || !position) {
+      return;
+    }
+
+    const {
+      latitude,
+      longitude,
+      accuracy,
+    } = position.coords;
 
     try {
       const data = {
         job_id: String(job.id),
+
         lat: String(latitude),
+
         long: String(longitude),
-        gps_accuracy: String(accuracy || ""),
+
+        gps_accuracy: String(
+          accuracy || ""
+        ),
+
         time: new Date().toISOString(),
       };
 
-      const response = await saveJobTracking(data, token);
-
-    } catch (error) {
+      await saveJobTracking(
+        data,
+        token
+      );
+    } catch (err) {
+      // console.error(
+      //   "Failed to save courier location:",
+      //   err
+      // );
     }
   };
 
-  // --------------------------------------------------
-  // Handle GPS position
-  // --------------------------------------------------
-  const handlePosition = (position) => {
-    const { latitude, longitude } = position.coords;
+  /*
+  |--------------------------------------------------------------------------
+  | Handle GPS position
+  |--------------------------------------------------------------------------
+  */
 
-    // Save latest GPS position
+  const handlePosition = async (
+    position
+  ) => {
+    if (!position) {
+      return;
+    }
+
     latestPositionRef.current = position;
 
-    // Move courier marker
-    if (myMarkerRef.current) {
-      myMarkerRef.current.setPosition({
-        lat: latitude,
-        lng: longitude,
-      });
-    }
+    /*
+     * Update blue dot and actual GPS path
+     */
 
-    // Move map
-    mapInstanceRef.current?.panTo({
-      lat: latitude,
-      lng: longitude,
-    });
+    updateMapPosition(position);
 
-    // Update route
-    fetchRoute(latitude, longitude);
+    /*
+     * Send location immediately
+     */
+
+    await sendLocationToBackend(position);
+
+    /*
+     * Route request is throttled inside fetchRoute().
+     */
+
+    const {
+      latitude,
+      longitude,
+    } = position.coords;
+
+    await fetchRoute(
+      latitude,
+      longitude
+    );
   };
 
-  // --------------------------------------------------
-  // Start sharing
-  // --------------------------------------------------
+  /*
+  |--------------------------------------------------------------------------
+  | Start GPS sharing
+  |--------------------------------------------------------------------------
+  */
+
   const startSharing = () => {
     setError(null);
 
     if (!navigator.geolocation) {
-      setError("Your browser doesn't support GPS.");
+      setError(
+        "Your browser doesn't support GPS."
+      );
+
       return;
     }
 
     if (!token) {
-      setError("Authentication token is missing.");
+      setError(
+        "Authentication token is missing."
+      );
+
       return;
     }
 
     if (!job?.id) {
-      setError("Job ID is missing.");
+      setError(
+        "Job ID is missing."
+      );
+
       return;
     }
+
+    /*
+     * Already sharing
+     */
 
     if (watchIdRef.current !== null) {
       return;
     }
 
-    // SAVE SHARING STATE
-    localStorage.setItem(`locationSharing_${job.id}`, "true");
+    /*
+     * Save sharing state
+     */
 
-    watchIdRef.current = navigator.geolocation.watchPosition(
-      (position) => {
-        handlePosition(position);
-      },
-      (err) => {
-        setError(err.message);
-      },
-      {
-        enableHighAccuracy: true,
-        maximumAge: 3000,
-        timeout: 10000,
-      },
+    localStorage.setItem(
+      `locationSharing_${job.id}`,
+      "true"
     );
 
     setIsSharing(true);
 
+    /*
+     * Watch live GPS
+     */
+
+    watchIdRef.current =
+      navigator.geolocation.watchPosition(
+        (position) => {
+          handlePosition(position);
+        },
+
+        (err) => {
+          // console.error(
+          //   "GPS watch error:",
+          //   err
+          // );
+
+          setError(
+            getGeolocationErrorMessage(err)
+          );
+        },
+
+        {
+          enableHighAccuracy: true,
+
+          maximumAge: 3000,
+
+          timeout: 15000,
+        }
+      );
+
+    /*
+     * Get immediate location
+     */
+
     navigator.geolocation.getCurrentPosition(
       async (position) => {
-        handlePosition(position);
-        await sendLocationToBackend(position);
+        latestPositionRef.current =
+          position;
+
+        updateMapPosition(position);
+
+        /*
+         * First route request should happen immediately.
+         */
+
+        const {
+          latitude,
+          longitude,
+        } = position.coords;
+
+        await sendLocationToBackend(
+          position
+        );
+
+        await fetchRoute(
+          latitude,
+          longitude,
+          true
+        );
       },
+
       (err) => {
-        setError(err.message);
+        // console.error(
+        //   "Initial GPS error:",
+        //   err
+        // );
+
+        setError(
+          getGeolocationErrorMessage(err)
+        );
       },
+
       {
         enableHighAccuracy: true,
+
         maximumAge: 0,
-        timeout: 10000,
-      },
+
+        timeout: 15000,
+      }
     );
 
-    locationIntervalRef.current = setInterval(() => {
-      if (latestPositionRef.current) {
-        sendLocationToBackend(latestPositionRef.current);
-      }
-    }, 5000);
+    /*
+     * Backup backend update every 5 seconds.
+     *
+     * watchPosition() itself can update more or less
+     * frequently depending on the device/browser.
+     */
+
+    locationIntervalRef.current =
+      setInterval(() => {
+        if (
+          latestPositionRef.current
+        ) {
+          sendLocationToBackend(
+            latestPositionRef.current
+          );
+        }
+      }, 5000);
   };
 
-  useEffect(() => {
-    if (!job?.id) return;
+  /*
+  |--------------------------------------------------------------------------
+  | Stop GPS sharing
+  |--------------------------------------------------------------------------
+  */
 
-    const savedSharing =
-      localStorage.getItem(`locationSharing_${job.id}`) === "true";
-
-    if (savedSharing && watchIdRef.current === null) {
-      startSharing();
-    }
-  }, [job?.id]);
-
-  // --------------------------------------------------
-  // Stop sharing
-  // --------------------------------------------------
   const stopSharing = () => {
     if (watchIdRef.current !== null) {
-      navigator.geolocation.clearWatch(watchIdRef.current);
+      navigator.geolocation.clearWatch(
+        watchIdRef.current
+      );
+
       watchIdRef.current = null;
     }
 
     if (locationIntervalRef.current) {
-      clearInterval(locationIntervalRef.current);
+      clearInterval(
+        locationIntervalRef.current
+      );
+
       locationIntervalRef.current = null;
     }
 
     latestPositionRef.current = null;
 
-    // REMOVE SAVED SHARING STATE
+    /*
+     * Keep travelled path on the map while component
+     * is mounted, but stop receiving GPS.
+     */
+
     if (job?.id) {
-      localStorage.removeItem(`locationSharing_${job.id}`);
+      localStorage.removeItem(
+        `locationSharing_${job.id}`
+      );
     }
 
     setIsSharing(false);
   };
 
-  // --------------------------------------------------
-  // Cleanup
-  // --------------------------------------------------
+  /*
+  |--------------------------------------------------------------------------
+  | Automatically restore sharing after refresh
+  |--------------------------------------------------------------------------
+  */
+
+  useEffect(() => {
+    if (!job?.id) {
+      return;
+    }
+
+    const savedSharing =
+      localStorage.getItem(
+        `locationSharing_${job.id}`
+      ) === "true";
+
+    if (
+      savedSharing &&
+      watchIdRef.current === null
+    ) {
+      startSharing();
+    }
+
+    /*
+     * eslint-disable-next-line react-hooks/exhaustive-deps
+     */
+  }, [job?.id]);
+
+  /*
+  |--------------------------------------------------------------------------
+  | Recalculate route when job status changes
+  |--------------------------------------------------------------------------
+  |
+  | ASSIGNED  -> pickup
+  | PICKED_UP -> delivery
+  |
+  */
+
+  useEffect(() => {
+    if (!mapsReady) {
+      return;
+    }
+
+    if (!latestPositionRef.current) {
+      return;
+    }
+
+    const {
+      latitude,
+      longitude,
+    } = latestPositionRef.current.coords;
+
+    fetchRoute(
+      latitude,
+      longitude,
+      true
+    );
+
+    /*
+     * eslint-disable-next-line react-hooks/exhaustive-deps
+     */
+  }, [
+    job?.status,
+    mapsReady,
+  ]);
+
+  /*
+  |--------------------------------------------------------------------------
+  | Cleanup
+  |--------------------------------------------------------------------------
+  */
+
   useEffect(() => {
     return () => {
-      if (watchIdRef.current !== null) {
-        navigator.geolocation.clearWatch(watchIdRef.current);
+      if (
+        watchIdRef.current !== null
+      ) {
+        navigator.geolocation.clearWatch(
+          watchIdRef.current
+        );
+
+        watchIdRef.current = null;
       }
 
-      if (locationIntervalRef.current) {
-        clearInterval(locationIntervalRef.current);
+      if (
+        locationIntervalRef.current
+      ) {
+        clearInterval(
+          locationIntervalRef.current
+        );
+
+        locationIntervalRef.current =
+          null;
       }
+
+      routePolylinesRef.current.forEach(
+        (polyline) => {
+          polyline.setMap(null);
+        }
+      );
+
+      routePolylinesRef.current = [];
+
+      if (gpsPolylineRef.current) {
+        gpsPolylineRef.current.setMap(
+          null
+        );
+      }
+
+      if (accuracyCircleRef.current) {
+        accuracyCircleRef.current.setMap(
+          null
+        );
+      }
+
+      if (courierMarkerRef.current) {
+        courierMarkerRef.current.map =
+          null;
+      }
+
+      mapInstanceRef.current = null;
     };
   }, []);
+
+  /*
+  |--------------------------------------------------------------------------
+  | Geolocation error helper
+  |--------------------------------------------------------------------------
+  */
+
+  function getGeolocationErrorMessage(
+    err
+  ) {
+    if (!err) {
+      return "Unable to get your location.";
+    }
+
+    switch (err.code) {
+      case 1:
+        return "Location permission was denied. Please allow location access.";
+
+      case 2:
+        return "Your location is currently unavailable.";
+
+      case 3:
+        return "Getting your location timed out. Please try again.";
+
+      default:
+        return (
+          err.message ||
+          "Unable to get your location."
+        );
+    }
+  }
+
+  /*
+  |--------------------------------------------------------------------------
+  | Render
+  |--------------------------------------------------------------------------
+  */
 
   return (
     <Card className="border-emerald-200 bg-emerald-50/40">
       <CardHeader className="pb-2">
         <CardTitle className="text-base flex items-center gap-2">
           <Navigation className="w-4 h-4 text-emerald-600" />
+
           Navigation & Location Sharing
         </CardTitle>
       </CardHeader>
 
       <CardContent className="space-y-3">
         <p className="text-sm text-slate-600">
-          {job.status === "ASSIGNED"
-            ? `Next stop: Pick up from ${job.pickup_address}`
-            : `Deliver to: ${job.delivery_address}`}
+          {job?.status === "ASSIGNED"
+            ? `Next stop: Pick up from ${job?.pickup_address || "pickup location"}`
+            : `Deliver to: ${job?.delivery_address || "delivery location"}`}
         </p>
 
         {error && (
           <p className="text-sm text-red-600 flex items-center gap-1">
             <WifiOff className="w-4 h-4" />
+
             {error}
           </p>
         )}
@@ -1265,11 +2131,13 @@ export default function CourierTracker({ job }) {
           <div className="flex gap-3 text-sm">
             <span className="flex items-center gap-1 text-emerald-700 font-medium">
               <Clock className="w-4 h-4" />
+
               {routeInfo.duration}
             </span>
 
             <span className="flex items-center gap-1 text-slate-600">
               <MapPin className="w-4 h-4" />
+
               {routeInfo.distance}
             </span>
           </div>
@@ -1278,25 +2146,44 @@ export default function CourierTracker({ job }) {
         <div
           ref={mapRef}
           className="rounded-xl overflow-hidden border border-slate-200"
-          style={{ height: 300 }}
+          style={{
+            height: 300,
+            width: "100%",
+          }}
         />
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           {isSharing ? (
             <>
               <Badge
                 className="
-    bg-green-100
-    text-green-800
-    hover:bg-green-100
-    flex items-center gap-1
-  "
+                  bg-green-100
+                  text-green-800
+                  hover:bg-green-100
+                  flex
+                  items-center
+                  gap-1
+                "
               >
-                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse inline-block" />
+                <span
+                  className="
+                    w-2
+                    h-2
+                    bg-green-500
+                    rounded-full
+                    animate-pulse
+                    inline-block
+                  "
+                />
+
                 Live — sharing location
               </Badge>
 
-              <Button variant="outline" size="sm" onClick={stopSharing}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={stopSharing}
+              >
                 Stop Sharing
               </Button>
             </>
@@ -1307,10 +2194,18 @@ export default function CourierTracker({ job }) {
               className="bg-emerald-600 hover:bg-emerald-700"
             >
               <MapPin className="w-4 h-4 mr-1" />
+
               Start Navigation & Share Location
             </Button>
           )}
         </div>
+
+        {isSharing && (
+          <p className="text-xs text-slate-500">
+            Your live GPS location is being shared
+            with the job tracking system.
+          </p>
+        )}
       </CardContent>
     </Card>
   );

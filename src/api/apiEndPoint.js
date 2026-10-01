@@ -60,6 +60,17 @@ export const removeJobApi =  baseUrl + "/removeJob";
 
 export const appliedJobApi =  baseUrl + "/appliedJobList";
 
+export const sendNegotiationMessageApi =  baseUrl + "/sendNegotiationMessage";
+
+export const getNegotiationMessagesApi =  baseUrl + "/getNegotiationMessages";
+
+export const sendAgreedAmountApi =  baseUrl + "/sendAgreedAmount";
+
+export const negotiationAblyAuthApi =  baseUrl + "/negotiationAblyAuth";
+
+export const getNegotiationThreadsApi =  baseUrl + "/getNegotiationThreads";
+
+
 
 
 // dashboard

@@ -454,8 +454,6 @@ const handleConfirmDelivery = async () => {
     if (res.status === 1) {
       toast.success(res.msg || "Delivery confirmed successfully.");
 
-      // Get Stripe payment information directly
-      // from confirmJobComplete API response
       const paymentInfo = {
         clientSecret: res.payload?.client_secret,
         publishableKey: res.payload?.publishable_key,
@@ -468,10 +466,8 @@ const handleConfirmDelivery = async () => {
 
       setPaymentData(paymentInfo);
 
-      // Refresh job details for latest job status
       await fetchJobDetails();
 
-      // Open payment modal
       setShowPaymentModal(true);
     } else {
       toast.error(res.msg || "Failed to confirm delivery.");
@@ -480,6 +476,40 @@ const handleConfirmDelivery = async () => {
     toast.error(
       err.response?.data?.msg || "Failed to confirm delivery."
     );
+  } finally {
+    setIsUpdating(false);
+  }
+};
+
+const handleOpenPayment = async () => {
+  try {
+    setIsUpdating(true);
+
+    let paymentInfo = paymentData;
+
+    // If payment session doesn't already exist, create/get it
+    if (!paymentInfo?.clientSecret || !paymentInfo?.publishableKey) {
+      const res = await confirmJobCompleteService(job.id, token);
+
+      if (res.status !== 1) {
+        return;
+      }
+
+      paymentInfo = {
+        clientSecret: res.payload?.client_secret,
+        publishableKey: res.payload?.publishable_key,
+      };
+
+      if (!paymentInfo.clientSecret || !paymentInfo.publishableKey) {
+        return;
+      }
+
+      setPaymentData(paymentInfo);
+    }
+
+    setShowPaymentModal(true);
+  } catch (err) {
+    console.error("Unable to open payment:", err);
   } finally {
     setIsUpdating(false);
   }
@@ -1120,42 +1150,105 @@ const PostupdateJobStatus = async (newStatus) => {
                     ================================================= */}
 
                     
-    {paymentCompleted ? (
-      <div className="mb-6 overflow-hidden rounded-2xl border border-emerald-200 bg-white shadow-sm">
-        <div className="border-b border-emerald-100 bg-emerald-50 px-5 py-4">
-          <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100">
-              <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-            </div>
 
-            <div>
-              <h3 className="font-semibold text-emerald-900">
-                Payment Completed
-              </h3>
+{paymentCompleted || job.payment_status === "completed" ? (
+  <>
+  {/* =================================================
+      PAYMENT COMPLETED
+  ================================================= */}
 
-              <p className="mt-1 text-sm text-emerald-700">
-                Your delivery has been confirmed and payment has been
-                completed successfully.
-              </p>
-            </div>
-          </div>
+
+
+  <div className="mb-6 overflow-hidden rounded-2xl border border-emerald-200 bg-white shadow-sm">
+    <div className="border-b border-emerald-100 bg-emerald-50 px-5 py-4">
+      <div className="flex items-start gap-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100">
+          <CheckCircle2 className="h-5 w-5 text-emerald-600" />
         </div>
 
-        <div className="p-5">
-          <div className="rounded-xl bg-emerald-50 p-4">
-            <p className="text-sm font-medium text-emerald-800">
-              Payment successful
-            </p>
+        <div>
+          <h3 className="font-semibold text-emerald-900">
+            Payment Completed
+          </h3>
 
-            <p className="mt-1 text-sm text-emerald-700">
-              Amount paid:{" "}
-              <strong>
-                {job.currency || "AUD"} {Number(job.price).toFixed(2)}
-              </strong>
-            </p>
-          </div>
+          <p className="mt-1 text-sm text-emerald-700">
+            Your delivery has been confirmed and payment has been
+            completed successfully.
+          </p>
         </div>
       </div>
+    </div>
+
+    <div className="p-5">
+      <div className="rounded-xl bg-emerald-50 p-4">
+        <p className="text-sm font-medium text-emerald-800">
+          Payment successful
+        </p>
+
+        <p className="mt-1 text-sm text-emerald-700">
+          Amount paid:{" "}
+          <strong>
+            {job.currency || "AUD"} {Number(job.price).toFixed(2)}
+          </strong>
+        </p>
+      </div>
+    </div>
+  </div>
+</>
+) : job.is_delivery_confirmed && job.payment_status === "pending" ? (
+<>
+  {/* =================================================
+      PAYMENT PENDING
+  ================================================= */}
+
+  <div className="mb-6 overflow-hidden rounded-2xl border border-amber-200 bg-white shadow-sm">
+
+    <div className="border-b border-amber-100 bg-amber-50 px-5 py-4">
+      <div className="flex items-start gap-3">
+
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100">
+          <AlertCircle className="h-5 w-5 text-amber-600" />
+        </div>
+
+        <div>
+          <h3 className="font-semibold text-amber-900">
+            Payment Pending
+          </h3>
+
+          <p className="mt-1 text-sm text-amber-700">
+            Delivery has been confirmed, but payment has not
+            been completed yet.
+          </p>
+        </div>
+
+      </div>
+    </div>
+
+    <div className="p-5">
+
+      <div className="mb-4 rounded-xl bg-slate-50 p-4">
+        <p className="text-sm font-medium text-slate-700">
+          Amount to pay
+        </p>
+
+        <p className="mt-1 text-xl font-bold text-slate-900">
+          {job.currency || "AUD"} {Number(job.price).toFixed(2)}
+        </p>
+      </div>
+
+      <Button
+        type="button"
+        onClick={handleOpenPayment}
+        disabled={isUpdating}
+        className="w-full bg-blue-600 text-white hover:bg-blue-700"
+      >
+        {isUpdating ? "Preparing Payment..." : "Complete Payment"}
+      </Button>
+
+    </div>
+  </div>
+</>
+
     ) : (
       <>
 

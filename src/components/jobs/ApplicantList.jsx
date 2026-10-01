@@ -27,7 +27,14 @@ import { toast } from "react-toastify";
 import { format } from "date-fns";
 import { getAssignJob } from "../../api/ApiServices/jobrelated/getAssignJobService";
 import { getJobDetails } from "../../api/ApiServices/jobrelated/getJobDetailsService";
-import ChatBox from "./ChatBox";
+import WithoutJobApplyChat from "./WithoutJobApplyChat";
+import { getNegotiationThreadsService } from "../../api/ApiServices/withOutApplyChat/getNegotiationThreadsService";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export default function ApplicantList() {
   const [isLoading, setIsLoading] = useState(true);
@@ -36,17 +43,23 @@ export default function ApplicantList() {
   const [customer, setCustomer] = useState(null);
   const { id } = useParams();
   const navigate = useNavigate();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
 
   const [job, setJob] = useState(null);
   const [applicants, setApplicants] = useState([]);
+  const [negotiationCouriers, setNegotiationCouriers] = useState([]);
+  const [selectedNegotiationCourier, setSelectedNegotiationCourier] =
+    useState(null);
 
   const [selectedApplicant, setSelectedApplicant] = useState(null);
   const { notifyJobAssigned } = useNotificationTrigger();
 
   useEffect(() => {
+    if (!id || !token) return;
+
     fetchApplicants();
-  }, [id]);
+    fetchNegotiationThreads();
+  }, [id, token]);
 
   const fetchApplicants = async () => {
     try {
@@ -77,6 +90,31 @@ export default function ApplicantList() {
       toast.error(error.response?.data?.msg || "Failed to load applicants.");
     } finally {
       setIsLoading(false);
+    }
+  };
+  const fetchNegotiationThreads = async () => {
+    try {
+      const res = await getNegotiationThreadsService(id, token);
+
+      console.log("NEGOTIATION THREAD RESPONSE:", res);
+
+      if (res?.status === 1) {
+        const threads = res?.payload?.threads || [];
+
+        console.log("NEGOTIATION THREADS:", threads);
+
+        setNegotiationCouriers(threads);
+      } else {
+        console.log("NEGOTIATION API FAILED:", res?.msg);
+        setNegotiationCouriers([]);
+      }
+    } catch (error) {
+      console.error(
+        "Failed to load negotiation threads:",
+        error?.response?.data || error,
+      );
+
+      setNegotiationCouriers([]);
     }
   };
 
@@ -387,8 +425,8 @@ export default function ApplicantList() {
                             {app.courier?.name}
                           </p> */}
                           <p className="font-bold text-slate-800">
-  {app.courier?.name}
-</p>
+                            {app.courier?.name}
+                          </p>
 
                           <div className="flex items-center gap-1 text-sm text-slate-500">
                             <Star className="w-4 h-4 text-yellow-500 fill-current" />
@@ -467,15 +505,180 @@ export default function ApplicantList() {
                     </div>
                   </Card>
                 ))}
+
+                {selectedApplicant && (
+                  <Card className="mt-6 overflow-hidden border-blue-200 shadow-lg">
+                    <CardContent className="p-0">
+                      <WithoutJobApplyChat
+                        jobId={job.id}
+                        currentUserId={user?.id}
+                        courierId={selectedApplicant?.courier?.id}
+                        receiverId={selectedApplicant?.courier?.id}
+                        otherUserName={
+                          selectedApplicant?.courier?.name || "Courier"
+                        }
+                      />
+
+                      <div className="border-t p-3">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={handleCloseChat}
+                        >
+                          Close Chat
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+            
               </div>
             )}
+
+            {/* ================================
+    PRICE NEGOTIATION
+================================ */}
+
+            {negotiationCouriers.length > 0 && (
+              <div className="mt-8 border-t pt-6">
+                <div className="mb-4">
+                  <h3 className="text-lg font-semibold text-slate-800">
+                    Price Negotiation
+                  </h3>
+
+                  <p className="text-sm text-slate-500 mt-1">
+                    Couriers who have started a price negotiation for this job.
+                  </p>
+                </div>
+
+                <div className="space-y-4">
+                  {negotiationCouriers.map((thread) => (
+                    <Card
+                      key={thread.courier?.id}
+                      className="p-4 border-blue-100"
+                    >
+                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        {/* Courier Information */}
+                        <div className="flex items-center gap-4">
+                          <Avatar className="w-14 h-14">
+                            <AvatarFallback>
+                              {thread.courier?.name?.charAt(0) || "U"}
+                            </AvatarFallback>
+                          </Avatar>
+
+                          <div>
+                            <p className="font-semibold text-slate-800">
+                              {thread.courier?.name || "Courier"}
+                            </p>
+
+                            <div className="flex items-center gap-2 text-sm text-slate-500">
+                              <Star className="w-4 h-4 text-yellow-500 fill-current" />
+
+                              <span>
+                                {thread.courier?.rating
+                                  ? Number(thread.courier.rating).toFixed(1)
+                                  : "New"}
+                              </span>
+
+                              <span>
+                                ({thread.courier?.completed_deliveries || 0}{" "}
+                                jobs)
+                              </span>
+                            </div>
+
+                            {Number(thread.courier?.id_verified) === 1 && (
+                              <Badge
+                                variant="secondary"
+                                className="mt-1 text-green-700 bg-green-100"
+                              >
+                                <CheckCircle className="w-3 h-3 mr-1" />
+                                Verified
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Negotiation Information */}
+                        <div className="flex flex-col md:items-end gap-2">
+                          {thread.agreed_amount ? (
+                            <div className="text-sm">
+                              <span className="text-slate-500">
+                                Agreed Amount:
+                              </span>
+
+                              <span className="ml-2 font-bold text-green-600">
+                                {thread.agreed_amount}
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="text-sm text-amber-600">
+                              Price negotiation in progress
+                            </div>
+                          )}
+
+                          {thread.last_message && (
+                            <p className="text-xs text-slate-400 max-w-md">
+                              Last message: {thread.last_message.message}
+                            </p>
+                          )}
+
+                          <Button
+                            variant="outline"
+                            onClick={() =>
+                              setSelectedNegotiationCourier(thread)
+                            }
+                            disabled={job?.status !== "OPEN"}
+                            className="border-blue-200 text-blue-600 hover:bg-blue-50"
+                          >
+                            <MessageCircle className="w-4 h-4 mr-2" />
+                            Chat with {thread.courier?.name || "Courier"}
+                          </Button>
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ================================
+    NEGOTIATION CHAT
+================================ */}
+
+           {selectedNegotiationCourier && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+    <div className="relative w-full max-w-lg bg-white rounded-xl shadow-2xl overflow-hidden">
+
+      {/* Close button */}
+      <button
+        type="button"
+        onClick={() => setSelectedNegotiationCourier(null)}
+        className="absolute right-3 top-3 z-10 text-slate-500 hover:text-slate-800 bg-white rounded-full w-8 h-8 flex items-center justify-center shadow"
+      >
+        ✕
+      </button>
+
+      <WithoutJobApplyChat
+        jobId={job?.id}
+        currentUserId={user?.id || user?.user_id}
+        courierId={selectedNegotiationCourier?.courier?.id}
+        receiverId={selectedNegotiationCourier?.courier?.id}
+        otherUserName={
+          selectedNegotiationCourier?.courier?.name || "Courier"
+        }
+      />
+    </div>
+  </div>
+)}
+
+
           </CardContent>
         </Card>
       </div>
     </div>
   );
 }
-
 
 // ------------ this is the code without chat
 
