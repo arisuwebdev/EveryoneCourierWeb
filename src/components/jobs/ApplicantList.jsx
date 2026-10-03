@@ -96,23 +96,23 @@ export default function ApplicantList() {
     try {
       const res = await getNegotiationThreadsService(id, token);
 
-      console.log("NEGOTIATION THREAD RESPONSE:", res);
+      // console.log("NEGOTIATION THREAD RESPONSE:", res);
 
       if (res?.status === 1) {
         const threads = res?.payload?.threads || [];
 
-        console.log("NEGOTIATION THREADS:", threads);
+        // console.log("NEGOTIATION THREADS:", threads);
 
         setNegotiationCouriers(threads);
       } else {
-        console.log("NEGOTIATION API FAILED:", res?.msg);
+        // console.log("NEGOTIATION API FAILED:", res?.msg);
         setNegotiationCouriers([]);
       }
     } catch (error) {
-      console.error(
-        "Failed to load negotiation threads:",
-        error?.response?.data || error,
-      );
+      // console.error(
+      //   "Failed to load negotiation threads:",
+      //   error?.response?.data || error,
+      // );
 
       setNegotiationCouriers([]);
     }
@@ -532,7 +532,7 @@ export default function ApplicantList() {
                   </Card>
                 )}
 
-            
+
               </div>
             )}
 

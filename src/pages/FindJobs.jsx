@@ -8,7 +8,6 @@ import { findJob } from "../api/ApiServices/jobrelated/findJobService";
 import { appliedJobApplied } from "../api/ApiServices/jobrelated/appliedJobAppliedService";
 import WithoutJobApplyChat from "../components/jobs/WithoutJobApplyChat";
 
-
 // import { useNotificationTrigger } from "../components/notifications/useNotificationTrigger";
 
 export default function FindJobs() {
@@ -363,8 +362,8 @@ export default function FindJobs() {
 
                             <WithoutJobApplyChat
                               jobId={selectedChatJob.id}
-currentUserId={user?.id || user?.user_id}
-courierId={user?.id || user?.user_id}
+                              currentUserId={user?.id || user?.user_id}
+                              courierId={user?.id || user?.user_id}
                               receiverId={
                                 selectedChatJob.customer_id ||
                                 selectedChatJob.customer?.id
@@ -372,10 +371,10 @@ courierId={user?.id || user?.user_id}
                               otherUserName={
                                 selectedChatJob.customer_name ||
                                 selectedChatJob.customer?.name ||
-                                selectedChatJob.other_party?.name || 
+                                selectedChatJob.other_party?.name ||
                                 "Customer"
                               }
-                               showAgreedAmount={true}
+                              showAgreedAmount={true}
                             />
                           </div>
                         </div>

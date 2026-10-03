@@ -912,19 +912,9 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  MapPin,
-  Navigation,
-  WifiOff,
-  Clock,
-} from "lucide-react";
+import { MapPin, Navigation, WifiOff, Clock } from "lucide-react";
 
 import { useAuth } from "../../lib/AuthContext";
 import { saveJobTracking } from "../../api/ApiServices/tracking/saveJobTrackingService";
@@ -951,7 +941,7 @@ function loadGoogleMaps(apiKey) {
     }
 
     const existingScript = document.querySelector(
-      'script[data-google-maps="true"]'
+      'script[data-google-maps="true"]',
     );
 
     if (existingScript) {
@@ -1062,9 +1052,7 @@ export default function CourierTracker({ job }) {
       return false;
     }
 
-    return (
-      localStorage.getItem(`locationSharing_${job.id}`) === "true"
-    );
+    return localStorage.getItem(`locationSharing_${job.id}`) === "true";
   });
 
   const [error, setError] = useState(null);
@@ -1104,10 +1092,7 @@ export default function CourierTracker({ job }) {
       return job.pickup_address;
     }
 
-    if (
-      job.status === "PICKED_UP" ||
-      job.status === "IN_TRANSIT"
-    ) {
+    if (job.status === "PICKED_UP" || job.status === "IN_TRANSIT") {
       return job.delivery_address;
     }
 
@@ -1159,7 +1144,7 @@ export default function CourierTracker({ job }) {
 
     if (!apiKey) {
       setError(
-        "Google Maps API key is missing. Please add VITE_GOOGLE_MAPS_API_KEY to your .env file."
+        "Google Maps API key is missing. Please add VITE_GOOGLE_MAPS_API_KEY to your .env file.",
       );
       return;
     }
@@ -1194,8 +1179,7 @@ export default function CourierTracker({ job }) {
          * Load Marker library
          */
 
-        const { AdvancedMarkerElement } =
-          await maps.importLibrary("marker");
+        const { AdvancedMarkerElement } = await maps.importLibrary("marker");
 
         /*
          * Create map
@@ -1237,8 +1221,7 @@ export default function CourierTracker({ job }) {
         markerElement.style.borderRadius = "50%";
         markerElement.style.background = "#4285F4";
         markerElement.style.border = "3px solid #ffffff";
-        markerElement.style.boxShadow =
-          "0 1px 5px rgba(0,0,0,0.35)";
+        markerElement.style.boxShadow = "0 1px 5px rgba(0,0,0,0.35)";
 
         courierMarkerRef.current = new AdvancedMarkerElement({
           map,
@@ -1321,7 +1304,7 @@ export default function CourierTracker({ job }) {
         // console.error("Google Maps initialization error:", err);
 
         setError(
-          "Failed to load Google Maps. Please check your Google Maps API configuration."
+          "Failed to load Google Maps. Please check your Google Maps API configuration.",
         );
       }
     };
@@ -1350,11 +1333,7 @@ export default function CourierTracker({ job }) {
       return;
     }
 
-    const {
-      latitude,
-      longitude,
-      accuracy,
-    } = position.coords;
+    const { latitude, longitude, accuracy } = position.coords;
 
     const currentLocation = {
       lat: latitude,
@@ -1380,10 +1359,7 @@ export default function CourierTracker({ job }) {
        * Don't allow the circle to become extremely large.
        */
 
-      const safeAccuracy = Math.min(
-        Math.max(Number(accuracy) || 30, 10),
-        100
-      );
+      const safeAccuracy = Math.min(Math.max(Number(accuracy) || 30, 10), 100);
 
       accuracyCircleRef.current.setRadius(safeAccuracy);
     }
@@ -1392,8 +1368,7 @@ export default function CourierTracker({ job }) {
      * Add location to actual GPS path
      */
 
-    const lastPoint =
-      gpsPathRef.current[gpsPathRef.current.length - 1];
+    const lastPoint = gpsPathRef.current[gpsPathRef.current.length - 1];
 
     /*
      * Only add a point when courier has moved
@@ -1405,7 +1380,7 @@ export default function CourierTracker({ job }) {
         lastPoint.lat,
         lastPoint.lng,
         latitude,
-        longitude
+        longitude,
       );
 
       if (distance >= 5) {
@@ -1420,9 +1395,7 @@ export default function CourierTracker({ job }) {
      */
 
     if (gpsPolylineRef.current) {
-      gpsPolylineRef.current.setPath(
-        gpsPathRef.current
-      );
+      gpsPolylineRef.current.setPath(gpsPathRef.current);
     }
 
     /*
@@ -1438,34 +1411,21 @@ export default function CourierTracker({ job }) {
   |--------------------------------------------------------------------------
   */
 
-  const calculateDistanceMeters = (
-    lat1,
-    lon1,
-    lat2,
-    lon2
-  ) => {
+  const calculateDistanceMeters = (lat1, lon1, lat2, lon2) => {
     const earthRadius = 6371000;
 
-    const dLat =
-      ((lat2 - lat1) * Math.PI) / 180;
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
 
-    const dLon =
-      ((lon2 - lon1) * Math.PI) / 180;
+    const dLon = ((lon2 - lon1) * Math.PI) / 180;
 
     const a =
-      Math.sin(dLat / 2) *
-        Math.sin(dLat / 2) +
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
       Math.cos((lat1 * Math.PI) / 180) *
         Math.cos((lat2 * Math.PI) / 180) *
         Math.sin(dLon / 2) *
         Math.sin(dLon / 2);
 
-    const c =
-      2 *
-      Math.atan2(
-        Math.sqrt(a),
-        Math.sqrt(1 - a)
-      );
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
     return earthRadius * c;
   };
@@ -1481,11 +1441,190 @@ export default function CourierTracker({ job }) {
   |
   */
 
-  const fetchRoute = async (
-    latitude,
-    longitude,
-    force = false
-  ) => {
+  // const fetchRoute = async (
+  //   latitude,
+  //   longitude,
+  //   force = false
+  // ) => {
+  //   if (!mapsReady || !mapInstanceRef.current) {
+  //     return;
+  //   }
+
+  //   const Route = RouteClassRef.current;
+
+  //   if (!Route) {
+  //     return;
+  //   }
+
+  //   const destination = getDestination();
+
+  //   if (!destination) {
+  //     return;
+  //   }
+
+  //   /*
+  //    * Don't call Google Routes API on every GPS update.
+  //    *
+  //    * Normal refresh:
+  //    * once every 30 seconds.
+  //    *
+  //    * Force:
+  //    * immediately.
+  //    */
+
+  //   const now = Date.now();
+
+  //   if (
+  //     !force &&
+  //     now - lastRouteRequestRef.current < 30000
+  //   ) {
+  //     return;
+  //   }
+
+  //   if (routeRequestInProgressRef.current) {
+  //     return;
+  //   }
+
+  //   routeRequestInProgressRef.current = true;
+
+  //   lastRouteRequestRef.current = now;
+
+  //   try {
+  //     clearRoute();
+
+  //     const request = {
+  //       origin: {
+  //         lat: latitude,
+  //         lng: longitude,
+  //       },
+
+  //       destination,
+
+  //       travelMode: "DRIVING",
+
+  //       routingPreference: "TRAFFIC_AWARE",
+
+  //       /*
+  //        * We need:
+  //        * - path for route polyline
+  //        * - distanceMeters
+  //        * - durationMillis
+  //        */
+
+  //       fields: [
+  //         "path",
+  //         "distanceMeters",
+  //         "durationMillis",
+  //       ],
+  //     };
+
+  //     const result =
+  //       await Route.computeRoutes(request);
+
+  //     if (
+  //       !result?.routes ||
+  //       result.routes.length === 0
+  //     ) {
+  //       // console.warn(
+  //       //   "No Google route found."
+  //       // );
+
+  //       return;
+  //     }
+
+  //     const route = result.routes[0];
+
+  //     /*
+  //      * Draw Google calculated route
+  //      */
+
+  //     const polylines =
+  //       route.createPolylines({
+  //         polylineOptions: {
+  //           strokeColor: "#2563EB",
+
+  //           strokeOpacity: 0.9,
+
+  //           strokeWeight: 5,
+  //         },
+  //       });
+
+  //     polylines.forEach((polyline) => {
+  //       polyline.setMap(
+  //         mapInstanceRef.current
+  //       );
+  //     });
+
+  //     routePolylinesRef.current = polylines;
+
+  //     /*
+  //      * Route distance
+  //      */
+
+  //     const distanceKm =
+  //       Number(route.distanceMeters || 0) /
+  //       1000;
+
+  //     /*
+  //      * Route duration
+  //      */
+
+  //     const durationMinutes =
+  //       Number(route.durationMillis || 0) /
+  //       60000;
+
+  //     let durationText = "";
+
+  //     if (durationMinutes < 1) {
+  //       durationText = "< 1 min";
+  //     } else if (durationMinutes < 60) {
+  //       durationText =
+  //         `${Math.round(durationMinutes)} min`;
+  //     } else {
+  //       const hours =
+  //         Math.floor(durationMinutes / 60);
+
+  //       const minutes =
+  //         Math.round(durationMinutes % 60);
+
+  //       durationText =
+  //         minutes > 0
+  //           ? `${hours} hr ${minutes} min`
+  //           : `${hours} hr`;
+  //     }
+
+  //     setRouteInfo({
+  //       duration: durationText,
+
+  //       distance:
+  //         distanceKm < 1
+  //           ? `${Math.round(
+  //               Number(route.distanceMeters || 0)
+  //             )} m`
+  //           : `${distanceKm.toFixed(1)} km`,
+  //     });
+  //   } catch (err) {
+  //     // console.error(
+  //     //   "Google Routes API error:",
+  //     //   err
+  //     // );
+
+  //     /*
+  //      * Don't show a scary error every time a route
+  //      * calculation temporarily fails.
+  //      */
+
+  //     setError(
+  //       "Unable to calculate the current route."
+  //     );
+  //   } finally {
+  //     routeRequestInProgressRef.current = false;
+  //   }
+  // };
+
+  const routeNeedsRefreshRef = useRef(false);
+
+  const fetchRoute = async (latitude, longitude, force = false) => {
     if (!mapsReady || !mapInstanceRef.current) {
       return;
     }
@@ -1502,31 +1641,21 @@ export default function CourierTracker({ job }) {
       return;
     }
 
-    /*
-     * Don't call Google Routes API on every GPS update.
-     *
-     * Normal refresh:
-     * once every 30 seconds.
-     *
-     * Force:
-     * immediately.
-     */
-
     const now = Date.now();
 
-    if (
-      !force &&
-      now - lastRouteRequestRef.current < 30000
-    ) {
+    // If another route request is already running,
+    // remember that we need to calculate again.
+    if (routeRequestInProgressRef.current) {
+      routeNeedsRefreshRef.current = true;
       return;
     }
 
-    if (routeRequestInProgressRef.current) {
+    if (!force && now - lastRouteRequestRef.current < 30000) {
       return;
     }
 
     routeRequestInProgressRef.current = true;
-
+    routeNeedsRefreshRef.current = false;
     lastRouteRequestRef.current = now;
 
     try {
@@ -1537,149 +1666,98 @@ export default function CourierTracker({ job }) {
           lat: latitude,
           lng: longitude,
         },
-
         destination,
-
         travelMode: "DRIVING",
-
         routingPreference: "TRAFFIC_AWARE",
-
-        /*
-         * We need:
-         * - path for route polyline
-         * - distanceMeters
-         * - durationMillis
-         */
-
-        fields: [
-          "path",
-          "distanceMeters",
-          "durationMillis",
-        ],
+        fields: ["path", "distanceMeters", "durationMillis"],
       };
 
-      const result =
-        await Route.computeRoutes(request);
+      const result = await Route.computeRoutes(request);
 
-      if (
-        !result?.routes ||
-        result.routes.length === 0
-      ) {
-        // console.warn(
-        //   "No Google route found."
-        // );
-
+      if (!result?.routes || result.routes.length === 0) {
         return;
       }
 
       const route = result.routes[0];
 
-      /*
-       * Draw Google calculated route
-       */
-
-      const polylines =
-        route.createPolylines({
-          polylineOptions: {
-            strokeColor: "#2563EB",
-
-            strokeOpacity: 0.9,
-
-            strokeWeight: 5,
-          },
-        });
+      const polylines = route.createPolylines({
+        polylineOptions: {
+          strokeColor: "#2563EB",
+          strokeOpacity: 0.9,
+          strokeWeight: 5,
+        },
+      });
 
       polylines.forEach((polyline) => {
-        polyline.setMap(
-          mapInstanceRef.current
-        );
+        polyline.setMap(mapInstanceRef.current);
       });
 
       routePolylinesRef.current = polylines;
 
-      /*
-       * Route distance
-       */
+      const distanceMeters = Number(route.distanceMeters || 0);
 
-      const distanceKm =
-        Number(route.distanceMeters || 0) /
-        1000;
+      const distanceKm = distanceMeters / 1000;
 
-      /*
-       * Route duration
-       */
-
-      const durationMinutes =
-        Number(route.durationMillis || 0) /
-        60000;
+      const durationMinutes = Number(route.durationMillis || 0) / 60000;
 
       let durationText = "";
 
       if (durationMinutes < 1) {
         durationText = "< 1 min";
       } else if (durationMinutes < 60) {
-        durationText =
-          `${Math.round(durationMinutes)} min`;
+        durationText = `${Math.round(durationMinutes)} min`;
       } else {
-        const hours =
-          Math.floor(durationMinutes / 60);
+        const hours = Math.floor(durationMinutes / 60);
 
-        const minutes =
-          Math.round(durationMinutes % 60);
+        const minutes = Math.round(durationMinutes % 60);
 
         durationText =
-          minutes > 0
-            ? `${hours} hr ${minutes} min`
-            : `${hours} hr`;
+          minutes > 0 ? `${hours} hr ${minutes} min` : `${hours} hr`;
       }
 
       setRouteInfo({
         duration: durationText,
-
         distance:
           distanceKm < 1
-            ? `${Math.round(
-                Number(route.distanceMeters || 0)
-              )} m`
+            ? `${Math.round(distanceMeters)} m`
             : `${distanceKm.toFixed(1)} km`,
       });
     } catch (err) {
-      // console.error(
-      //   "Google Routes API error:",
-      //   err
-      // );
+      console.error("Route calculation error:", err);
 
-      /*
-       * Don't show a scary error every time a route
-       * calculation temporarily fails.
-       */
-
-      setError(
-        "Unable to calculate the current route."
-      );
+      setError("Unable to calculate the current route.");
     } finally {
       routeRequestInProgressRef.current = false;
+
+      // Status may have changed while the previous
+      // route was being calculated.
+      if (routeNeedsRefreshRef.current) {
+        routeNeedsRefreshRef.current = false;
+
+        const latestPosition = latestPositionRef.current;
+
+        if (latestPosition) {
+          const { latitude, longitude } = latestPosition.coords;
+
+          // Force a new request so the 30-second
+          // throttle does not block it.
+          fetchRoute(latitude, longitude, true);
+        }
+      }
     }
   };
-
   /*
   |--------------------------------------------------------------------------
   | Send GPS location to backend
   |--------------------------------------------------------------------------
   */
 
-  const sendLocationToBackend = async (
-    position
-  ) => {
+  const sendLocationToBackend = async (position) => {
     if (!token || !job?.id || !position) {
       return;
     }
 
-    const {
-      latitude,
-      longitude,
-      accuracy,
-    } = position.coords;
+    const { latitude, longitude, accuracy } = position.coords;
 
     try {
       const data = {
@@ -1689,17 +1767,12 @@ export default function CourierTracker({ job }) {
 
         long: String(longitude),
 
-        gps_accuracy: String(
-          accuracy || ""
-        ),
+        gps_accuracy: String(accuracy || ""),
 
         time: new Date().toISOString(),
       };
 
-      await saveJobTracking(
-        data,
-        token
-      );
+      await saveJobTracking(data, token);
     } catch (err) {
       // console.error(
       //   "Failed to save courier location:",
@@ -1714,9 +1787,7 @@ export default function CourierTracker({ job }) {
   |--------------------------------------------------------------------------
   */
 
-  const handlePosition = async (
-    position
-  ) => {
+  const handlePosition = async (position) => {
     if (!position) {
       return;
     }
@@ -1739,15 +1810,9 @@ export default function CourierTracker({ job }) {
      * Route request is throttled inside fetchRoute().
      */
 
-    const {
-      latitude,
-      longitude,
-    } = position.coords;
+    const { latitude, longitude } = position.coords;
 
-    await fetchRoute(
-      latitude,
-      longitude
-    );
+    await fetchRoute(latitude, longitude);
   };
 
   /*
@@ -1760,25 +1825,19 @@ export default function CourierTracker({ job }) {
     setError(null);
 
     if (!navigator.geolocation) {
-      setError(
-        "Your browser doesn't support GPS."
-      );
+      setError("Your browser doesn't support GPS.");
 
       return;
     }
 
     if (!token) {
-      setError(
-        "Authentication token is missing."
-      );
+      setError("Authentication token is missing.");
 
       return;
     }
 
     if (!job?.id) {
-      setError(
-        "Job ID is missing."
-      );
+      setError("Job ID is missing.");
 
       return;
     }
@@ -1795,10 +1854,7 @@ export default function CourierTracker({ job }) {
      * Save sharing state
      */
 
-    localStorage.setItem(
-      `locationSharing_${job.id}`,
-      "true"
-    );
+    localStorage.setItem(`locationSharing_${job.id}`, "true");
 
     setIsSharing(true);
 
@@ -1806,31 +1862,28 @@ export default function CourierTracker({ job }) {
      * Watch live GPS
      */
 
-    watchIdRef.current =
-      navigator.geolocation.watchPosition(
-        (position) => {
-          handlePosition(position);
-        },
+    watchIdRef.current = navigator.geolocation.watchPosition(
+      (position) => {
+        handlePosition(position);
+      },
 
-        (err) => {
-          // console.error(
-          //   "GPS watch error:",
-          //   err
-          // );
+      (err) => {
+        // console.error(
+        //   "GPS watch error:",
+        //   err
+        // );
 
-          setError(
-            getGeolocationErrorMessage(err)
-          );
-        },
+        setError(getGeolocationErrorMessage(err));
+      },
 
-        {
-          enableHighAccuracy: true,
+      {
+        enableHighAccuracy: true,
 
-          maximumAge: 3000,
+        maximumAge: 3000,
 
-          timeout: 15000,
-        }
-      );
+        timeout: 15000,
+      },
+    );
 
     /*
      * Get immediate location
@@ -1838,8 +1891,7 @@ export default function CourierTracker({ job }) {
 
     navigator.geolocation.getCurrentPosition(
       async (position) => {
-        latestPositionRef.current =
-          position;
+        latestPositionRef.current = position;
 
         updateMapPosition(position);
 
@@ -1847,20 +1899,11 @@ export default function CourierTracker({ job }) {
          * First route request should happen immediately.
          */
 
-        const {
-          latitude,
-          longitude,
-        } = position.coords;
+        const { latitude, longitude } = position.coords;
 
-        await sendLocationToBackend(
-          position
-        );
+        await sendLocationToBackend(position);
 
-        await fetchRoute(
-          latitude,
-          longitude,
-          true
-        );
+        await fetchRoute(latitude, longitude, true);
       },
 
       (err) => {
@@ -1869,9 +1912,7 @@ export default function CourierTracker({ job }) {
         //   err
         // );
 
-        setError(
-          getGeolocationErrorMessage(err)
-        );
+        setError(getGeolocationErrorMessage(err));
       },
 
       {
@@ -1880,7 +1921,7 @@ export default function CourierTracker({ job }) {
         maximumAge: 0,
 
         timeout: 15000,
-      }
+      },
     );
 
     /*
@@ -1890,16 +1931,11 @@ export default function CourierTracker({ job }) {
      * frequently depending on the device/browser.
      */
 
-    locationIntervalRef.current =
-      setInterval(() => {
-        if (
-          latestPositionRef.current
-        ) {
-          sendLocationToBackend(
-            latestPositionRef.current
-          );
-        }
-      }, 5000);
+    locationIntervalRef.current = setInterval(() => {
+      if (latestPositionRef.current) {
+        sendLocationToBackend(latestPositionRef.current);
+      }
+    }, 5000);
   };
 
   /*
@@ -1910,17 +1946,13 @@ export default function CourierTracker({ job }) {
 
   const stopSharing = () => {
     if (watchIdRef.current !== null) {
-      navigator.geolocation.clearWatch(
-        watchIdRef.current
-      );
+      navigator.geolocation.clearWatch(watchIdRef.current);
 
       watchIdRef.current = null;
     }
 
     if (locationIntervalRef.current) {
-      clearInterval(
-        locationIntervalRef.current
-      );
+      clearInterval(locationIntervalRef.current);
 
       locationIntervalRef.current = null;
     }
@@ -1933,9 +1965,7 @@ export default function CourierTracker({ job }) {
      */
 
     if (job?.id) {
-      localStorage.removeItem(
-        `locationSharing_${job.id}`
-      );
+      localStorage.removeItem(`locationSharing_${job.id}`);
     }
 
     setIsSharing(false);
@@ -1953,14 +1983,9 @@ export default function CourierTracker({ job }) {
     }
 
     const savedSharing =
-      localStorage.getItem(
-        `locationSharing_${job.id}`
-      ) === "true";
+      localStorage.getItem(`locationSharing_${job.id}`) === "true";
 
-    if (
-      savedSharing &&
-      watchIdRef.current === null
-    ) {
+    if (savedSharing && watchIdRef.current === null) {
       startSharing();
     }
 
@@ -1984,28 +2009,17 @@ export default function CourierTracker({ job }) {
       return;
     }
 
-    if (!latestPositionRef.current) {
+    const latestPosition = latestPositionRef.current;
+
+    if (!latestPosition) {
       return;
     }
 
-    const {
-      latitude,
-      longitude,
-    } = latestPositionRef.current.coords;
+    const { latitude, longitude } = latestPosition.coords;
 
-    fetchRoute(
-      latitude,
-      longitude,
-      true
-    );
-
-    /*
-     * eslint-disable-next-line react-hooks/exhaustive-deps
-     */
-  }, [
-    job?.status,
-    mapsReady,
-  ]);
+    // Always force a new route when job status changes.
+    fetchRoute(latitude, longitude, true);
+  }, [job?.status, mapsReady]);
 
   /*
   |--------------------------------------------------------------------------
@@ -2015,50 +2029,34 @@ export default function CourierTracker({ job }) {
 
   useEffect(() => {
     return () => {
-      if (
-        watchIdRef.current !== null
-      ) {
-        navigator.geolocation.clearWatch(
-          watchIdRef.current
-        );
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
 
         watchIdRef.current = null;
       }
 
-      if (
-        locationIntervalRef.current
-      ) {
-        clearInterval(
-          locationIntervalRef.current
-        );
+      if (locationIntervalRef.current) {
+        clearInterval(locationIntervalRef.current);
 
-        locationIntervalRef.current =
-          null;
+        locationIntervalRef.current = null;
       }
 
-      routePolylinesRef.current.forEach(
-        (polyline) => {
-          polyline.setMap(null);
-        }
-      );
+      routePolylinesRef.current.forEach((polyline) => {
+        polyline.setMap(null);
+      });
 
       routePolylinesRef.current = [];
 
       if (gpsPolylineRef.current) {
-        gpsPolylineRef.current.setMap(
-          null
-        );
+        gpsPolylineRef.current.setMap(null);
       }
 
       if (accuracyCircleRef.current) {
-        accuracyCircleRef.current.setMap(
-          null
-        );
+        accuracyCircleRef.current.setMap(null);
       }
 
       if (courierMarkerRef.current) {
-        courierMarkerRef.current.map =
-          null;
+        courierMarkerRef.current.map = null;
       }
 
       mapInstanceRef.current = null;
@@ -2071,9 +2069,7 @@ export default function CourierTracker({ job }) {
   |--------------------------------------------------------------------------
   */
 
-  function getGeolocationErrorMessage(
-    err
-  ) {
+  function getGeolocationErrorMessage(err) {
     if (!err) {
       return "Unable to get your location.";
     }
@@ -2089,10 +2085,7 @@ export default function CourierTracker({ job }) {
         return "Getting your location timed out. Please try again.";
 
       default:
-        return (
-          err.message ||
-          "Unable to get your location."
-        );
+        return err.message || "Unable to get your location.";
     }
   }
 
@@ -2107,7 +2100,6 @@ export default function CourierTracker({ job }) {
       <CardHeader className="pb-2">
         <CardTitle className="text-base flex items-center gap-2">
           <Navigation className="w-4 h-4 text-emerald-600" />
-
           Navigation & Location Sharing
         </CardTitle>
       </CardHeader>
@@ -2175,15 +2167,10 @@ export default function CourierTracker({ job }) {
                     inline-block
                   "
                 />
-
                 Live — sharing location
               </Badge>
 
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={stopSharing}
-              >
+              <Button variant="outline" size="sm" onClick={stopSharing}>
                 Stop Sharing
               </Button>
             </>
@@ -2194,7 +2181,6 @@ export default function CourierTracker({ job }) {
               className="bg-emerald-600 hover:bg-emerald-700"
             >
               <MapPin className="w-4 h-4 mr-1" />
-
               Start Navigation & Share Location
             </Button>
           )}
@@ -2202,8 +2188,7 @@ export default function CourierTracker({ job }) {
 
         {isSharing && (
           <p className="text-xs text-slate-500">
-            Your live GPS location is being shared
-            with the job tracking system.
+            Your live GPS location is being shared with the job tracking system.
           </p>
         )}
       </CardContent>

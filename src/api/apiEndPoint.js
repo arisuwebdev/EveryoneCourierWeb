@@ -23,6 +23,8 @@ export const googleLoginApi =  baseUrl + "/auth/social-login";
 export const changePasswordApi =  baseUrl + "/auth/changePassword";
 
 
+
+
 //priacy and policy
 
 export const getPrivacyPolicyUrlApi =  baseUrl + "/getPrivacyPolicy";
@@ -70,6 +72,9 @@ export const negotiationAblyAuthApi =  baseUrl + "/negotiationAblyAuth";
 
 export const getNegotiationThreadsApi =  baseUrl + "/getNegotiationThreads";
 
+export const confirmAgreedAmountApi =  baseUrl + "/confirmAgreedAmount";
+
+export const rejectAgreedAmountApi =  baseUrl + "/rejectAgreedAmount";
 
 
 
@@ -77,7 +82,7 @@ export const getNegotiationThreadsApi =  baseUrl + "/getNegotiationThreads";
 
 export const dashboardStatsApi =  baseUrl + "/dashboardStats";
 
-// deviceToken 
+// deviceToken
 
 export const deviceNotificationTokenApi =  baseUrl + "/updateDeviceToken";
 
@@ -92,7 +97,7 @@ export const getUploadProfile =  baseUrl + "/uploadProfilePic";
 export const getUserProfile =  baseUrl + "/getUserProfile";
 
 
-// payout 
+// payout
 
 export const getStripeConnectStatus =  baseUrl + "/stripeConnectStatus";
 
@@ -106,7 +111,7 @@ export const saveJobTrackLocationApi =  baseUrl + "/saveJobTrackLocation";
 export const getJobTrackLocationApi =  baseUrl + "/getJobTrackLocation";
 
 
-// chat message 
+// chat message
 
 export const getMessagesApi =  baseUrl + "/getMessages";
 

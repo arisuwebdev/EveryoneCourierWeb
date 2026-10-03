@@ -8,6 +8,9 @@ import { MessageCircle, Send, Loader2, ChevronUp } from "lucide-react";
 import { useAuth } from "../../lib/AuthContext";
 import { sendAgreedAmountService } from "../../api/ApiServices/withOutApplyChat/sendAgreedAmountService";
 
+import { confirmAgreedAmountService } from "../../api/ApiServices/withOutApplyChat/confirmAgreedAmountService";
+import { rejectAgreedAmountService } from "../../api/ApiServices/withOutApplyChat/rejectAgreedAmountService";
+
 export default function WithoutJobApplyChat({
   jobId,
   currentUserId,
@@ -19,12 +22,17 @@ export default function WithoutJobApplyChat({
   const { token } = useAuth();
 
   const [messages, setMessages] = useState([]);
+  const [chatUserName, setChatUserName] = useState(otherUserName || "Customer");
   const [inputText, setInputText] = useState("");
 
   const [agreedAmount, setAgreedAmount] = useState("");
+  // const [submittedAgreedAmount, setSubmittedAgreedAmount] = useState(null);
   const [submittedAgreedAmount, setSubmittedAgreedAmount] = useState(null);
   const [amountSubmitting, setAmountSubmitting] = useState(false);
   const [amountMessage, setAmountMessage] = useState("");
+  const [confirmingAmount, setConfirmingAmount] = useState(false);
+  const [rejectingAmount, setRejectingAmount] = useState(false);
+  const [amountActionMessage, setAmountActionMessage] = useState("");
 
   const [loading, setLoading] = useState(false);
   const [chatLoading, setChatLoading] = useState(true);
@@ -190,13 +198,16 @@ export default function WithoutJobApplyChat({
         if (isMounted) {
           const initialMessages = response?.payload?.messages ?? [];
 
+          // Get customer/user name from negotiation API
+          const apiOtherPartyName = response?.payload?.other_party?.name;
+
+          if (apiOtherPartyName) {
+            setChatUserName(apiOtherPartyName);
+          }
+
           setMessages(initialMessages);
-
           setCurrentPage(response?.payload?.currentPage ?? 1);
-
           setLastPage(response?.payload?.lastPage ?? 1);
-
-          // Initial chat should go to bottom
           shouldScrollToBottomRef.current = true;
         }
 
@@ -204,12 +215,12 @@ export default function WithoutJobApplyChat({
         // 2. Get Ably token
         // --------------------------------
 
-        console.log("ABLY AUTH DATA:", {
-          jobId,
-          courierId,
-          receiverId,
-          currentUserId,
-        });
+        // console.log("ABLY AUTH DATA:", {
+        //   jobId,
+        //   courierId,
+        //   receiverId,
+        //   currentUserId,
+        // });
         const ablyResponse = await negotiationAblyAuthService(
           jobId,
           courierId,
@@ -322,20 +333,17 @@ export default function WithoutJobApplyChat({
         // --------------------------------
         // 5. Listen for new messages
         // --------------------------------
-channel.subscribe("message", (msg) => {
-  if (!isMounted) return;
+        channel.subscribe("message", (msg) => {
+          if (!isMounted) return;
 
-  const newMessage = msg.data;
+          const newMessage = msg.data;
 
-  // Agreed amount received through Ably
-  if (
-    newMessage?.type === "amount" &&
-    newMessage?.amount != null
-  ) {
-    setSubmittedAgreedAmount(Number(newMessage.amount));
-  }
+          // Agreed amount received through Ably
+          if (newMessage?.type === "amount" && newMessage?.amount != null) {
+            setSubmittedAgreedAmount(Number(newMessage.amount));
+          }
 
-  setMessages((prev) => {
+          setMessages((prev) => {
             // Prevent duplicate message
             if (
               newMessage?.id &&
@@ -384,6 +392,22 @@ channel.subscribe("message", (msg) => {
     };
   }, [jobId, courierId, token]);
 
+  const getAmountStatus = (msg) => {
+    return String(msg?.amount_status || "").toUpperCase();
+  };
+
+  const isAmountPending = (msg) => {
+    return getAmountStatus(msg) === "PENDING";
+  };
+
+  const isAmountAccepted = (msg) => {
+    return getAmountStatus(msg) === "ACCEPTED";
+  };
+
+  const isAmountRejected = (msg) => {
+    return getAmountStatus(msg) === "REJECTED";
+  };
+
   const handleAgreeAmount = async () => {
     const amount = Number(agreedAmount);
 
@@ -406,46 +430,54 @@ channel.subscribe("message", (msg) => {
         amount: amount,
       };
 
-      console.log("Agree Amount Payload:", payload);
+      // console.log("Agree Amount Payload:", payload);
 
       const response = await sendAgreedAmountService(payload, token);
 
-      console.log("Agree Amount Response:", response);
+      // console.log("Agree Amount Response:", response);
 
-if (response?.status === 1) {
-  const amountMessage = response?.payload?.message;
+      if (response?.status === 1) {
+        const amountMessage = response?.payload?.message;
 
-  if (amountMessage) {
-    setMessages((prev) => {
-      if (
-        amountMessage?.id &&
-        prev.some(
-          (msg) => String(msg.id) === String(amountMessage.id)
-        )
-      ) {
-        return prev;
-      }
+        if (amountMessage) {
+          // Courier's newly sent amount starts as PENDING
+          const messageWithStatus = {
+            ...amountMessage,
+            amount_status: amountMessage?.amount_status || "PENDING",
+          };
 
-      return [...prev, amountMessage];
-    });
-  }
+          setMessages((prev) => {
+            if (
+              messageWithStatus?.id &&
+              prev.some(
+                (msg) => String(msg.id) === String(messageWithStatus.id),
+              )
+            ) {
+              return prev;
+            }
 
-  setSubmittedAgreedAmount(
-    Number(response?.payload?.agreed_amount ?? amount)
-  );
+            return [...prev, messageWithStatus];
+          });
 
-  setAgreedAmount("");
-  setAmountMessage("");
+          setSubmittedAgreedAmount(
+            Number(
+              response?.payload?.agreed_amount ??
+                amountMessage?.amount ??
+                amount,
+            ),
+          );
+        }
 
-  shouldScrollToBottomRef.current = true;
-}
-       else {
+        setAgreedAmount("");
+        setAmountMessage("");
+        shouldScrollToBottomRef.current = true;
+      } else {
         setAmountMessage(
           response?.msg || "Unable to submit the agreed amount.",
         );
       }
     } catch (error) {
-      console.error("Agree amount error:", error);
+      // console.error("Agree amount error:", error);
 
       setAmountMessage(
         error?.response?.data?.msg || "Failed to submit the amount.",
@@ -455,6 +487,111 @@ if (response?.status === 1) {
     }
   };
 
+  const handleConfirmAgreedAmount = async (msg) => {
+    if (!jobId || !courierId || !msg?.id || !token) {
+      setAmountActionMessage("Missing amount information.");
+      return;
+    }
+
+    try {
+      setConfirmingAmount(true);
+      setAmountActionMessage("");
+
+      const payload = {
+        job_id: Number(jobId),
+        courier_id: Number(courierId),
+        message_id: Number(msg.id),
+      };
+
+      // console.log("Confirm Agreed Amount Payload:", payload);
+
+      const response = await confirmAgreedAmountService(payload, token);
+
+      // console.log("Confirm Agreed Amount Response:", response);
+
+      if (response?.status === 1) {
+        setMessages((prev) =>
+          prev.map((message) =>
+            String(message.id) === String(msg.id)
+              ? {
+                  ...message,
+                  amount_status: "ACCEPTED",
+                }
+              : message,
+          ),
+        );
+
+        setSubmittedAgreedAmount(Number(msg.amount));
+
+        setAmountActionMessage(
+          response?.msg || "Amount accepted successfully.",
+        );
+
+        shouldScrollToBottomRef.current = false;
+      } else {
+        setAmountActionMessage(response?.msg || "Unable to confirm amount.");
+      }
+    } catch (error) {
+      // console.error("Confirm agreed amount error:", error);
+
+      setAmountActionMessage(
+        error?.response?.data?.msg || "Failed to confirm agreed amount.",
+      );
+    } finally {
+      setConfirmingAmount(false);
+    }
+  };
+
+  const handleRejectAgreedAmount = async (msg) => {
+    if (!jobId || !courierId || !msg?.id || !token) {
+      setAmountActionMessage("Missing amount information.");
+      return;
+    }
+
+    try {
+      setRejectingAmount(true);
+      setAmountActionMessage("");
+
+      const payload = {
+        job_id: Number(jobId),
+        courier_id: Number(courierId),
+        message_id: Number(msg.id),
+      };
+
+      // console.log("Reject Agreed Amount Payload:", payload);
+
+      const response = await rejectAgreedAmountService(payload, token);
+
+      // console.log("Reject Agreed Amount Response:", response);
+
+      if (response?.status === 1) {
+        setMessages((prev) =>
+          prev.map((message) =>
+            String(message.id) === String(msg.id)
+              ? {
+                  ...message,
+                  amount_status: "REJECTED",
+                }
+              : message,
+          ),
+        );
+
+        setAmountActionMessage(
+          response?.msg || "Amount rejected successfully.",
+        );
+      } else {
+        setAmountActionMessage(response?.msg || "Unable to reject amount.");
+      }
+    } catch (error) {
+      console.error("Reject agreed amount error:", error);
+
+      setAmountActionMessage(
+        error?.response?.data?.msg || "Failed to reject agreed amount.",
+      );
+    } finally {
+      setRejectingAmount(false);
+    }
+  };
   // ---------------------------------------
   // Send message
   // ---------------------------------------
@@ -504,6 +641,13 @@ if (response?.status === 1) {
     }
   };
 
+  const hasAcceptedCourierAmount = messages.some(
+    (msg) =>
+      msg?.type === "amount" &&
+      Number(msg?.sender_id) === Number(currentUserId) &&
+      String(msg?.amount_status).toUpperCase() === "ACCEPTED",
+  );
+
   return (
     <div className="w-full h-[480px] sm:h-[520px] bg-white rounded-xl sm:rounded-2xl border border-slate-200 shadow-lg flex flex-col overflow-hidden">
       {/* =========================
@@ -516,7 +660,7 @@ if (response?.status === 1) {
 
         <div className="flex-1">
           <h3 className="text-sm sm:text-base font-semibold text-slate-900">
-            {otherUserName}
+            {chatUserName}
           </h3>
 
           {/* <p
@@ -594,27 +738,137 @@ if (response?.status === 1) {
             {messages.map((msg, index) => {
               const isMine = Number(msg.sender_id) === Number(currentUserId);
 
+              const isAmountMessage =
+                msg.type === "amount" && msg.amount != null;
+
               return (
                 <div
                   key={msg.id || index}
                   className={`flex ${isMine ? "justify-end" : "justify-start"}`}
                 >
-
-
                   <div
                     className={`max-w-[85%] sm:max-w-[75%] ${
                       isMine ? "items-end" : "items-start"
                     } flex flex-col`}
                   >
-                    <div
-                      className={`px-3 py-2 sm:px-4 sm:py-2.5 rounded-2xl text-xs sm:text-sm break-words ${
-                        isMine
-                          ? "bg-blue-600 text-white rounded-br-md"
-                          : "bg-white text-slate-800 border border-slate-200 rounded-bl-md"
-                      }`}
-                    >
-                      {msg.message}
-                    </div>
+                    {isAmountMessage ? (
+                      (() => {
+                        const amountStatus = getAmountStatus(msg);
+
+                        return (
+                          <div
+                            className={`px-4 py-3 rounded-2xl ${
+                              isMine
+                                ? "bg-blue-600 text-white rounded-br-md"
+                                : "bg-white text-slate-800 border border-slate-200 rounded-bl-md"
+                            }`}
+                          >
+                            <p className="text-sm font-medium">
+                              Agreed amount: AUD {Number(msg.amount).toFixed(2)}
+                            </p>
+
+                            {/* COURIER/SENDER VIEW */}
+                            {isMine && (
+                              <div className="mt-2">
+                                {amountStatus === "PENDING" && (
+                                  <span className="text-xs font-medium opacity-90">
+                                    Pending
+                                  </span>
+                                )}
+
+                                {amountStatus === "ACCEPTED" && (
+                                  <span className="text-xs font-semibold">
+                                    Accepted
+                                  </span>
+                                )}
+
+                                {amountStatus === "REJECTED" && (
+                                  <span className="text-xs font-semibold">
+                                    Rejected
+                                  </span>
+                                )}
+                              </div>
+                            )}
+
+                            {/* CUSTOMER/RECEIVER VIEW */}
+                            {!isMine && amountStatus === "PENDING" && (
+                              <div className="mt-3">
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      handleConfirmAgreedAmount(msg)
+                                    }
+                                    disabled={
+                                      confirmingAmount || rejectingAmount
+                                    }
+                                    className="px-3 py-1.5 rounded-lg bg-green-600 text-white text-xs font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                  >
+                                    {confirmingAmount
+                                      ? "Accepting..."
+                                      : "Accept"}
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      handleRejectAgreedAmount(msg)
+                                    }
+                                    disabled={
+                                      confirmingAmount || rejectingAmount
+                                    }
+                                    className="px-3 py-1.5 rounded-lg bg-red-600 text-white text-xs font-medium hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                  >
+                                    {rejectingAmount
+                                      ? "Rejecting..."
+                                      : "Reject"}
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* CUSTOMER AFTER ACCEPT */}
+                            {!isMine && amountStatus === "ACCEPTED" && (
+                              <div className="mt-2">
+                                <span className="text-xs font-semibold text-green-600">
+                                  Accepted
+                                </span>
+                              </div>
+                            )}
+
+                            {/* CUSTOMER AFTER REJECT */}
+                            {!isMine && amountStatus === "REJECTED" && (
+                              <div className="mt-2">
+                                <span className="text-xs font-semibold text-red-600">
+                                  Rejected
+                                </span>
+                              </div>
+                            )}
+
+                            {/* {amountActionMessage &&
+                              !isMine &&
+                              amountStatus === "PENDING" && (
+                                <p className="mt-2 text-xs text-slate-600">
+                                  {amountActionMessage}
+                                </p>
+                              )} */}
+                          </div>
+                        );
+                      })()
+                    ) : (
+                      // =========================
+                      // NORMAL CHAT MESSAGE
+                      // =========================
+                      <div
+                        className={`px-3 py-2 sm:px-4 sm:py-2.5 rounded-2xl text-xs sm:text-sm break-words ${
+                          isMine
+                            ? "bg-blue-600 text-white rounded-br-md"
+                            : "bg-white text-slate-800 border border-slate-200 rounded-bl-md"
+                        }`}
+                      >
+                        {msg.message}
+                      </div>
+                    )}
 
                     {msg.created_at && (
                       <span className="text-[10px] mt-1 px-1 text-slate-400">
@@ -637,58 +891,58 @@ if (response?.status === 1) {
       {/* =========================
     AGREED AMOUNT BOX
 ========================== */}
-{showAgreedAmount && (
-      <div className="px-3 py-2.5 sm:px-4 sm:py-3 border-t bg-blue-50">
-        <label className="block text-xs sm:text-sm font-semibold text-slate-800 mb-2">
-          Agree on Delivery Amount
-        </label>
+      {showAgreedAmount && !hasAcceptedCourierAmount && (
+        <div className="px-3 py-2.5 sm:px-4 sm:py-3 border-t bg-blue-50">
+          <label className="block text-xs sm:text-sm font-semibold text-slate-800 mb-2">
+            Agree on Delivery Amount
+          </label>
 
-        <div className="flex items-center gap-2">
-          <div className="relative flex-1">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">
-              $
-            </span>
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">
+                $
+              </span>
 
-            <input
-              type="number"
-              min="0.01"
-              step="0.01"
-              value={agreedAmount}
-              onChange={(e) => {
-                setAgreedAmount(e.target.value);
-                setAmountMessage("");
-              }}
-              placeholder="Enter amount"
-              disabled={amountSubmitting}
-              className="w-full h-9 sm:h-10 pl-7 pr-3  rounded-lg border border-slate-300 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+              <input
+                type="number"
+                min="0.01"
+                step="0.01"
+                value={agreedAmount}
+                onChange={(e) => {
+                  setAgreedAmount(e.target.value);
+                  setAmountMessage("");
+                }}
+                placeholder="Enter amount"
+                disabled={amountSubmitting}
+                className="w-full h-9 sm:h-10 pl-7 pr-3  rounded-lg border border-slate-300 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={handleAgreeAmount}
+              disabled={
+                amountSubmitting ||
+                !agreedAmount ||
+                !Number.isFinite(Number(agreedAmount)) ||
+                Number(agreedAmount) <= 0
+              }
+              className="h-9 sm:h-10 px-3 sm:px-4 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              {amountSubmitting ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : null}
+
+              {amountSubmitting ? "Submitting..." : "Agree Amount"}
+            </button>
           </div>
 
-          <button
-            type="button"
-            onClick={handleAgreeAmount}
-            disabled={
-              amountSubmitting ||
-              !agreedAmount ||
-              !Number.isFinite(Number(agreedAmount)) ||
-              Number(agreedAmount) <= 0
-            }
-            className="h-9 sm:h-10 px-3 sm:px-4 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-          >
-            {amountSubmitting ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : null}
-
-            {amountSubmitting ? "Submitting..." : "Agree Amount"}
-          </button>
+          {amountMessage && (
+            <p className="mt-2 text-xs text-slate-600" role="status">
+              {amountMessage}
+            </p>
+          )}
         </div>
-
-        {amountMessage && (
-          <p className="mt-2 text-xs text-slate-600" role="status">
-            {amountMessage}
-          </p>
-        )}
-      </div>
       )}
 
       {/* =========================
