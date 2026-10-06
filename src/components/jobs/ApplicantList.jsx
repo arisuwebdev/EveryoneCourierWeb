@@ -166,7 +166,8 @@ export default function ApplicantList() {
 
         <Card className="shadow-xl">
           <CardHeader>
-            <CardTitle>Applicants for "{job.title}"</CardTitle>
+            {/* <CardTitle>Applicants for "{job.title}"</CardTitle> */}
+<CardTitle>Applicants for "{job?.title || "Job"}"</CardTitle>
           </CardHeader>
           <CardContent>
             {/* Job Details - ALWAYS SHOW */}
@@ -178,7 +179,7 @@ export default function ApplicantList() {
               <CardContent>
                 <div className="space-y-4">
                   {/* Pickup */}
-                  <div className="flex items-start gap-3">
+                  {/* <div className="flex items-start gap-3">
                     <MapPin className="w-5 h-5 text-blue-500 mt-0.5" />
 
                     <div>
@@ -190,10 +191,10 @@ export default function ApplicantList() {
                         {job?.pickup_address || "Not provided"}
                       </p>
                     </div>
-                  </div>
+                  </div> */}
 
                   {/* Delivery */}
-                  <div className="flex items-start gap-3">
+                  {/* <div className="flex items-start gap-3">
                     <MapPin className="w-5 h-5 text-green-500 mt-0.5" />
 
                     <div>
@@ -205,10 +206,10 @@ export default function ApplicantList() {
                         {job?.delivery_address || "Not provided"}
                       </p>
                     </div>
-                  </div>
+                  </div> */}
 
                   {/* Package */}
-                  <div className="flex items-start gap-3">
+                  {/* <div className="flex items-start gap-3">
                     <Package className="w-5 h-5 text-purple-500 mt-0.5" />
 
                     <div>
@@ -220,7 +221,7 @@ export default function ApplicantList() {
                         {job?.package_description || "Not provided"}
                       </p>
                     </div>
-                  </div>
+                  </div> */}
 
                   {/* Job Information */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -347,6 +348,51 @@ export default function ApplicantList() {
                           {Number(job?.price || 0).toFixed(2)}
                         </p>
                       </div>
+                    </div>
+                  </div>
+
+                  {/* Pickup */}
+                  <div className="flex items-start gap-3">
+                    <MapPin className="w-5 h-5 text-blue-500 mt-0.5" />
+
+                    <div>
+                      <p className="text-sm font-medium text-slate-600">
+                        Pickup
+                      </p>
+
+                      <p className="text-slate-900">
+                        {job?.pickup_address || "Not provided"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Delivery */}
+                  <div className="flex items-start gap-3">
+                    <MapPin className="w-5 h-5 text-green-500 mt-0.5" />
+
+                    <div>
+                      <p className="text-sm font-medium text-slate-600">
+                        Delivery
+                      </p>
+
+                      <p className="text-slate-900">
+                        {job?.delivery_address || "Not provided"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Package */}
+                  <div className="flex items-start gap-3">
+                    <Package className="w-5 h-5 text-purple-500 mt-0.5" />
+
+                    <div>
+                      <p className="text-sm font-medium text-slate-600">
+                        Package
+                      </p>
+
+                      <p className="text-slate-900">
+                        {job?.package_description || "Not provided"}
+                      </p>
                     </div>
                   </div>
 
@@ -531,8 +577,6 @@ export default function ApplicantList() {
                     </CardContent>
                   </Card>
                 )}
-
-
               </div>
             )}
 
@@ -604,7 +648,7 @@ export default function ApplicantList() {
                           {thread.agreed_amount ? (
                             <div className="text-sm">
                               <span className="text-slate-500">
-                                Agreed Amount:
+                                 Proposed Amount:
                               </span>
 
                               <span className="ml-2 font-bold text-green-600">
@@ -646,33 +690,30 @@ export default function ApplicantList() {
     NEGOTIATION CHAT
 ================================ */}
 
-           {selectedNegotiationCourier && (
-  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-    <div className="relative w-full max-w-lg bg-white rounded-xl shadow-2xl overflow-hidden">
+            {selectedNegotiationCourier && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                <div className="relative w-full max-w-lg bg-white rounded-xl shadow-2xl overflow-hidden">
+                  {/* Close button */}
+                  <button
+                    type="button"
+                    onClick={() => setSelectedNegotiationCourier(null)}
+                    className="absolute right-3 top-3 z-10 text-slate-500 hover:text-slate-800 bg-white rounded-full w-8 h-8 flex items-center justify-center shadow"
+                  >
+                    ✕
+                  </button>
 
-      {/* Close button */}
-      <button
-        type="button"
-        onClick={() => setSelectedNegotiationCourier(null)}
-        className="absolute right-3 top-3 z-10 text-slate-500 hover:text-slate-800 bg-white rounded-full w-8 h-8 flex items-center justify-center shadow"
-      >
-        ✕
-      </button>
-
-      <WithoutJobApplyChat
-        jobId={job?.id}
-        currentUserId={user?.id || user?.user_id}
-        courierId={selectedNegotiationCourier?.courier?.id}
-        receiverId={selectedNegotiationCourier?.courier?.id}
-        otherUserName={
-          selectedNegotiationCourier?.courier?.name || "Courier"
-        }
-      />
-    </div>
-  </div>
-)}
-
-
+                  <WithoutJobApplyChat
+                    jobId={job?.id}
+                    currentUserId={user?.id || user?.user_id}
+                    courierId={selectedNegotiationCourier?.courier?.id}
+                    receiverId={selectedNegotiationCourier?.courier?.id}
+                    otherUserName={
+                      selectedNegotiationCourier?.courier?.name || "Courier"
+                    }
+                  />
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

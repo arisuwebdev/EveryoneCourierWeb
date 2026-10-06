@@ -1931,11 +1931,12 @@ export default function CourierTracker({ job }) {
      * frequently depending on the device/browser.
      */
 
-    locationIntervalRef.current = setInterval(() => {
-      if (latestPositionRef.current) {
-        sendLocationToBackend(latestPositionRef.current);
-      }
-    }, 5000);
+locationIntervalRef.current = setInterval(() => {
+  if (latestPositionRef.current) {
+    sendLocationToBackend(latestPositionRef.current);
+  }
+}, 60000);
+
   };
 
   /*
@@ -2119,7 +2120,7 @@ export default function CourierTracker({ job }) {
           </p>
         )}
 
-        {routeInfo && (
+        {/* {routeInfo && (
           <div className="flex gap-3 text-sm">
             <span className="flex items-center gap-1 text-emerald-700 font-medium">
               <Clock className="w-4 h-4" />
@@ -2133,7 +2134,7 @@ export default function CourierTracker({ job }) {
               {routeInfo.distance}
             </span>
           </div>
-        )}
+        )} */}
 
         <div
           ref={mapRef}

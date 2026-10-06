@@ -10,6 +10,7 @@ import { sendAgreedAmountService } from "../../api/ApiServices/withOutApplyChat/
 
 import { confirmAgreedAmountService } from "../../api/ApiServices/withOutApplyChat/confirmAgreedAmountService";
 import { rejectAgreedAmountService } from "../../api/ApiServices/withOutApplyChat/rejectAgreedAmountService";
+import { toast } from "react-toastify";
 
 export default function WithoutJobApplyChat({
   jobId,
@@ -487,60 +488,79 @@ export default function WithoutJobApplyChat({
     }
   };
 
-  const handleConfirmAgreedAmount = async (msg) => {
-    if (!jobId || !courierId || !msg?.id || !token) {
-      setAmountActionMessage("Missing amount information.");
-      return;
-    }
+const handleConfirmAgreedAmount = async (msg) => {
+  if (!jobId || !courierId || !msg?.id || !token) {
+    setAmountActionMessage("Missing amount information.");
+    return;
+  }
 
-    try {
-      setConfirmingAmount(true);
-      setAmountActionMessage("");
+  try {
+    setConfirmingAmount(true);
+    setAmountActionMessage("");
 
-      const payload = {
-        job_id: Number(jobId),
-        courier_id: Number(courierId),
-        message_id: Number(msg.id),
-      };
+    const payload = {
+      job_id: Number(jobId),
+      courier_id: Number(courierId),
+      message_id: Number(msg.id),
+    };
 
-      // console.log("Confirm Agreed Amount Payload:", payload);
+    const response = await confirmAgreedAmountService(payload, token);
 
-      const response = await confirmAgreedAmountService(payload, token);
+    if (response?.status === 1) {
+      setMessages((prev) =>
+        prev.map((message) =>
+          String(message.id) === String(msg.id)
+            ? {
+                ...message,
+                amount_status: "ACCEPTED",
+              }
+            : message,
+        ),
+      );
 
-      // console.log("Confirm Agreed Amount Response:", response);
+      setSubmittedAgreedAmount(Number(msg.amount));
 
-      if (response?.status === 1) {
-        setMessages((prev) =>
-          prev.map((message) =>
-            String(message.id) === String(msg.id)
-              ? {
-                  ...message,
-                  amount_status: "ACCEPTED",
-                }
-              : message,
-          ),
-        );
-
-        setSubmittedAgreedAmount(Number(msg.amount));
-
-        setAmountActionMessage(
-          response?.msg || "Amount accepted successfully.",
-        );
-
-        shouldScrollToBottomRef.current = false;
-      } else {
-        setAmountActionMessage(response?.msg || "Unable to confirm amount.");
-      }
-    } catch (error) {
-      // console.error("Confirm agreed amount error:", error);
+      // Success toast
+      toast.success(
+        `Amount accepted! AUD ${Number(msg.amount).toFixed(
+          2,
+        )} has been agreed. The courier has been added to your applicants.`,
+        {
+          position: "top-right",
+          autoClose: 4000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        },
+      );
 
       setAmountActionMessage(
-        error?.response?.data?.msg || "Failed to confirm agreed amount.",
+        response?.msg || "Amount accepted successfully.",
       );
-    } finally {
-      setConfirmingAmount(false);
+
+      shouldScrollToBottomRef.current = false;
+    } else {
+      toast.error(
+        response?.msg || "Unable to accept the agreed amount.",
+      );
+
+      setAmountActionMessage(
+        response?.msg || "Unable to confirm amount.",
+      );
     }
-  };
+  } catch (error) {
+    const errorMessage =
+      error?.response?.data?.msg ||
+      "Failed to confirm agreed amount.";
+
+    toast.error(errorMessage);
+
+    setAmountActionMessage(errorMessage);
+  } finally {
+    setConfirmingAmount(false);
+  }
+};
 
   const handleRejectAgreedAmount = async (msg) => {
     if (!jobId || !courierId || !msg?.id || !token) {
@@ -583,7 +603,7 @@ export default function WithoutJobApplyChat({
         setAmountActionMessage(response?.msg || "Unable to reject amount.");
       }
     } catch (error) {
-      console.error("Reject agreed amount error:", error);
+      // console.error("Reject agreed amount error:", error);
 
       setAmountActionMessage(
         error?.response?.data?.msg || "Failed to reject agreed amount.",
@@ -764,7 +784,8 @@ export default function WithoutJobApplyChat({
                             }`}
                           >
                             <p className="text-sm font-medium">
-                              Agreed amount: AUD {Number(msg.amount).toFixed(2)}
+                              Confirmation needed: AUD{" "}
+                              {Number(msg.amount).toFixed(2)}
                             </p>
 
                             {/* COURIER/SENDER VIEW */}
@@ -791,41 +812,45 @@ export default function WithoutJobApplyChat({
                             )}
 
                             {/* CUSTOMER/RECEIVER VIEW */}
-                            {!isMine && amountStatus === "PENDING" && (
-                              <div className="mt-3">
-                                <div className="flex items-center gap-2">
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      handleConfirmAgreedAmount(msg)
-                                    }
-                                    disabled={
-                                      confirmingAmount || rejectingAmount
-                                    }
-                                    className="px-3 py-1.5 rounded-lg bg-green-600 text-white text-xs font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                                  >
-                                    {confirmingAmount
-                                      ? "Accepting..."
-                                      : "Accept"}
-                                  </button>
 
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      handleRejectAgreedAmount(msg)
-                                    }
-                                    disabled={
-                                      confirmingAmount || rejectingAmount
-                                    }
-                                    className="px-3 py-1.5 rounded-lg bg-red-600 text-white text-xs font-medium hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                                  >
-                                    {rejectingAmount
-                                      ? "Rejecting..."
-                                      : "Reject"}
-                                  </button>
-                                </div>
-                              </div>
-                            )}
+{!isMine && amountStatus === "PENDING" && (
+  <div className="mt-3">
+    <div className="flex items-center gap-2">
+      <button
+        type="button"
+        onClick={() => handleConfirmAgreedAmount(msg)}
+        disabled={confirmingAmount || rejectingAmount}
+        className="px-3 py-1.5 rounded-lg bg-green-600 text-white text-xs font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {confirmingAmount ? "Accepting..." : "Accept"}
+      </button>
+
+      <button
+        type="button"
+        onClick={() => handleRejectAgreedAmount(msg)}
+        disabled={confirmingAmount || rejectingAmount}
+        className="px-3 py-1.5 rounded-lg bg-red-600 text-white text-xs font-medium hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {rejectingAmount ? "Rejecting..." : "Reject"}
+      </button>
+    </div>
+
+    {/* Customer note */}
+    <div className="mt-2.5 rounded-lg bg-slate-50 border border-slate-200 px-3 py-2">
+      <p className="text-[11px] leading-relaxed text-slate-600">
+        <span className="font-semibold text-slate-700">Note:</span>{" "}
+        If you accept this amount, the courier will be added to your
+        applicants at the agreed price of{" "}
+        <span className="font-semibold text-slate-700">
+          AUD {Number(msg.amount).toFixed(2)}
+        </span>
+        . You can then continue with the courier selection process.
+      </p>
+    </div>
+  </div>
+)}
+
+
 
                             {/* CUSTOMER AFTER ACCEPT */}
                             {!isMine && amountStatus === "ACCEPTED" && (
@@ -835,6 +860,7 @@ export default function WithoutJobApplyChat({
                                 </span>
                               </div>
                             )}
+                            
 
                             {/* CUSTOMER AFTER REJECT */}
                             {!isMine && amountStatus === "REJECTED" && (
@@ -889,12 +915,12 @@ export default function WithoutJobApplyChat({
       </div>
 
       {/* =========================
-    AGREED AMOUNT BOX
+    Proposal amount
 ========================== */}
       {showAgreedAmount && !hasAcceptedCourierAmount && (
         <div className="px-3 py-2.5 sm:px-4 sm:py-3 border-t bg-blue-50">
           <label className="block text-xs sm:text-sm font-semibold text-slate-800 mb-2">
-            Agree on Delivery Amount
+            Your Price Sent for Confirmation
           </label>
 
           <div className="flex items-center gap-2">
@@ -933,7 +959,7 @@ export default function WithoutJobApplyChat({
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : null}
 
-              {amountSubmitting ? "Submitting..." : "Agree Amount"}
+              {amountSubmitting ? "Sending..." : "Send Price"}
             </button>
           </div>
 
@@ -942,6 +968,11 @@ export default function WithoutJobApplyChat({
               {amountMessage}
             </p>
           )}
+
+          <p className="mt-2 text-xs text-slate-500">
+            <span className="font-medium">Note:</span> Once the customer accepts
+            your proposed amount, you will be automatically applied to the job.
+          </p>
         </div>
       )}
 

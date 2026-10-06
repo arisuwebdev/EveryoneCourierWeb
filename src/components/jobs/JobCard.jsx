@@ -98,7 +98,6 @@ export default function JobCard({ job, onApply, onChat, isApplied = false }) {
       const response = await ApplyJob(payload, token);
 
       toast.success(response.msg || "Job applied successfully");
-      
 
       onApply?.(job.id);
     } catch (error) {
@@ -291,14 +290,6 @@ export default function JobCard({ job, onApply, onChat, isApplied = false }) {
 
         {!isApplied && (
           <div className="space-y-3 border-t pt-4">
-            {/* <Input
-  type="number"
-  min="0"
-  step="0.01"
-  placeholder={`Your price (${currency})`}
-  value={proposedPrice}
-  onChange={(e) => setProposedPrice(e.target.value)}
-/> */}
             <Input
               placeholder="Message"
               value={message}
@@ -331,34 +322,19 @@ export default function JobCard({ job, onApply, onChat, isApplied = false }) {
               Apply for This Job
             </Button>
 
-            <Button
-  type="button"
-  variant="outline"
-  onClick={onChat}
-  className="w-full border-blue-200 text-blue-600 hover:bg-blue-50"
->
-  <MessageCircle className="w-4 h-4 mr-2" />
-  Chat for Price Increase
-</Button>
+            {canApply && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onChat}
+                className="w-full border-blue-200 text-blue-600 hover:bg-blue-50"
+              >
+                <MessageCircle className="w-4 h-4 mr-2" />
+                Chat for Price Increase
+              </Button>
+            )}
           </div>
         )}
-
-   
-{/* {isApplied && (
-  <div className="border-t pt-4">
-    <Button
-      type="button"
-      variant="outline"
-      className="w-full border-blue-200 text-blue-600 hover:bg-blue-50"
-      onClick={() => onChat?.(job)}
-    >
-      <MessageCircle className="w-4 h-4 mr-2" />
-      Chat with Customer
-    </Button>
-  </div>
-)} */}
-
-
       </CardContent>
     </Card>
   );

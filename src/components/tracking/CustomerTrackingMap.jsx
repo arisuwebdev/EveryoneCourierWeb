@@ -1017,10 +1017,10 @@ export default function CustomerTrackingMap({
      * Then every 5 seconds
      */
 
-    pollingIntervalRef.current =
-      setInterval(() => {
-        fetchCourierLocation();
-      }, 5000);
+pollingIntervalRef.current = setInterval(() => {
+  fetchCourierLocation();
+}, 60000);
+
 
     return () => {
       if (
@@ -1275,7 +1275,7 @@ export default function CustomerTrackingMap({
 
         {/* Route information */}
 
-        {routeInfo && (
+ {/*       {routeInfo && (
           <div className="flex gap-3 text-sm">
             <span className="flex items-center gap-1 text-indigo-700 font-medium">
               <Clock className="w-4 h-4" />
@@ -1289,8 +1289,8 @@ export default function CustomerTrackingMap({
               {routeInfo.distance}
             </span>
           </div>
-        )}
-
+        )} */}
+ 
         {/* Polling information */}
 
         <p className="text-xs text-slate-500 flex items-center gap-1">
