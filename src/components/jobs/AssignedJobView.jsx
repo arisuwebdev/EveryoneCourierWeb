@@ -23,6 +23,8 @@ import {
   AlertCircle,
   Calendar,
   XCircle,
+  PackageCheck,
+  UserRound,
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
@@ -377,6 +379,32 @@ export default function AssignedJobView() {
   const [loadingComplaint, setLoadingComplaint] = useState(false);
 
   const [isEditingComplaint, setIsEditingComplaint] = useState(false);
+
+  const getInitials = (name = "") =>
+    name
+      .split(" ")
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((n) => n[0].toUpperCase())
+      .join("") || "?";
+
+  const Stars = ({ rating = 0 }) => (
+    <div
+      className="flex items-center gap-0.5"
+      aria-label={`${rating} out of 5`}
+    >
+      {[1, 2, 3, 4, 5].map((i) => (
+        <span
+          key={i}
+          className={`text-lg leading-none ${
+            i <= Math.round(rating) ? "text-amber-400" : "text-gray-300"
+          }`}
+        >
+          ★
+        </span>
+      ))}
+    </div>
+  );
 
   // =========================================================
   // FETCH JOB DETAILS
@@ -1568,7 +1596,7 @@ export default function AssignedJobView() {
               RIGHT COLUMN
           =================================================== */}
 
-          <div className="space-y-6">
+          {/* <div className="space-y-6">
             {job.status !== STATUS.PENDING_PAYMENT && (
               <Card>
                 <CardHeader>
@@ -1577,42 +1605,64 @@ export default function AssignedJobView() {
                   </CardTitle>
                 </CardHeader>
 
-                <CardContent className="text-center">
-                  {isCustomer && job.is_complain_resolved === true ? (
-                    <p
-                      className="font-bold text-blue-600 hover:text-blue-800 hover:underline cursor-pointer mb-4"
-                      onClick={() => {
-                        const userId = job.courier_id;
-                        const encryptedId = encryptId(userId);
+               
 
-                        navigate(
-                          `/user-profile/${encodeURIComponent(encryptedId)}`,
-                        );
-                      }}
-                    >
-                      {job.courier_name}
-                    </p>
-                  ) : (
-                    <p className="font-bold text-gray-700 mb-4">
-                      {isCustomer ? job.courier_name : job.customer_name}
-                    </p>
-                  )}
+<CardContent className="text-center">
+  {isCustomer && job.is_complain_resolved === true ? (
+    <p
+      className="font-bold text-blue-600 hover:text-blue-800 hover:underline cursor-pointer mb-4"
+      onClick={() => {
+        const userId = job.courier_id;
+        const encryptedId = encryptId(userId);
 
-                  <Avatar className="w-20 h-20 mx-auto mb-4">
-                    {isCustomer && job.courier_profile_pic && (
-                      <AvatarImage
-                        src={job.courier_profile_pic}
-                        alt={job.courier_name}
-                      />
-                    )}
+        navigate(`/user-profile/${encodeURIComponent(encryptedId)}`);
+      }}
+    >
+      {job.courier_name}
+    </p>
+  ) : (
+    <p className="font-bold text-gray-700 mb-4">
+      {isCustomer ? job.courier_name : job.customer_name}
+    </p>
+  )}
 
-                    <AvatarFallback>
-                      {(isCustomer ? job.courier_name : job.customer_name)
-                        ?.charAt(0)
-                        ?.toUpperCase() || "U"}
-                    </AvatarFallback>
-                  </Avatar>
-                </CardContent>
+  {isCustomer && (
+    <div className="mt-4 space-y-3">
+      <div className="flex items-center justify-center gap-2">
+        <span className="text-yellow-500 text-lg">★</span>
+        <span className="font-bold text-gray-800">
+          {Number(job.courier_rating || 0).toFixed(1)}
+        </span>
+        <span className="text-sm text-gray-500">/ 5</span>
+      </div>
+
+      <div className="text-sm text-gray-600">
+        <span className="font-semibold text-gray-800">
+          {job.courier_completed_deliveries || 0}
+        </span>{" "}
+        deliveries completed
+      </div>
+
+      <div className="flex justify-center gap-2 pt-2">
+        <div className="rounded-lg bg-gray-50 px-3 py-2">
+          <p className="text-xs text-gray-500">Rating</p>
+          <p className="font-bold text-gray-800">
+            {Number(job.courier_rating || 0).toFixed(1)}
+          </p>
+        </div>
+
+        <div className="rounded-lg bg-gray-50 px-3 py-2">
+          <p className="text-xs text-gray-500">Deliveries</p>
+          <p className="font-bold text-gray-800">
+            {job.courier_completed_deliveries || 0}
+          </p>
+        </div>
+      </div>
+    </div>
+  )}
+</CardContent>
+
+
               </Card>
             )}
 
@@ -1630,7 +1680,139 @@ export default function AssignedJobView() {
                   }
                 />
               )}
+          </div> */}
+
+       
+<div className="space-y-6">
+  {job.status !== STATUS.PENDING_PAYMENT && (
+    <Card className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-shadow duration-300 hover:shadow-md">
+      {/* Header */}
+      <CardHeader className="border-b border-slate-100 bg-gradient-to-r from-slate-50 to-blue-50/70 px-5 py-4">
+        <div className="flex items-center justify-between gap-3">
+          <CardTitle className="text-base font-bold text-slate-800">
+            {isCustomer ? "Your Courier" : "Your Customer"}
+          </CardTitle>
+
+          <span className="rounded-full border border-blue-100 bg-white px-3 py-1 text-xs font-medium text-blue-700">
+            {isCustomer ? "Delivery Partner" : "Job Poster"}
+          </span>
+        </div>
+      </CardHeader>
+
+      <CardContent className="p-5">
+        {/* Profile */}
+        <div className="flex flex-col items-center text-center">
+          <div
+            className={`rounded-full p-1 ${
+              isCustomer
+                ? "bg-gradient-to-br from-blue-400 to-indigo-600"
+                : "bg-gradient-to-br from-emerald-400 to-teal-600"
+            }`}
+          >
+            <Avatar className="h-20 w-20 border-4 border-white shadow-sm">
+              <AvatarFallback
+                className={`${
+                  isCustomer
+                    ? "bg-blue-50 text-blue-600"
+                    : "bg-emerald-50 text-emerald-600"
+                }`}
+              >
+                {isCustomer ? (
+                  <Truck className="h-9 w-9" />
+                ) : (
+                  <UserRound className="h-9 w-9" />
+                )}
+              </AvatarFallback>
+            </Avatar>
           </div>
+
+          {/* Name */}
+          {isCustomer && job.is_complain_resolved === true ? (
+            <button
+              type="button"
+              className="mt-3 rounded-md text-lg font-bold text-slate-800 transition-colors hover:text-blue-600 hover:underline"
+              onClick={() => {
+                const encryptedId = encryptId(job.courier_id);
+                navigate(
+                  `/user-profile/${encodeURIComponent(encryptedId)}`
+                );
+              }}
+            >
+              {job.courier_name}
+            </button>
+          ) : (
+            <p className="mt-3 text-lg font-bold text-slate-800">
+              {isCustomer ? job.courier_name : job.customer_name}
+            </p>
+          )}
+
+          <p className="mt-1 text-sm text-slate-500">
+            {isCustomer
+              ? "Your delivery partner"
+              : "Your customer"}
+          </p>
+        </div>
+
+        {/* Courier statistics — customer view only */}
+        {isCustomer && (
+          <div className="mt-6 grid grid-cols-2 gap-3">
+            {/* Rating */}
+            <div className="flex flex-col items-center justify-center rounded-xl border border-amber-100 bg-amber-50/60 px-3 py-4">
+              <p className="mb-2 text-xs font-medium text-slate-500">
+                Courier Rating
+              </p>
+
+              <div className="flex flex-wrap items-center justify-center gap-1">
+                <Stars rating={Number(job.courier_rating || 0)} />
+              </div>
+
+              <p className="mt-2 text-sm font-bold text-slate-800">
+                {Number(job.courier_rating || 0).toFixed(1)}
+                <span className="ml-1 font-medium text-slate-400">
+                  / 5
+                </span>
+              </p>
+            </div>
+
+            {/* Completed deliveries */}
+            <div className="flex flex-col items-center justify-center rounded-xl border border-blue-100 bg-blue-50/60 px-3 py-4">
+              <div className="mb-2 flex h-9 w-9 items-center justify-center rounded-full bg-white text-blue-600 shadow-sm">
+                <Truck className="h-5 w-5" />
+              </div>
+
+              <p className="text-xl font-bold text-slate-800">
+                {job.courier_completed_deliveries || 0}
+              </p>
+
+              <p className="mt-1 text-center text-xs font-medium text-slate-500">
+                Deliveries
+              </p>
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )}
+
+  {/* Chat */}
+  {job.status !== STATUS.PENDING_PAYMENT &&
+    job.status !== STATUS.DELIVERED &&
+    job.status !== STATUS.CANCELLED && (
+      <ChatBox
+        jobId={job.id}
+        currentUserId={currentUser?.user_id}
+        receiverId={isCustomer ? job.courier_id : job.customer_id}
+        otherUserName={
+          isCustomer
+            ? job?.courier_name || "Courier"
+            : job?.customer_name || "Customer"
+        }
+      />
+    )}
+</div>
+
+
+
         </div>
       </div>
 

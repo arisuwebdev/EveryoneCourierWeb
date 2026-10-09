@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { ArrowLeft } from "lucide-react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { getTermsOfServiceUrl } from "../api/ApiServices/getTermsOfServiceUrlApiService";
 
 export default function TermsOfService() {
   const [termsOfService, setTermsOfService] = useState("");
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -38,9 +39,7 @@ export default function TermsOfService() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto" />
 
-          <p className="mt-4 text-gray-600">
-            Loading terms of service...
-          </p>
+          <p className="mt-4 text-gray-600">Loading terms of service...</p>
         </div>
       </div>
     );
@@ -49,20 +48,16 @@ export default function TermsOfService() {
   return (
     <div className="min-h-screen bg-white">
       <div className="max-w-3xl mx-auto px-4 py-8 pb-24">
-
-        <Link
-          to="/"
+        <button
+          type="button"
+          onClick={() => navigate(-1)}
           className="inline-flex items-center gap-2 text-slate-500 hover:text-slate-800 mb-6 text-sm"
         >
           <ArrowLeft className="w-4 h-4" />
           Back
-        </Link>
+        </button>
 
-        {error && (
-          <div className="text-red-600 text-sm">
-            {error}
-          </div>
-        )}
+        {error && <div className="text-red-600 text-sm">{error}</div>}
 
         {!error && termsOfService && (
           <div
@@ -78,9 +73,7 @@ export default function TermsOfService() {
             Terms of service are not available.
           </div>
         )}
-
       </div>
     </div>
   );
 }
-

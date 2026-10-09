@@ -286,15 +286,23 @@ export default function Profile() {
     e.preventDefault();
     const phone = profileData.phone.trim();
 
+    if (!/^\d{10}$/.test(phone)) {
+  toast.error("Please enter a valid 10-digit phone number.");
+  return;
+}
+
+    // const emergencyContact = profileData.emergency_contact_no.trim();
     const emergencyContact = profileData.emergency_contact_no.trim();
 
-    if (emergencyContact && !isValidAustralianMobile(emergencyContact)) {
-      toast.error(
-        "Please enter a valid Australian mobile number (e.g. 0412 345 678).",
-      );
-      setIsUpdating(false);
-      return;
-    }
+    // if (emergencyContact && !isValidAustralianMobile(emergencyContact)) {
+    //   toast.error(
+    //     "Please enter a valid Australian mobile number (e.g. 0412 345 678).",
+    //   );
+    //   setIsUpdating(false);
+    //   return;
+    // }
+
+    if (emergencyContact && !/^\d{10}$/.test(emergencyContact)) { toast.error("Please enter a valid 10-digit mobile number."); return; }
 
     setIsUpdating(true);
 

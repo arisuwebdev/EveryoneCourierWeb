@@ -86,13 +86,13 @@
 //   );
 // }
 
-import React, { useState, useEffect, useRef, useCallback,} from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 
-import {Card,CardContent,CardHeader,CardTitle,} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 import { Badge } from "@/components/ui/badge";
 
-import {Navigation, WifiOff, MapPin, Clock,} from "lucide-react";
+import { Navigation, WifiOff, MapPin, Clock } from "lucide-react";
 
 import { useAuth } from "../../lib/AuthContext";
 
@@ -128,7 +128,7 @@ function loadGoogleMaps(apiKey) {
      */
 
     const existingScript = document.querySelector(
-      'script[data-google-maps="true"]'
+      'script[data-google-maps="true"]',
     );
 
     if (existingScript) {
@@ -136,24 +136,13 @@ function loadGoogleMaps(apiKey) {
         if (window.google?.maps) {
           resolve(window.google.maps);
         } else {
-          reject(
-            new Error(
-              "Google Maps failed to initialize."
-            )
-          );
+          reject(new Error("Google Maps failed to initialize."));
         }
       });
 
-      existingScript.addEventListener(
-        "error",
-        () => {
-          reject(
-            new Error(
-              "Failed to load Google Maps."
-            )
-          );
-        }
-      );
+      existingScript.addEventListener("error", () => {
+        reject(new Error("Failed to load Google Maps."));
+      });
 
       return;
     }
@@ -162,9 +151,7 @@ function loadGoogleMaps(apiKey) {
      * Create new Google Maps script.
      */
 
-    const script = document.createElement(
-      "script"
-    );
+    const script = document.createElement("script");
 
     script.src =
       `https://maps.googleapis.com/maps/api/js` +
@@ -182,30 +169,19 @@ function loadGoogleMaps(apiKey) {
       if (window.google?.maps) {
         resolve(window.google.maps);
       } else {
-        reject(
-          new Error(
-            "Google Maps failed to initialize."
-          )
-        );
+        reject(new Error("Google Maps failed to initialize."));
       }
     };
 
     script.onerror = () => {
-      reject(
-        new Error(
-          "Failed to load Google Maps."
-        )
-      );
+      reject(new Error("Failed to load Google Maps."));
     };
 
     document.head.appendChild(script);
   });
 }
 
-export default function CustomerTrackingMap({
-  job,
-  courierName,
-}) {
+export default function CustomerTrackingMap({ job, courierName }) {
   const { token } = useAuth();
 
   /*
@@ -234,8 +210,7 @@ export default function CustomerTrackingMap({
 
   const lastRouteRequestRef = useRef(0);
 
-  const routeRequestInProgressRef =
-    useRef(false);
+  const routeRequestInProgressRef = useRef(false);
 
   /*
   |--------------------------------------------------------------------------
@@ -243,8 +218,7 @@ export default function CustomerTrackingMap({
   |--------------------------------------------------------------------------
   */
 
-  const pollingIntervalRef =
-    useRef(null);
+  const pollingIntervalRef = useRef(null);
 
   /*
   |--------------------------------------------------------------------------
@@ -252,26 +226,19 @@ export default function CustomerTrackingMap({
   |--------------------------------------------------------------------------
   */
 
-  const [location, setLocation] =
-    useState(null);
+  const [location, setLocation] = useState(null);
 
-  const [isActive, setIsActive] =
-    useState(false);
+  const [isActive, setIsActive] = useState(false);
 
-  const [lastUpdated, setLastUpdated] =
-    useState(null);
+  const [lastUpdated, setLastUpdated] = useState(null);
 
-  const [mapsReady, setMapsReady] =
-    useState(false);
+  const [mapsReady, setMapsReady] = useState(false);
 
-  const [mapError, setMapError] =
-    useState(null);
+  const [mapError, setMapError] = useState(null);
 
-  const [trackingError, setTrackingError] =
-    useState(null);
+  const [trackingError, setTrackingError] = useState(null);
 
-  const [routeInfo, setRouteInfo] =
-    useState(null);
+  const [routeInfo, setRouteInfo] = useState(null);
 
   /*
   |--------------------------------------------------------------------------
@@ -279,9 +246,7 @@ export default function CustomerTrackingMap({
   |--------------------------------------------------------------------------
   */
 
-  const apiKey =
-    import.meta.env
-      .VITE_GOOGLE_MAPS_API_KEY;
+  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
   /*
   |--------------------------------------------------------------------------
@@ -310,10 +275,7 @@ export default function CustomerTrackingMap({
      * Courier is going to delivery.
      */
 
-    if (
-      job.status === "PICKED_UP" ||
-      job.status === "IN_TRANSIT"
-    ) {
+    if (job.status === "PICKED_UP" || job.status === "IN_TRANSIT") {
       return job.delivery_address;
     }
 
@@ -321,11 +283,7 @@ export default function CustomerTrackingMap({
      * Fallback
      */
 
-    return (
-      job.delivery_address ||
-      job.pickup_address ||
-      null
-    );
+    return job.delivery_address || job.pickup_address || null;
   }, [job]);
 
   /*
@@ -335,11 +293,9 @@ export default function CustomerTrackingMap({
   */
 
   const clearRoute = useCallback(() => {
-    routePolylinesRef.current.forEach(
-      (polyline) => {
-        polyline.setMap(null);
-      }
-    );
+    routePolylinesRef.current.forEach((polyline) => {
+      polyline.setMap(null);
+    });
 
     routePolylinesRef.current = [];
 
@@ -353,27 +309,18 @@ export default function CustomerTrackingMap({
   */
 
   const fetchRoute = useCallback(
-    async (
-      latitude,
-      longitude,
-      force = false
-    ) => {
-      if (
-        !mapsReady ||
-        !mapInstanceRef.current
-      ) {
+    async (latitude, longitude, force = false) => {
+      if (!mapsReady || !mapInstanceRef.current) {
         return;
       }
 
-      const Route =
-        RouteClassRef.current;
+      const Route = RouteClassRef.current;
 
       if (!Route) {
         return;
       }
 
-      const destination =
-        getDestination();
+      const destination = getDestination();
 
       if (!destination) {
         return;
@@ -394,51 +341,36 @@ export default function CustomerTrackingMap({
 
       if (
         !force &&
-        now -
-          lastRouteRequestRef.current <
-          30000
+        now - lastRouteRequestRef.current < 300000 // first 30 sec and now add 5 min
       ) {
         return;
       }
 
-      if (
-        routeRequestInProgressRef.current
-      ) {
+      if (routeRequestInProgressRef.current) {
         return;
       }
 
-      routeRequestInProgressRef.current =
-        true;
+      routeRequestInProgressRef.current = true;
 
-      lastRouteRequestRef.current =
-        now;
+      lastRouteRequestRef.current = now;
 
       try {
-        const result =
-          await Route.computeRoutes({
-            origin: {
-              lat: latitude,
-              lng: longitude,
-            },
+        const result = await Route.computeRoutes({
+          origin: {
+            lat: latitude,
+            lng: longitude,
+          },
 
-            destination,
+          destination,
 
-            travelMode: "DRIVING",
+          travelMode: "DRIVING",
 
-            routingPreference:
-              "TRAFFIC_AWARE",
+          routingPreference: "TRAFFIC_AWARE",
 
-            fields: [
-              "path",
-              "distanceMeters",
-              "durationMillis",
-            ],
-          });
+          fields: ["path", "distanceMeters", "durationMillis"],
+        });
 
-        if (
-          !result?.routes ||
-          result.routes.length === 0
-        ) {
+        if (!result?.routes || result.routes.length === 0) {
           // console.warn(
           //   "No route found."
           // );
@@ -446,8 +378,7 @@ export default function CustomerTrackingMap({
           return;
         }
 
-        const route =
-          result.routes[0];
+        const route = result.routes[0];
 
         /*
          * Remove previous route
@@ -459,76 +390,49 @@ export default function CustomerTrackingMap({
          * Create new route polyline
          */
 
-        const polylines =
-          route.createPolylines({
-            polylineOptions: {
-              strokeColor:
-                "#4f46e5",
+        const polylines = route.createPolylines({
+          polylineOptions: {
+            strokeColor: "#4f46e5",
 
-              strokeOpacity: 0.9,
+            strokeOpacity: 0.9,
 
-              strokeWeight: 5,
-            },
-          });
+            strokeWeight: 5,
+          },
+        });
 
-        polylines.forEach(
-          (polyline) => {
-            polyline.setMap(
-              mapInstanceRef.current
-            );
-          }
-        );
+        polylines.forEach((polyline) => {
+          polyline.setMap(mapInstanceRef.current);
+        });
 
-        routePolylinesRef.current =
-          polylines;
+        routePolylinesRef.current = polylines;
 
         /*
          * Distance
          */
 
-        const distanceMeters =
-          Number(
-            route.distanceMeters || 0
-          );
+        const distanceMeters = Number(route.distanceMeters || 0);
 
-        const distanceKm =
-          distanceMeters / 1000;
+        const distanceKm = distanceMeters / 1000;
 
         /*
          * Duration
          */
 
-        const durationMinutes =
-          Number(
-            route.durationMillis || 0
-          ) / 60000;
+        const durationMinutes = Number(route.durationMillis || 0) / 60000;
 
         let durationText = "";
 
         if (durationMinutes < 1) {
           durationText = "< 1 min";
-        } else if (
-          durationMinutes < 60
-        ) {
-          durationText =
-            `${Math.round(
-              durationMinutes
-            )} min`;
+        } else if (durationMinutes < 60) {
+          durationText = `${Math.round(durationMinutes)} min`;
         } else {
-          const hours =
-            Math.floor(
-              durationMinutes / 60
-            );
+          const hours = Math.floor(durationMinutes / 60);
 
-          const minutes =
-            Math.round(
-              durationMinutes % 60
-            );
+          const minutes = Math.round(durationMinutes % 60);
 
           durationText =
-            minutes > 0
-              ? `${hours} hr ${minutes} min`
-              : `${hours} hr`;
+            minutes > 0 ? `${hours} hr ${minutes} min` : `${hours} hr`;
         }
 
         setRouteInfo({
@@ -536,12 +440,8 @@ export default function CustomerTrackingMap({
 
           distance:
             distanceKm < 1
-              ? `${Math.round(
-                  distanceMeters
-                )} m`
-              : `${distanceKm.toFixed(
-                  1
-                )} km`,
+              ? `${Math.round(distanceMeters)} m`
+              : `${distanceKm.toFixed(1)} km`,
         });
       } catch (error) {
         // console.error(
@@ -556,15 +456,10 @@ export default function CustomerTrackingMap({
 
         setRouteInfo(null);
       } finally {
-        routeRequestInProgressRef.current =
-          false;
+        routeRequestInProgressRef.current = false;
       }
     },
-    [
-      mapsReady,
-      getDestination,
-      clearRoute,
-    ]
+    [mapsReady, getDestination, clearRoute],
   );
 
   /*
@@ -575,9 +470,7 @@ export default function CustomerTrackingMap({
 
   useEffect(() => {
     if (!apiKey) {
-      setMapError(
-        "Google Maps API key is missing."
-      );
+      setMapError("Google Maps API key is missing.");
 
       return;
     }
@@ -588,195 +481,141 @@ export default function CustomerTrackingMap({
 
     let cancelled = false;
 
-    const initializeMap =
-      async () => {
-        try {
-          const maps =
-            await loadGoogleMaps(
-              apiKey
-            );
+    const initializeMap = async () => {
+      try {
+        const maps = await loadGoogleMaps(apiKey);
 
-          if (
-            cancelled ||
-            !mapRef.current
-          ) {
-            return;
-          }
+        if (cancelled || !mapRef.current) {
+          return;
+        }
 
-          /*
-           * Maps library
-           */
+        /*
+         * Maps library
+         */
 
-          const { Map } =
-            await maps.importLibrary(
-              "maps"
-            );
+        const { Map } = await maps.importLibrary("maps");
 
-          /*
-           * Routes library
-           */
+        /*
+         * Routes library
+         */
 
-          const { Route } =
-            await maps.importLibrary(
-              "routes"
-            );
+        const { Route } = await maps.importLibrary("routes");
 
-          RouteClassRef.current =
-            Route;
+        RouteClassRef.current = Route;
 
-          /*
-           * Marker library
-           */
+        /*
+         * Marker library
+         */
 
-          const {
-            AdvancedMarkerElement,
-          } =
-            await maps.importLibrary(
-              "marker"
-            );
+        const { AdvancedMarkerElement } = await maps.importLibrary("marker");
 
-          /*
-           * Default map center
-           */
+        /*
+         * Default map center
+         */
 
-          const defaultCenter = {
-            lat: -33.8688,
-            lng: 151.2093,
-          };
+        const defaultCenter = {
+          lat: -33.8688,
+          lng: 151.2093,
+        };
 
-          /*
-           * Create map
-           */
+        /*
+         * Create map
+         */
 
-          const map = new Map(
-            mapRef.current,
-            {
-              center:
-                defaultCenter,
+        const map = new Map(mapRef.current, {
+          center: defaultCenter,
 
-              zoom: 13,
+          zoom: 13,
 
-              mapId:
-                "DEMO_MAP_ID",
+          mapId: "DEMO_MAP_ID",
 
-              mapTypeControl:
-                false,
+          mapTypeControl: false,
 
-              fullscreenControl:
-                false,
+          fullscreenControl: false,
 
-              streetViewControl:
-                false,
+          streetViewControl: false,
 
-              zoomControl:
-                true,
+          zoomControl: true,
 
-              gestureHandling:
-                "greedy",
-            }
-          );
+          gestureHandling: "greedy",
+        });
 
-          mapInstanceRef.current =
-            map;
+        mapInstanceRef.current = map;
 
-          /*
+        /*
            |--------------------------------------------------------------------------
            | Blue courier marker
            |--------------------------------------------------------------------------
            */
 
-          const markerElement =
-            document.createElement(
-              "div"
-            );
+        const markerElement = document.createElement("div");
 
-          markerElement.style.width =
-            "18px";
+        markerElement.style.width = "18px";
 
-          markerElement.style.height =
-            "18px";
+        markerElement.style.height = "18px";
 
-          markerElement.style.borderRadius =
-            "50%";
+        markerElement.style.borderRadius = "50%";
 
-          markerElement.style.background =
-            "#2563EB";
+        markerElement.style.background = "#2563EB";
 
-          markerElement.style.border =
-            "3px solid white";
+        markerElement.style.border = "3px solid white";
 
-          markerElement.style.boxShadow =
-            "0 1px 6px rgba(0,0,0,0.35)";
+        markerElement.style.boxShadow = "0 1px 6px rgba(0,0,0,0.35)";
 
-          courierMarkerRef.current =
-            new AdvancedMarkerElement({
-              map,
+        courierMarkerRef.current = new AdvancedMarkerElement({
+          map,
 
-              position:
-                defaultCenter,
+          position: defaultCenter,
 
-              title:
-                courierName ||
-                "Courier",
+          title: courierName || "Courier",
 
-              content:
-                markerElement,
-            });
+          content: markerElement,
+        });
 
-          /*
-           * Initially hide marker
-           */
+        /*
+         * Initially hide marker
+         */
 
-          courierMarkerRef.current.map =
-            null;
+        courierMarkerRef.current.map = null;
 
-          /*
+        /*
            |--------------------------------------------------------------------------
            | GPS accuracy circle
            |--------------------------------------------------------------------------
            */
 
-          accuracyCircleRef.current =
-            new maps.Circle({
-              map: null,
+        accuracyCircleRef.current = new maps.Circle({
+          map: null,
 
-              center:
-                defaultCenter,
+          center: defaultCenter,
 
-              radius: 30,
+          radius: 30,
 
-              fillColor:
-                "#2563EB",
+          fillColor: "#2563EB",
 
-              fillOpacity:
-                0.12,
+          fillOpacity: 0.12,
 
-              strokeColor:
-                "#2563EB",
+          strokeColor: "#2563EB",
 
-              strokeOpacity:
-                0.25,
+          strokeOpacity: 0.25,
 
-              strokeWeight: 1,
+          strokeWeight: 1,
 
-              clickable: false,
-            });
+          clickable: false,
+        });
 
-          setMapsReady(true);
+        setMapsReady(true);
 
-          setMapError(null);
-        } catch (error) {
-          // console.error(
-          //   "Google Maps initialization error:",
-          //   error
-          // );
+        setMapError(null);
+      } catch (error) {
+        // console.error(
+        //   "Google Maps initialization error:",
+        //   error
+        // );
 
-          setMapError(
-            error?.message ||
-              "Failed to load Google Maps."
-          );
-        }
-      };
+        setMapError(error?.message || "Failed to load Google Maps.");
+      }
+    };
 
     initializeMap();
 
@@ -791,202 +630,132 @@ export default function CustomerTrackingMap({
   |--------------------------------------------------------------------------
   */
 
-  const fetchCourierLocation =
-    useCallback(async () => {
-      if (
-        !token ||
-        !job?.id
-      ) {
+  const fetchCourierLocation = useCallback(async () => {
+    if (!token || !job?.id) {
+      return;
+    }
+
+    try {
+      const response = await getJobTrackLocation(job.id, token);
+
+      if (response?.status !== 1) {
+        setTrackingError(response?.msg || "Unable to get courier location.");
+
         return;
       }
 
-      try {
-        const response =
-          await getJobTrackLocation(
-            job.id,
-            token
-          );
+      const locations = response?.payload?.locations || [];
 
-        if (
-          response?.status !== 1
-        ) {
-          setTrackingError(
-            response?.msg ||
-              "Unable to get courier location."
-          );
+      if (locations.length === 0) {
+        setTrackingError("Courier location is not available yet.");
 
-          return;
-        }
+        setIsActive(false);
 
-        const locations =
-          response?.payload
-            ?.locations || [];
+        return;
+      }
 
-        if (
-          locations.length === 0
-        ) {
-          setTrackingError(
-            "Courier location is not available yet."
-          );
+      /*
+       * Get latest location
+       */
 
-          setIsActive(false);
+      const locationData = locations[locations.length - 1];
 
-          return;
-        }
+      if (!locationData) {
+        return;
+      }
 
-        /*
-         * Get latest location
-         */
+      const lat = Number(locationData.lat ?? locationData.latitude);
 
-        const locationData =
-          locations[
-            locations.length - 1
-          ];
+      const lng = Number(
+        locationData.long ?? locationData.lng ?? locationData.longitude,
+      );
 
-        if (!locationData) {
-          return;
-        }
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+        setTrackingError("Invalid courier location received from server.");
 
-        const lat = Number(
-          locationData.lat ??
-            locationData.latitude
-        );
+        return;
+      }
 
-        const lng = Number(
-          locationData.long ??
-            locationData.lng ??
-            locationData.longitude
-        );
+      /*
+       * Backend timestamp
+       */
 
-        if (
-          !Number.isFinite(lat) ||
-          !Number.isFinite(lng)
-        ) {
-          setTrackingError(
-            "Invalid courier location received from server."
-          );
+      const backendTime = locationData.time
+        ? new Date(locationData.time)
+        : new Date();
 
-          return;
-        }
+      setLocation({
+        lat,
 
-        /*
-         * Backend timestamp
-         */
+        lng,
 
-        const backendTime =
-          locationData.time
-            ? new Date(
-                locationData.time
-              )
-            : new Date();
+        gps_accuracy: locationData.gps_accuracy,
 
-        setLocation({
-          lat,
+        time: locationData.time,
+      });
 
-          lng,
+      setLastUpdated(backendTime);
 
-          gps_accuracy:
-            locationData.gps_accuracy,
+      setIsActive(true);
 
-          time:
-            locationData.time,
-        });
+      setTrackingError(null);
 
-        setLastUpdated(
-          backendTime
-        );
-
-        setIsActive(true);
-
-        setTrackingError(null);
-
-        /*
+      /*
          |--------------------------------------------------------------------------
          | Update courier marker
          |--------------------------------------------------------------------------
          */
 
-        if (
-          mapsReady &&
-          mapInstanceRef.current &&
-          courierMarkerRef.current
-        ) {
-          const newPosition = {
-            lat,
-            lng,
-          };
+      if (mapsReady && mapInstanceRef.current && courierMarkerRef.current) {
+        const newPosition = {
+          lat,
+          lng,
+        };
 
-          courierMarkerRef.current.position =
-            newPosition;
+        courierMarkerRef.current.position = newPosition;
 
-          courierMarkerRef.current.map =
-            mapInstanceRef.current;
+        courierMarkerRef.current.map = mapInstanceRef.current;
 
-          /*
-           * Accuracy circle
-           */
+        /*
+         * Accuracy circle
+         */
 
-          if (
-            accuracyCircleRef.current
-          ) {
-            const accuracy =
-              Math.min(
-                Math.max(
-                  Number(
-                    locationData.gps_accuracy
-                  ) || 30,
-                  10
-                ),
-                100
-              );
-
-            accuracyCircleRef.current.setCenter(
-              newPosition
-            );
-
-            accuracyCircleRef.current.setRadius(
-              accuracy
-            );
-
-            accuracyCircleRef.current.setMap(
-              mapInstanceRef.current
-            );
-          }
-
-          /*
-           * Move map to courier
-           */
-
-          mapInstanceRef.current.panTo(
-            newPosition
+        if (accuracyCircleRef.current) {
+          const accuracy = Math.min(
+            Math.max(Number(locationData.gps_accuracy) || 30, 10),
+            100,
           );
 
-          /*
-           * Calculate route
-           */
+          accuracyCircleRef.current.setCenter(newPosition);
 
-          fetchRoute(
-            lat,
-            lng
-          );
+          accuracyCircleRef.current.setRadius(accuracy);
+
+          accuracyCircleRef.current.setMap(mapInstanceRef.current);
         }
-      } catch (error) {
-        // console.error(
-        //   "Courier tracking error:",
-        //   error
-        // );
 
-        setTrackingError(
-          error?.response?.data?.msg ||
-            "Failed to get courier location."
-        );
+        /*
+         * Move map to courier
+         */
+
+        mapInstanceRef.current.panTo(newPosition);
+
+        /*
+         * Calculate route
+         */
+
+        fetchRoute(lat, lng);
       }
-    }, [
-      token,
-      job?.id,
-      mapsReady,
-      fetchRoute,
-    ]);
+    } catch (error) {
+      // console.error(
+      //   "Courier tracking error:",
+      //   error
+      // );
+
+      setTrackingError(
+        error?.response?.data?.msg || "Failed to get courier location.",
+      );
+    }
+  }, [token, job?.id, mapsReady, fetchRoute]);
 
   /*
   |--------------------------------------------------------------------------
@@ -999,11 +768,7 @@ export default function CustomerTrackingMap({
   */
 
   useEffect(() => {
-    if (
-      !mapsReady ||
-      !token ||
-      !job?.id
-    ) {
+    if (!mapsReady || !token || !job?.id) {
       return;
     }
 
@@ -1017,29 +782,18 @@ export default function CustomerTrackingMap({
      * Then every 5 seconds
      */
 
-pollingIntervalRef.current = setInterval(() => {
-  fetchCourierLocation();
-}, 60000);
-
+    pollingIntervalRef.current = setInterval(() => {
+      fetchCourierLocation();
+    }, 300000);
 
     return () => {
-      if (
-        pollingIntervalRef.current
-      ) {
-        clearInterval(
-          pollingIntervalRef.current
-        );
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
 
-        pollingIntervalRef.current =
-          null;
+        pollingIntervalRef.current = null;
       }
     };
-  }, [
-    mapsReady,
-    token,
-    job?.id,
-    fetchCourierLocation,
-  ]);
+  }, [mapsReady, token, job?.id, fetchCourierLocation]);
 
   /*
   |--------------------------------------------------------------------------
@@ -1055,22 +809,12 @@ pollingIntervalRef.current = setInterval(() => {
   */
 
   useEffect(() => {
-    if (
-      !mapsReady ||
-      !location
-    ) {
+    if (!mapsReady || !location) {
       return;
     }
 
-    fetchRoute(
-      location.lat,
-      location.lng,
-      true
-    );
-  }, [
-    job?.status,
-    mapsReady,
-  ]);
+    fetchRoute(location.lat, location.lng, true);
+  }, [job?.status, mapsReady]);
 
   /*
   |--------------------------------------------------------------------------
@@ -1083,26 +827,20 @@ pollingIntervalRef.current = setInterval(() => {
       return;
     }
 
-    const timer =
-      setInterval(() => {
-        const seconds =
-          (
-            new Date() -
-            lastUpdated
-          ) / 1000;
+    const timer = setInterval(() => {
+      const seconds = (new Date() - lastUpdated) / 1000;
 
-        /*
-         * Backend has not provided
-         * a new location for 20+ seconds.
-         */
+      /*
+       * Backend has not provided
+       * a new location for 20+ seconds.
+       */
 
-        if (seconds > 20) {
-          setIsActive(false);
-        }
-      }, 1000);
+      if (seconds > 20) {
+        setIsActive(false);
+      }
+    }, 1000);
 
-    return () =>
-      clearInterval(timer);
+    return () => clearInterval(timer);
   }, [lastUpdated]);
 
   /*
@@ -1116,19 +854,13 @@ pollingIntervalRef.current = setInterval(() => {
       return "";
     }
 
-    const seconds = Math.floor(
-      (new Date() -
-        lastUpdated) /
-        1000
-    );
+    const seconds = Math.floor((new Date() - lastUpdated) / 1000);
 
     if (seconds < 60) {
       return `${seconds}s ago`;
     }
 
-    return `${Math.floor(
-      seconds / 60
-    )}m ago`;
+    return `${Math.floor(seconds / 60)}m ago`;
   };
 
   /*
@@ -1139,39 +871,25 @@ pollingIntervalRef.current = setInterval(() => {
 
   useEffect(() => {
     return () => {
-      if (
-        pollingIntervalRef.current
-      ) {
-        clearInterval(
-          pollingIntervalRef.current
-        );
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
       }
 
-      routePolylinesRef.current.forEach(
-        (polyline) => {
-          polyline.setMap(null);
-        }
-      );
+      routePolylinesRef.current.forEach((polyline) => {
+        polyline.setMap(null);
+      });
 
       routePolylinesRef.current = [];
 
-      if (
-        accuracyCircleRef.current
-      ) {
-        accuracyCircleRef.current.setMap(
-          null
-        );
+      if (accuracyCircleRef.current) {
+        accuracyCircleRef.current.setMap(null);
       }
 
-      if (
-        courierMarkerRef.current
-      ) {
-        courierMarkerRef.current.map =
-          null;
+      if (courierMarkerRef.current) {
+        courierMarkerRef.current.map = null;
       }
 
-      mapInstanceRef.current =
-        null;
+      mapInstanceRef.current = null;
     };
   }, []);
 
@@ -1187,9 +905,7 @@ pollingIntervalRef.current = setInterval(() => {
         <CardTitle className="text-base flex items-center gap-2">
           <Navigation className="w-4 h-4 text-indigo-600" />
 
-          {courierName
-            ? `${courierName} Tracking`
-            : "Courier Tracking"}
+          {courierName ? `${courierName} Tracking` : "Courier Tracking"}
         </CardTitle>
       </CardHeader>
 
@@ -1200,28 +916,23 @@ pollingIntervalRef.current = setInterval(() => {
           {!location ? (
             <span className="flex items-center gap-1 text-sm text-slate-500">
               <WifiOff className="w-4 h-4" />
-
-              Waiting for courier to share
-              location...
+              Waiting for courier to share location...
             </span>
           ) : isActive ? (
             <>
               <Badge className="bg-green-100 text-green-800 flex items-center gap-1">
                 <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse inline-block" />
-
                 Live tracking
               </Badge>
 
               <span className="text-xs text-slate-400">
-                Updated{" "}
-                {getTimeSince()}
+                Updated {getTimeSince()}
               </span>
             </>
           ) : (
-            <Badge className="bg-slate-100 text-slate-600">
-              Last seen{" "}
-              {getTimeSince()}
-            </Badge>
+            <Badge className="bg-slate-100 text-slate-600 hover:bg-slate-100">
+  Last seen {getTimeSince()}
+</Badge>
           )}
         </div>
 
@@ -1229,14 +940,10 @@ pollingIntervalRef.current = setInterval(() => {
 
         {mapError && (
           <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-sm text-red-600">
-              {mapError}
-            </p>
+            <p className="text-sm text-red-600">{mapError}</p>
 
             <p className="text-xs text-red-500 mt-1">
-              Check your Google Maps API
-              key and Google Cloud API
-              configuration.
+              Check your Google Maps API key and Google Cloud API configuration.
             </p>
           </div>
         )}
@@ -1245,9 +952,7 @@ pollingIntervalRef.current = setInterval(() => {
 
         {trackingError && (
           <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
-            <p className="text-sm text-amber-700">
-              {trackingError}
-            </p>
+            <p className="text-sm text-amber-700">{trackingError}</p>
           </div>
         )}
 
@@ -1267,15 +972,13 @@ pollingIntervalRef.current = setInterval(() => {
         {lastUpdated && (
           <p className="text-xs text-slate-500 flex items-center gap-1">
             <Clock className="w-3 h-3" />
-
-            Last location update:{" "}
-            {getTimeSince()}
+            Last location update: {getTimeSince()}
           </p>
         )}
 
         {/* Route information */}
 
- {/*       {routeInfo && (
+        {/*       {routeInfo && (
           <div className="flex gap-3 text-sm">
             <span className="flex items-center gap-1 text-indigo-700 font-medium">
               <Clock className="w-4 h-4" />
@@ -1290,14 +993,12 @@ pollingIntervalRef.current = setInterval(() => {
             </span>
           </div>
         )} */}
- 
+
         {/* Polling information */}
 
         <p className="text-xs text-slate-500 flex items-center gap-1">
           <MapPin className="w-3 h-3" />
-
-          Courier position updates every
-          5 seconds.
+          Courier position updates every 5 min.
         </p>
       </CardContent>
     </Card>

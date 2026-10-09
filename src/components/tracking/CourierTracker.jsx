@@ -1650,7 +1650,7 @@ export default function CourierTracker({ job }) {
       return;
     }
 
-    if (!force && now - lastRouteRequestRef.current < 30000) {
+    if (!force && now - lastRouteRequestRef.current < 300000) {
       return;
     }
 
@@ -1935,7 +1935,7 @@ locationIntervalRef.current = setInterval(() => {
   if (latestPositionRef.current) {
     sendLocationToBackend(latestPositionRef.current);
   }
-}, 60000);
+}, 300000);
 
   };
 

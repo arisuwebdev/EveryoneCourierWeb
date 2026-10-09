@@ -819,7 +819,7 @@ export default function Layout({ children }) {
                 <div className="flex items-center gap-3">
                   <Mail className="w-5 h-5 text-blue-600" />
                   <span className="text-slate-600 text-sm">
-                    support@everyonecourier.com
+                    admin@everyonesacourier.com
                   </span>
                 </div>
 
