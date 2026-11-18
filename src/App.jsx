@@ -43,6 +43,7 @@ import ApplicantList from "./components/jobs/ApplicantList";
 import ScrollToTop from "./components/ScrollToTop";
 import ProtectedRoute from "./lib/ProtectedRoute";
 import UserProfileView from "./pages/UserProfileView";
+import DeleteAccount from "./components/delete account/DeleteAccount";
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError } = useAuth();
@@ -74,6 +75,7 @@ const AuthenticatedApp = () => {
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/PrivacyPolicy" element={<PrivacyPolicy />} />
         <Route path="/TermsOfService" element={<TermsOfService />} />
+        <Route path="/delete-account" element={<DeleteAccount/>} />
 
         {/* App Routes */}
         <Route
@@ -189,6 +191,7 @@ const AuthenticatedApp = () => {
             </ProtectedRoute>
           }
         />
+
 
         {/* 404 */}
         <Route path="*" element={<PageNotFound />} />

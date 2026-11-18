@@ -22,6 +22,9 @@ export const googleLoginApi =  baseUrl + "/auth/social-login";
 
 export const changePasswordApi =  baseUrl + "/auth/changePassword";
 
+export const DeleteAccountApi =  baseUrl + "/requestAccountDeletion";
+
+
 
 
 

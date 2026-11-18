@@ -215,7 +215,7 @@ export default function Layout({ children }) {
 
       case "DELIVERY_CONFIRMED":
         // Courier sees available/applicants-related job
-         navigate(`/my-jobs/${notification.job_id}/assigned?type=deliveries`);
+        navigate(`/my-jobs/${notification.job_id}/assigned?type=deliveries`);
         break;
 
       default:
@@ -571,7 +571,7 @@ export default function Layout({ children }) {
                                   "JOB_STATUS_UPDATE",
                                   "JOB_POSTED",
                                   "COMPLAINT_SENT",
-                                   "DELIVERY_CONFIRMED"
+                                  "DELIVERY_CONFIRMED",
                                 ].includes(notification.notifyType)
                                   ? "cursor-pointer hover:bg-slate-100 active:bg-slate-200"
                                   : ""
@@ -806,6 +806,12 @@ export default function Layout({ children }) {
                 >
                   Privacy Policy
                 </button>
+                <Link
+                  to="/delete-account"
+                  className="text-slate-600 hover:text-blue-600 transition-colors"
+                >
+                  Delete Account
+                </Link>
               </div>
             </div>
 
